@@ -250,16 +250,48 @@ def get_default_goggins_response() -> str:
 async def send_whatsapp_message(to_number: str, message: str) -> None:
     """Send message back to WhatsApp user via Azure Communication Services."""
     try:
-        # For now, just log the message (we'll add Azure Communication Services integration next)
         print(f"📤 SENDING GOGGINS RESPONSE to {to_number}:")
         print(f"📝 {message}")
         print("-" * 50)
         
-        # TODO: Integrate Azure Communication Services here
-        # This is where we'll send the actual WhatsApp message
+        # Get Azure Communication Services credentials
+        endpoint = os.getenv("AZURE_COMMUNICATION_ENDPOINT")
+        access_key = os.getenv("AZURE_COMMUNICATION_KEY") 
+        from_number = os.getenv("WHATSAPP_PHONE_NUMBER")
         
+        if not all([endpoint, access_key, from_number]):
+            print("🚨 Missing Azure Communication Services credentials - message logged only")
+            return
+            
+        # Import Azure Communication Services for WhatsApp
+        from azure.communication.messages import MessageClient
+        from azure.communication.messages.models import WhatsAppMessage
+        from azure.core.credentials import AzureKeyCredential
+        
+        # Create message client
+        client = MessageClient(endpoint, AzureKeyCredential(access_key))
+        
+        # Create WhatsApp message
+        whatsapp_message = WhatsAppMessage(
+            to=to_number,
+            from_=from_number,
+            content=message
+        )
+        
+        # Send the message
+        response = await client.send_message(whatsapp_message)
+        
+        if response and hasattr(response, 'message_id'):
+            print(f"✅ GOGGINS MESSAGE SENT successfully! Message ID: {response.message_id}")
+        else:
+            print("✅ GOGGINS MESSAGE SENT! No message ID returned but send completed")
+            
+    except ImportError as e:
+        print(f"🚨 Azure Communication Services not available: {str(e)}")
+        print("📝 Message logged only - install azure-communication-messages")
     except Exception as e:
-        print(f"🚨 Error sending message: {str(e)}")
+        print(f"🚨 Error sending message via Azure Communication Services: {str(e)}")
+        print("📝 GOGGINS RESPONSE logged but not sent - user will see response in logs")
 
 async def handle_interactive_message(from_number: str, message: Dict) -> None:
     """Handle interactive messages (buttons, lists) with Goggins responses."""
