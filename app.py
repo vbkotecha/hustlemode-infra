@@ -6,6 +6,7 @@ import httpx
 from typing import Dict, Optional
 import re
 
+# HustleMode.ai - David Goggins WhatsApp Bot - Version 1.0.1
 app = FastAPI(title="HustleMode.ai WhatsApp Bot")
 
 @app.get("/")
