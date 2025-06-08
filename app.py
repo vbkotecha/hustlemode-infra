@@ -257,15 +257,15 @@ async def send_whatsapp_message(to_number: str, message: str) -> None:
         
         # Get WhatsApp Business API credentials
         whatsapp_token = os.getenv("WHATSAPP_TOKEN")
-        whatsapp_business_account_id = os.getenv("WHATSAPP_BUSINESS_ACCOUNT_ID")
+        whatsapp_phone_number_id = os.getenv("WHATSAPP_PHONE_NUMBER_ID")
         from_number = os.getenv("WHATSAPP_PHONE_NUMBER")
         
-        if not all([whatsapp_token, whatsapp_business_account_id, from_number]):
+        if not all([whatsapp_token, whatsapp_phone_number_id, from_number]):
             print("🚨 Missing WhatsApp Business API credentials - message logged only")
             return
             
-        # WhatsApp Business API endpoint
-        url = f"https://graph.facebook.com/v21.0/{whatsapp_business_account_id}/messages"
+        # WhatsApp Business API endpoint  
+        url = f"https://graph.facebook.com/v22.0/{whatsapp_phone_number_id}/messages"
         
         # Prepare message payload
         payload = {
