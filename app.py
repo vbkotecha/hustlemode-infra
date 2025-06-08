@@ -248,49 +248,54 @@ def get_default_goggins_response() -> str:
     return random.choice(responses)
 
 async def send_whatsapp_message(to_number: str, message: str) -> None:
-    """Send message back to WhatsApp user via Azure Communication Services."""
+    """Send message back to WhatsApp user via WhatsApp Business API."""
     try:
         print(f"📤 SENDING GOGGINS RESPONSE to {to_number}:")
         print(f"📝 {message}")
         print("-" * 50)
         
-        # Get Azure Communication Services credentials
-        endpoint = os.getenv("AZURE_COMMUNICATION_ENDPOINT")
-        access_key = os.getenv("AZURE_COMMUNICATION_KEY") 
+        # Get WhatsApp Business API credentials
+        whatsapp_token = os.getenv("WHATSAPP_TOKEN")
+        whatsapp_business_account_id = os.getenv("WHATSAPP_BUSINESS_ACCOUNT_ID")
         from_number = os.getenv("WHATSAPP_PHONE_NUMBER")
         
-        if not all([endpoint, access_key, from_number]):
-            print("🚨 Missing Azure Communication Services credentials - message logged only")
+        if not all([whatsapp_token, whatsapp_business_account_id, from_number]):
+            print("🚨 Missing WhatsApp Business API credentials - message logged only")
             return
             
-        # Import Azure Communication Services for WhatsApp
-        from azure.communication.messages import MessageClient
-        from azure.communication.messages.models import WhatsAppMessage
-        from azure.core.credentials import AzureKeyCredential
+        # WhatsApp Business API endpoint
+        url = f"https://graph.facebook.com/v21.0/{whatsapp_business_account_id}/messages"
         
-        # Create message client
-        client = MessageClient(endpoint, AzureKeyCredential(access_key))
+        # Prepare message payload
+        payload = {
+            "messaging_product": "whatsapp",
+            "to": to_number,
+            "type": "text",
+            "text": {
+                "body": message
+            }
+        }
         
-        # Create WhatsApp message
-        whatsapp_message = WhatsAppMessage(
-            to=to_number,
-            from_=from_number,
-            content=message
-        )
+        # Headers with authorization
+        headers = {
+            "Authorization": f"Bearer {whatsapp_token}",
+            "Content-Type": "application/json"
+        }
         
-        # Send the message
-        response = await client.send_message(whatsapp_message)
-        
-        if response and hasattr(response, 'message_id'):
-            print(f"✅ GOGGINS MESSAGE SENT successfully! Message ID: {response.message_id}")
-        else:
-            print("✅ GOGGINS MESSAGE SENT! No message ID returned but send completed")
+        # Send message via WhatsApp Business API
+        async with httpx.AsyncClient() as client:
+            response = await client.post(url, json=payload, headers=headers)
             
-    except ImportError as e:
-        print(f"🚨 Azure Communication Services not available: {str(e)}")
-        print("📝 Message logged only - install azure-communication-messages")
+        if response.status_code == 200:
+            response_data = response.json()
+            message_id = response_data.get("messages", [{}])[0].get("id", "unknown")
+            print(f"✅ GOGGINS MESSAGE SENT successfully via WhatsApp Business API! Message ID: {message_id}")
+        else:
+            print(f"🚨 WhatsApp Business API error: {response.status_code} - {response.text}")
+            print("📝 GOGGINS RESPONSE logged but not sent")
+            
     except Exception as e:
-        print(f"🚨 Error sending message via Azure Communication Services: {str(e)}")
+        print(f"🚨 Error sending message via WhatsApp Business API: {str(e)}")
         print("📝 GOGGINS RESPONSE logged but not sent - user will see response in logs")
 
 async def handle_interactive_message(from_number: str, message: Dict) -> None:
