@@ -1,0 +1,48 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# API Design Guidelines
+
+## Endpoint Structure
+- Use RESTful conventions
+- Version all endpoints
+- Example: `/api/v1/goals`
+
+## Request/Response Format
+```typescript
+// Request
+interface ApiRequest {
+  promptId: string;
+  variables: Record<string, any>;
+  context?: Record<string, any>;
+}
+
+// Response
+interface ApiResponse {
+  success: boolean;
+  data?: any;
+  error?: {
+    code: string;
+    message: string;
+  };
+}
+```
+
+## Error Handling
+- Use standard HTTP status codes
+- Include detailed error messages
+- Log all errors
+
+## Security
+- Require API key
+- Implement rate limiting
+- Validate all inputs
+- Sanitize all outputs
+
+## Documentation
+- Use OpenAPI/Swagger
+- Include examples
+- Document rate limits
+- List all error codes

@@ -1,0 +1,45 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Prompt Management Guidelines
+
+## Structure
+- Store prompts in `/prompts` directory
+- Use semantic versioning for prompts
+- Include metadata with each prompt
+
+## Naming Convention
+- Use descriptive names
+- Include version number
+- Example: `goal-setting-v1.0.0.md`
+
+## Prompt Template Format
+```markdown
+---
+version: 1.0.0
+type: goal-setting
+description: Prompt for setting new goals
+variables:
+  - name: user_name
+    type: string
+    required: true
+  - name: goal_type
+    type: enum
+    values: [daily, weekly, monthly]
+    required: true
+---
+
+[Prompt content here]
+```
+
+## Version Control
+- Track all prompt changes in git
+- Include change log
+- Document breaking changes
+
+## Testing
+- Test all prompt variations
+- Validate variable substitution
+- Check response formatting

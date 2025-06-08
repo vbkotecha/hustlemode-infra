@@ -1,0 +1,77 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Schema Management Guidelines
+
+## Directory Structure
+- Store all schemas in `/schemas` directory
+- Organize by service/component (e.g., `/schemas/azure-search/`)
+- Include CHANGELOG.md in each schema directory
+
+## Schema File Requirements
+1. Must include:
+   - Schema name
+   - Version
+   - Last updated date
+   - Description
+   - Field definitions with descriptions
+   - Any additional configuration (e.g., suggesters, scoring profiles)
+
+2. JSON Schema Format:
+```json
+{
+  "name": "schema-name",
+  "version": "1.0.0",
+  "lastUpdated": "YYYY-MM-DD",
+  "description": "Schema description",
+  "fields": [
+    {
+      "name": "field-name",
+      "type": "field-type",
+      "description": "Field description"
+    }
+  ]
+}
+```
+
+## Changelog Requirements
+1. Must be in Markdown format
+2. Follow [Keep a Changelog](mdc:https:/keepachangelog.com) format
+3. Include for each version:
+   - Version number
+   - Date
+   - Added/Changed/Deprecated/Removed sections
+   - Schema details summary
+
+## Change Management Process
+1. Create new schema version:
+   - Increment version number
+   - Update lastUpdated date
+   - Document changes in CHANGELOG.md
+
+2. Schema Review:
+   - All schema changes must be reviewed
+   - Changes must be backward compatible
+   - Breaking changes require major version bump
+
+3. Documentation:
+   - Update README.md if needed
+   - Document migration steps if required
+   - Update any related code examples
+
+## Automated Checks
+- Schema validation on commit
+- Changelog presence check
+- Version number format check
+- Required fields check
+- Date format validation
+
+## Best Practices
+1. Keep schemas modular and focused
+2. Use clear, descriptive field names
+3. Document all fields and configurations
+4. Maintain backward compatibility
+5. Regular schema reviews
+6. Automated testing of schema changes

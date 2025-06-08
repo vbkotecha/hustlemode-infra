@@ -1,0 +1,18 @@
+{
+  "azure": {
+    "webapp_name": "hustlemode",
+    "resource_group": "hustlemode.ai",
+    "location": "eastus",
+    "app_service_plan": "hustlemode-plan",
+    "runtime": "PYTHON:3.11",
+    "sku": "B1"
+  },
+  "git": {
+    "github_repo": "https://github.com/vbkotecha/hustlemode-infra",
+    "azure_deployment_remote": "will_be_set_after_deployment"
+  },
+  "database": {
+    "postgres_server": "hustlemode-db",
+    "postgres_database": "hustlemode"
+  }
+} 

@@ -1,0 +1,59 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# HustleMode.ai Architecture
+
+## Core Principles
+- Stateless, prompt-based workflow
+- Azure AI Studio (Foundry) for orchestration
+- Public API endpoints for integration
+- Future extensibility for messaging channels
+
+## Architecture Components
+
+### 1. Prompt Layer
+- Centralized prompt management
+- Version-controlled prompt templates
+- Environment-specific configurations
+
+### 2. AI Orchestration
+- Azure AI Studio (Foundry) integration
+- Flow management and routing
+- Response processing and formatting
+
+### 3. API Layer
+- RESTful endpoints
+- Stateless request handling
+- Standardized response formats
+
+### 4. Integration Points
+- WhatsApp (future)
+- SMS (future)
+- Email (future)
+
+## Development Guidelines
+
+### Code Organization
+- Keep prompts in dedicated directories
+- Maintain clear separation of concerns
+- Document all API endpoints
+- Version all prompts and flows
+
+### Testing
+- Unit test all prompt variations
+- Integration test API endpoints
+- Load test for concurrent requests
+
+### Security
+- API key management
+- Rate limiting
+- Input validation
+- Response sanitization
+
+### Documentation
+- API documentation
+- Prompt templates
+- Flow diagrams
+- Integration guides
