@@ -42,7 +42,7 @@ async def whatsapp_webhook(request: Request):
             for entry in data["entry"]:
                 if "changes" in entry:
                     for change in entry["changes"]:
-                        if change["field"] == "messages" and "value" in change:
+                        if "value" in change:
                             await process_whatsapp_message(change["value"])
         
         return {"status": "success", "message": "STAY HARD - Message processed"}
