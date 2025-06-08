@@ -323,4 +323,4 @@ async def handle_interactive_message(from_number: str, message: Dict) -> None:
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000) # Fresh deployment
+    uvicorn.run(app, host="0.0.0.0", port=8000) 
