@@ -9,6 +9,11 @@ from .whatsapp_service import WhatsAppService
 app = FastAPI()
 whatsapp_service = WhatsAppService()
 
+@app.get("/")
+async def root():
+    """Health check endpoint."""
+    return {"status": "HustleMode.ai WhatsApp Bot is running", "message": "STAY HARD"}
+
 def verify_webhook_signature(request_body: bytes, signature: str) -> bool:
     """Verify WhatsApp webhook signature."""
     try:
