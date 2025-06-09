@@ -28,7 +28,7 @@
 
 ### Method 1: Clean Script Deployment (Recommended)
 
-```bash
+   ```bash
 # Use the built-in clean deployment script
 ./scripts/deploy-clean.sh
 ```
@@ -41,7 +41,7 @@ This script:
 
 ### Method 2: Manual Deployment
 
-```bash
+   ```bash
 # Create temporary deployment directory
 mkdir -p temp/deploy
 cp -r azure-functions-deploy/* temp/deploy/
@@ -99,13 +99,13 @@ WHATSAPP_PHONE_NUMBER=15556583575
 ## 🧪 Testing & Verification
 
 ### Health Check
-```bash
+   ```bash
 curl https://hustlemode-premium-bot.azurewebsites.net/api/health
-```
+   ```
 Expected: `200 OK` with health status
 
 ### Webhook Verification
-```bash
+   ```bash
 curl "https://hustlemode-premium-bot.azurewebsites.net/api/webhook/whatsapp?hub.mode=subscribe&hub.challenge=TEST&hub.verify_token=fa22d4e7-cba4-48cf-9b36-af6190bf9c67"
 ```
 Expected: Returns `TEST` (the challenge value)
@@ -121,7 +121,7 @@ Send a WhatsApp message to **+15556583575** with "hi" to test the full flow.
 - **Performance**: Response times and error tracking
 
 ### Log Streaming
-```bash
+   ```bash
 # View live logs
 az webapp log tail --name hustlemode-premium-bot --resource-group hustlemode.ai
 ```
@@ -163,7 +163,7 @@ Current EP1 plan supports:
 ### Common Issues
 
 #### Deployment Failures
-```bash
+   ```bash
 # Check function app status
 az functionapp show --name hustlemode-premium-bot --resource-group hustlemode.ai --query "state"
 

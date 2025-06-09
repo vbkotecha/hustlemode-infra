@@ -10,7 +10,8 @@
   "urls": {
     "app_url": "https://hustlemode-premium-bot.azurewebsites.net/",
     "webhook_url": "https://hustlemode-premium-bot.azurewebsites.net/api/webhook/whatsapp",
-    "health_check": "https://hustlemode-premium-bot.azurewebsites.net/api/health"
+    "health_check": "https://hustlemode-premium-bot.azurewebsites.net/api/health",
+    "token_status": "https://hustlemode-premium-bot.azurewebsites.net/api/token/status"
   },
   "whatsapp": {
     "webhook_url": "https://hustlemode-premium-bot.azurewebsites.net/api/webhook/whatsapp",
@@ -19,7 +20,9 @@
     "business_account_id": "715387334407630",
     "phone_number_id": "682917338218717",
     "api_version": "v22.0",
-    "status": "configured_and_verified"
+    "access_token_type": "system_user_token",
+    "access_token_expires": "never",
+    "status": "configured_and_unverified"
   },
   "deployment": {
     "github_repo": "https://github.com/vbkotecha/hustlemode-infra",
@@ -40,6 +43,10 @@
     "service_health": "OPERATIONAL",
     "webhook_verified": true,
     "function_app_running": true,
+    "whatsapp_token_type": "SYSTEM_USER_TOKEN",
+    "whatsapp_token_updated": "2025-06-09",
+    "whatsapp_token_expires": "NEVER",
+    "token_status_endpoint": "OPERATIONAL",
     "architecture": "Azure Functions Premium",
     "repository_status": "CLEAN"
   }

@@ -1,6 +1,6 @@
 ---
-description:
-globs:
+description: 
+globs: azure-functions-deploy/**/*,ai/**/*
 alwaysApply: false
 ---
 ---

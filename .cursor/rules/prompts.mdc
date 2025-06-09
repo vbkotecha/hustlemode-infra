@@ -1,7 +1,7 @@
 ---
 description: 
-globs: 
-alwaysApply: true
+globs: prompts/**/*,ai/**/*
+alwaysApply: false
 ---
 ---
 description: "AI prompt management guidelines for version control, naming conventions, and template structure"

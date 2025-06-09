@@ -116,7 +116,7 @@ hustlemode-infra/
 
 ### Next Steps
 - Add user data persistence with PostgreSQL
-- Implement goal tracking and progress monitoring  
+- Implement goal tracking and progress monitoring
 - Add Mem0 integration for conversation memory
 - Create user onboarding flow
 - Add analytics dashboard

@@ -1,6 +1,6 @@
 ---
 description: 
-globs: 
+globs: azure-functions-deploy/**/*
 alwaysApply: false
 ---
 ---

@@ -1,7 +1,7 @@
 ---
 description: 
-globs: 
-alwaysApply: true
+globs: schemas/**/*
+alwaysApply: false
 ---
 ---
 description: "Data schema management guidelines for database schemas, API schemas, and version control"

@@ -1,6 +1,6 @@
 ---
 description: 
-globs: 
+globs: scripts/**/*,deployment-config.json,.github/workflows/**/*
 alwaysApply: false
 ---
 ---
