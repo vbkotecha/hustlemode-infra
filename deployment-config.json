@@ -1,37 +1,46 @@
 {
   "azure": {
-    "webapp_name": "hustlemode",
+    "function_app_name": "hustlemode-premium-bot",
     "resource_group": "hustlemode.ai",
     "location": "eastus",
-    "app_service_plan": "hustlemode-plan",
+    "hosting_plan": "EP1",
     "runtime": "PYTHON:3.11",
-    "sku": "B1"
+    "service_type": "Azure Functions Premium"
   },
   "urls": {
-    "app_url": "https://hustlemode.azurewebsites.net/",
-    "webhook_url": "https://hustlemode.azurewebsites.net/webhook/whatsapp",
-    "health_check": "https://hustlemode.azurewebsites.net/",
-    "docs": "https://hustlemode.azurewebsites.net/docs"
+    "app_url": "https://hustlemode-premium-bot.azurewebsites.net/",
+    "webhook_url": "https://hustlemode-premium-bot.azurewebsites.net/api/webhook/whatsapp",
+    "health_check": "https://hustlemode-premium-bot.azurewebsites.net/api/health"
   },
   "whatsapp": {
-    "webhook_url": "https://hustlemode.azurewebsites.net/webhook/whatsapp",
+    "webhook_url": "https://hustlemode-premium-bot.azurewebsites.net/api/webhook/whatsapp",
     "verify_token": "fa22d4e7-cba4-48cf-9b36-af6190bf9c67",
     "phone_number": "+15556583575",
+    "business_account_id": "715387334407630",
+    "phone_number_id": "682917338218717",
+    "api_version": "v22.0",
     "status": "configured_and_verified"
   },
-  "git": {
+  "deployment": {
     "github_repo": "https://github.com/vbkotecha/hustlemode-infra",
     "github_actions": "https://github.com/vbkotecha/hustlemode-infra/actions",
-    "deployment_method": "GitHub Actions → Azure App Service (ZIP Deploy)"
+    "methods": [
+      "GitHub Actions → Azure Functions (ZIP Deploy)",
+      "Manual → scripts/deploy-clean.sh"
+    ],
+    "source_directory": "azure-functions-deploy"
   },
   "database": {
     "postgres_server": "hustlemode-db",
     "postgres_database": "hustlemode"
   },
-  "deployment_status": {
-    "last_updated": "2025-06-08",
-    "status": "LIVE",
+  "status": {
+    "last_updated": "2025-06-09",
+    "deployment_status": "LIVE",
+    "service_health": "OPERATIONAL",
     "webhook_verified": true,
-    "app_running": true
+    "function_app_running": true,
+    "architecture": "Azure Functions Premium",
+    "repository_status": "CLEAN"
   }
 } 

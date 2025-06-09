@@ -1,61 +1,76 @@
-from fastapi import FastAPI, Request, HTTPException
-from fastapi.responses import PlainTextResponse
-import os
+import azure.functions as func
 import json
-import httpx
-from typing import Dict, Optional
-import re
+import os
+import urllib.request
+import urllib.parse
+import random
 
-# HustleMode.ai - David Goggins WhatsApp Bot - Version 1.0.1
-app = FastAPI(title="HustleMode.ai WhatsApp Bot")
-
-@app.get("/")
-async def root():
-    """Health check endpoint."""
-    return {
-        "status": "HustleMode.ai WhatsApp Bot is running", 
-        "message": "STAY HARD",
-        "version": "1.0.0"
-    }
-
-@app.get("/webhook/whatsapp")
-async def verify_webhook(request: Request):
-    """WhatsApp webhook verification endpoint."""
-    params = dict(request.query_params)
-    verify_token = os.getenv("WHATSAPP_VERIFY_TOKEN", "fa22d4e7-cba4-48cf-9b36-af6190bf9c67")
+def main(req: func.HttpRequest) -> func.HttpResponse:
+    """Handle WhatsApp webhook verification and message processing."""
     
-    if (
-        params.get("hub.mode") == "subscribe"
-        and params.get("hub.verify_token") == verify_token
-    ):
-        return PlainTextResponse(params.get("hub.challenge"), status_code=200)
-    return PlainTextResponse("Verification failed", status_code=403)
+    if req.method == "GET":
+        return handle_webhook_verification(req)
+    elif req.method == "POST":
+        return handle_webhook_message(req)
+    else:
+        return func.HttpResponse("Method not allowed", status_code=405)
 
-@app.post("/webhook/whatsapp")
-async def whatsapp_webhook(request: Request):
+def handle_webhook_verification(req: func.HttpRequest) -> func.HttpResponse:
+    """Handle WhatsApp webhook verification."""
+    try:
+        verify_token = os.getenv("WHATSAPP_VERIFY_TOKEN", "fa22d4e7-cba4-48cf-9b36-af6190bf9c67")
+        
+        hub_mode = req.params.get("hub.mode")
+        hub_verify_token = req.params.get("hub.verify_token") 
+        hub_challenge = req.params.get("hub.challenge")
+        
+        if hub_mode == "subscribe" and hub_verify_token == verify_token:
+            return func.HttpResponse(hub_challenge, status_code=200)
+        else:
+            return func.HttpResponse("Verification failed", status_code=403)
+            
+    except Exception as e:
+        return func.HttpResponse(f"Verification error: {str(e)}", status_code=500)
+
+def handle_webhook_message(req: func.HttpRequest) -> func.HttpResponse:
     """Handle incoming WhatsApp messages with GOGGINS-STYLE responses."""
     try:
-        data = await request.json()
+        # Parse the webhook data
+        data = req.get_json()
         print(f"💪 Received WhatsApp webhook: {json.dumps(data, indent=2)}")
         
-        # Process each entry in the webhook
+        # Process messages synchronously
+        process_webhook_data(data)
+        
+        return func.HttpResponse(
+            json.dumps({"status": "success", "message": "STAY HARD - Message processed"}),
+            status_code=200,
+            mimetype="application/json"
+        )
+        
+    except Exception as e:
+        print(f"🚨 Error processing webhook: {str(e)}")
+        return func.HttpResponse(
+            json.dumps({"status": "error", "message": f"Error: {str(e)}"}),
+            status_code=500,
+            mimetype="application/json"
+        )
+
+def process_webhook_data(data: dict) -> None:
+    """Process the webhook data and send responses."""
+    try:
         if "entry" in data:
             for entry in data["entry"]:
                 if "changes" in entry:
                     for change in entry["changes"]:
                         if "value" in change:
-                            await process_whatsapp_message(change["value"])
-        
-        return {"status": "success", "message": "STAY HARD - Message processed"}
-        
+                            process_whatsapp_message(change["value"])
     except Exception as e:
-        print(f"🚨 Error processing webhook: {str(e)}")
-        return {"status": "error", "message": f"Error: {str(e)}"}
+        print(f"🚨 Error processing webhook data: {str(e)}")
 
-async def process_whatsapp_message(message_data: Dict) -> None:
+def process_whatsapp_message(message_data: dict) -> None:
     """Process incoming WhatsApp messages with GOGGINS-STYLE brutal honesty."""
     try:
-        # Extract message details
         messages = message_data.get("messages", [])
         if not messages:
             print("🚨 No messages found in webhook data")
@@ -64,23 +79,21 @@ async def process_whatsapp_message(message_data: Dict) -> None:
         for message in messages:
             from_number = message.get("from")
             message_type = message.get("type")
-            timestamp = message.get("timestamp")
             
             print(f"📱 Message from {from_number}, type: {message_type}")
             
             if message_type == "text":
                 text_content = message.get("text", {}).get("body", "").strip()
-                await handle_text_message(from_number, text_content)
+                handle_text_message(from_number, text_content)
             elif message_type == "interactive":
-                await handle_interactive_message(from_number, message)
+                handle_interactive_message(from_number, message)
             else:
-                # Handle other message types with default Goggins response
-                await send_whatsapp_message(from_number, get_default_goggins_response())
+                send_whatsapp_message(from_number, get_default_goggins_response())
                 
     except Exception as e:
         print(f"🚨 Error processing message: {str(e)}")
 
-async def handle_text_message(from_number: str, content: str) -> None:
+def handle_text_message(from_number: str, content: str) -> None:
     """Handle text messages with BRUTAL Goggins-style responses."""
     try:
         content_lower = content.lower().strip()
@@ -110,11 +123,11 @@ async def handle_text_message(from_number: str, content: str) -> None:
         else:
             response = get_default_goggins_response()
             
-        await send_whatsapp_message(from_number, response)
+        send_whatsapp_message(from_number, response)
         
     except Exception as e:
         print(f"🚨 Error handling text message: {str(e)}")
-        await send_whatsapp_message(from_number, "STAY HARD. Something went wrong but that's no excuse!")
+        send_whatsapp_message(from_number, "STAY HARD. Something went wrong but that's no excuse!")
 
 def get_goal_setting_response(content: str) -> str:
     """Generate Goggins-style goal setting response."""
@@ -245,11 +258,10 @@ def get_default_goggins_response() -> str:
         "Nobody's coming to save you. This is YOUR fight. What are you gonna do about it? 🔥",
         "Embrace the SUCK. That's where champions are made. STAY HARD! 💥"
     ]
-    import random
     return random.choice(responses)
 
-async def send_whatsapp_message(to_number: str, message: str) -> None:
-    """Send message back to WhatsApp user via WhatsApp Business API."""
+def send_whatsapp_message(to_number: str, message: str) -> None:
+    """Send message back to WhatsApp user via WhatsApp Business API using urllib."""
     try:
         print(f"📤 SENDING GOGGINS RESPONSE to {to_number}:")
         print(f"📝 {message}")
@@ -260,12 +272,18 @@ async def send_whatsapp_message(to_number: str, message: str) -> None:
         whatsapp_phone_number_id = os.getenv("WHATSAPP_PHONE_NUMBER_ID")
         from_number = os.getenv("WHATSAPP_PHONE_NUMBER")
         
+        print(f"🔐 DEBUG - Token exists: {bool(whatsapp_token)}")
+        print(f"📱 DEBUG - Phone Number ID: {whatsapp_phone_number_id}")
+        print(f"📞 DEBUG - From Number: {from_number}")
+        
         if not all([whatsapp_token, whatsapp_phone_number_id, from_number]):
             print("🚨 Missing WhatsApp Business API credentials - message logged only")
+            print(f"Token: {bool(whatsapp_token)}, Phone ID: {bool(whatsapp_phone_number_id)}, From: {bool(from_number)}")
             return
             
         # WhatsApp Business API endpoint  
         url = f"https://graph.facebook.com/v22.0/{whatsapp_phone_number_id}/messages"
+        print(f"🌐 DEBUG - API URL: {url}")
         
         # Prepare message payload
         payload = {
@@ -276,30 +294,60 @@ async def send_whatsapp_message(to_number: str, message: str) -> None:
                 "body": message
             }
         }
+        print(f"📦 DEBUG - Payload: {json.dumps(payload, indent=2)}")
         
-        # Headers with authorization
-        headers = {
-            "Authorization": f"Bearer {whatsapp_token}",
-            "Content-Type": "application/json"
-        }
+        # Convert payload to JSON bytes
+        data = json.dumps(payload).encode('utf-8')
         
-        # Send message via WhatsApp Business API
-        async with httpx.AsyncClient() as client:
-            response = await client.post(url, json=payload, headers=headers)
-            
-        if response.status_code == 200:
-            response_data = response.json()
-            message_id = response_data.get("messages", [{}])[0].get("id", "unknown")
-            print(f"✅ GOGGINS MESSAGE SENT successfully via WhatsApp Business API! Message ID: {message_id}")
-        else:
-            print(f"🚨 WhatsApp Business API error: {response.status_code} - {response.text}")
+        # Create request with headers
+        request = urllib.request.Request(
+            url=url,
+            data=data,
+            headers={
+                "Authorization": f"Bearer {whatsapp_token}",
+                "Content-Type": "application/json"
+            },
+            method="POST"
+        )
+        
+        print(f"🔑 DEBUG - Headers prepared (token length: {len(whatsapp_token) if whatsapp_token else 0})")
+        print("🚀 DEBUG - Attempting HTTP request...")
+        
+        # Send request using urllib
+        try:
+            with urllib.request.urlopen(request, timeout=30) as response:
+                response_status = response.getcode()
+                response_text = response.read().decode('utf-8')
+                
+                print(f"📊 DEBUG - Response status: {response_status}")
+                print(f"📋 DEBUG - Response text: {response_text}")
+                
+                if response_status == 200:
+                    response_data = json.loads(response_text)
+                    print(f"✅ DEBUG - Response JSON: {json.dumps(response_data, indent=2)}")
+                    message_id = response_data.get("messages", [{}])[0].get("id", "unknown")
+                    print(f"✅ GOGGINS MESSAGE SENT successfully via WhatsApp Business API! Message ID: {message_id}")
+                else:
+                    print(f"🚨 WhatsApp Business API error: {response_status} - {response_text}")
+                    print("📝 GOGGINS RESPONSE logged but not sent")
+        
+        except urllib.error.HTTPError as e:
+            error_body = e.read().decode('utf-8') if e.fp else "No error details"
+            print(f"🚨 HTTP Error {e.code}: {e.reason}")
+            print(f"📋 Error details: {error_body}")
+            print("📝 GOGGINS RESPONSE logged but not sent")
+        except urllib.error.URLError as e:
+            print(f"🌐 URL Error: {str(e)}")
             print("📝 GOGGINS RESPONSE logged but not sent")
             
     except Exception as e:
         print(f"🚨 Error sending message via WhatsApp Business API: {str(e)}")
+        print(f"🔍 Error type: {type(e).__name__}")
+        import traceback
+        print(f"📚 Full traceback: {traceback.format_exc()}")
         print("📝 GOGGINS RESPONSE logged but not sent - user will see response in logs")
 
-async def handle_interactive_message(from_number: str, message: Dict) -> None:
+def handle_interactive_message(from_number: str, message: dict) -> None:
     """Handle interactive messages (buttons, lists) with Goggins responses."""
     try:
         interactive = message.get("interactive", {})
@@ -316,11 +364,7 @@ async def handle_interactive_message(from_number: str, message: Dict) -> None:
         else:
             response = get_default_goggins_response()
             
-        await send_whatsapp_message(from_number, response)
+        send_whatsapp_message(from_number, response)
         
     except Exception as e:
-        print(f"🚨 Error handling interactive message: {str(e)}")
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000) 
+        print(f"🚨 Error handling interactive message: {str(e)}") 

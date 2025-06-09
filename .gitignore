@@ -29,6 +29,9 @@ yarn-error.log*
 *.swp
 *.swo
 
+# Deprecated Cursor files
+.cursorrules
+
 # OS
 .DS_Store
 Thumbs.db
@@ -51,10 +54,24 @@ Thumbs.db
 .cache/
 .temp/
 
-# Azure deployment logs
+# Azure deployment logs and artifacts (should be manually removed)
 LogFiles/
 deployments/
 hustlemode-logs.zip
+
+# These directories contain deployment artifacts that shouldn't be in version control
+# If they exist, manually remove them with: sudo rm -rf LogFiles deployments
+
+# Build artifacts and zip files
+*.zip
+functions-*.zip
+azure-functions.zip
+function-app.zip
+build/
+dist/
+temp/
+.build/
+.temp/
 
 # OS generated files
 .DS_Store?

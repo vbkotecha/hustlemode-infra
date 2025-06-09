@@ -1,0 +1,127 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Repository Management Rules
+
+## 🚫 Never Commit These Files
+- `*.zip` files (use `temp/` or `build/` directories instead)
+- Build artifacts (`functions-*.zip`, `azure-functions.zip`, etc.)
+- Environment files (`.env`, `.env.*`) - these are already in `.gitignore`
+- Log files (`*.log`, `LogFiles/`)
+- OS-specific files (`.DS_Store`, `Thumbs.db`)
+- IDE-specific files (`.vscode/`, `.idea/`)
+
+## 📁 Directory Structure Standards
+
+### Primary Organization
+- **Azure Functions**: `azure-functions-deploy/` (single source of truth)
+- **AI Services**: `ai/` for all AI-related code and documentation
+- **Prompts**: `prompts/` organized by category (goals, motivation)
+- **Documentation**: Core docs at root, component docs with components
+- **Scripts**: `scripts/` for deployment and utilities
+- **Automation**: `.github/workflows/` for CI/CD and quality checks
+
+### Duplication Prevention
+- ❌ Never create duplicate function directories
+- ❌ Never keep multiple copies of same files
+- ✅ Maintain single source of truth for each component
+- ✅ Use symbolic links for cross-references if needed
+
+## 🏗️ Build & Deployment Rules
+
+### Build Artifact Management
+```bash
+# Correct build pattern
+mkdir -p temp/build-$(date +%s)
+cp -r azure-functions-deploy/* temp/build-*/
+cd temp/build-* && zip -r ../functions-deploy.zip .
+# Deploy and cleanup
+rm -rf temp/
+```
+
+### Deployment Process
+1. Always use `scripts/deploy-clean.sh` for consistent deployments
+2. Build artifacts go to `temp/` directory (gitignored)
+3. Clean up temporary files after deployment
+4. Never commit deployment packages
+
+## 🧹 Maintenance Requirements
+
+### Regular Cleanup Tasks
+- Remove unused files and directories immediately
+- Consolidate duplicate code during development
+- Update documentation when structure changes
+- Review `.gitignore` for new exclusion patterns
+
+### Code Organization Standards
+- Group related functionality together
+- Use clear, descriptive directory names
+- Keep configuration files at appropriate levels
+- Maintain separation between dev/staging/prod artifacts
+
+## 🚀 Development Workflow Rules
+
+### File Creation Guidelines
+- Always verify file/directory necessity before creating
+- Use semantic, descriptive directory names
+- Keep build artifacts separate from source code
+- Document any new directory structures in README.md
+- Clean up experimental code immediately after use
+
+### Repository Hygiene
+- No orphaned files or directories
+- No commented-out code blocks
+- No temporary files in version control  
+- No build artifacts in repository
+- Regular dependency cleanup
+
+## 🛡️ Anti-Bloat Safeguards
+
+### Required Checks Before Any Addition
+1. **Purpose Verification**: "Why does this file/directory need to exist?"
+2. **Duplication Check**: "Does this functionality already exist elsewhere?"
+3. **Future Maintenance**: "Will this be actively maintained or become orphaned?"
+4. **Integration Test**: "Does this integrate with our current Azure Functions architecture?"
+
+### Prohibited Patterns
+- ❌ "Future" or "planning" directories (use issues/docs instead)
+- ❌ Multiple implementations of same functionality
+- ❌ Empty directories "for future use"
+- ❌ Experimental code without cleanup plan
+- ❌ Architecture mixing (FastAPI + Azure Functions + Lambda)
+- ❌ Schema files without active database implementation
+
+## 📝 Documentation Standards
+
+### Required Updates
+- Update `README.md` when architecture changes
+- Keep `CHANGELOG.md` current with all changes
+- Document deployment processes in `DEPLOYMENT.md`
+- Maintain `PRODUCTION_LINKS.md` accuracy
+
+### Documentation Organization
+- Core documentation at repository root
+- Component documentation with respective components
+- Specialized documentation in dedicated directories
+- No duplicate documentation files
+
+## ⚠️ Deprecated Practices
+
+### Never Use These
+- `.cursorrules` file (use `.cursor/rules/*.mdc` instead)
+- Root-level build scripts that create artifacts
+- Duplicate requirements.txt files
+- Duplicate host.json files (only azure-functions-deploy/host.json needed)
+- Multiple Azure Function directories
+- Zip files in version control
+- Empty API directories (`/api` with no implementation)
+- Outdated GitHub Actions workflows
+- Outdated deployment configurations (keep deployment-config.json current)
+
+### Migration Rules
+- Always move deprecated patterns to proper structure
+- Update scripts to use new patterns
+- Document migrations in CHANGELOG.md
+- Test new patterns before removing old ones

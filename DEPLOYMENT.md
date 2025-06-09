@@ -1,168 +1,193 @@
-# HustleMode.ai WhatsApp Integration Deployment Guide
+# HustleMode.ai Azure Functions Deployment Guide
 
-## Prerequisites
+## 📋 Prerequisites
 
 1. **Azure Account**
    - Active Azure subscription
-   - Owner or Contributor access
+   - Owner or Contributor access to resource group `hustlemode.ai`
 
 2. **WhatsApp Business Account**
    - Verified WhatsApp Business account
-   - Business phone number
-   - Business profile set up
+   - Business phone number: +15556583575
+   - Meta for Developers access
 
-3. **Azure Resources**
-   - Azure Communication Services
-   - Azure OpenAI
-   - Azure Cognitive Search
-   - Azure App Service (for hosting)
+3. **Development Tools**
+   - Azure CLI installed and configured
+   - Git repository access
+   - Python 3.11 (for local development)
 
-## Setup Steps
+## 🏗️ Current Architecture
 
-### 1. Azure Communication Services Setup
+### Azure Resources (Already Deployed)
+- **Azure Functions Premium (EP1)**: `hustlemode-premium-bot`
+- **Resource Group**: `hustlemode.ai` (East US)
+- **Application Insights**: Full monitoring and logging
+- **No additional services required** - simplified architecture
 
-1. Create Azure Communication Services resource:
-   ```bash
-   az communication create --name hustlemode-comm --resource-group your-resource-group --location eastus
-   ```
+## 🚀 Deployment Methods
 
-2. Get the connection string:
-   ```bash
-   az communication list-key --name hustlemode-comm --resource-group your-resource-group
-   ```
+### Method 1: Clean Script Deployment (Recommended)
 
-3. Configure WhatsApp channel:
-   - Go to Azure Portal > Your Communication Service
-   - Navigate to "Channels" > "WhatsApp"
-   - Click "Connect WhatsApp Business Account"
-   - Follow the setup wizard
+```bash
+# Use the built-in clean deployment script
+./scripts/deploy-clean.sh
+```
 
-### 2. WhatsApp Business API Setup
+This script:
+- Creates temporary deployment package
+- Deploys to Azure Functions
+- Cleans up build artifacts
+- Keeps repository clean
 
-1. Create WhatsApp Business API account:
-   - Go to [WhatsApp Business Platform](https://business.whatsapp.com/)
-   - Create a new business account
-   - Verify your business phone number
+### Method 2: Manual Deployment
 
-2. Get API credentials:
-   - Note down your Business Account ID
-   - Generate API token
-   - Save the phone number ID
+```bash
+# Create temporary deployment directory
+mkdir -p temp/deploy
+cp -r azure-functions-deploy/* temp/deploy/
 
-3. Configure webhook:
-   - Set webhook URL to your Azure App Service endpoint
-   - Configure webhook events (messages, status)
-   - Save the webhook secret
+# Create deployment package
+cd temp/deploy
+zip -r ../functions.zip .
+cd ../..
 
-### 3. Environment Configuration
+# Deploy to Azure
+az functionapp deployment source config-zip \
+  --name hustlemode-premium-bot \
+  --resource-group hustlemode.ai \
+  --src temp/functions.zip
 
-1. Copy `.env.example` to `.env`:
-   ```bash
-   cp .env.example .env
-   ```
+# Cleanup
+rm -rf temp/
+```
 
-2. Fill in the environment variables:
-   - Azure Communication Services credentials
-   - WhatsApp Business API credentials
-   - Azure OpenAI credentials
-   - Azure Cognitive Search credentials
+### Method 3: GitHub Actions (Automated)
 
-### 4. Deploy to Azure
+Deployment automatically triggers on push to main branch when files in `azure-functions-deploy/` change.
 
-1. Create Azure App Service:
-   ```bash
-   az appservice plan create --name hustlemode-plan --resource-group your-resource-group --sku B1
-   az webapp create --name hustlemode-app --resource-group your-resource-group --plan hustlemode-plan
-   ```
+## 🔧 Environment Configuration
 
-2. Configure environment variables:
-   ```bash
-   az webapp config appsettings set --name hustlemode-app --resource-group your-resource-group --settings @.env
-   ```
+### Required Environment Variables
+Set these in the Azure Portal Function App Configuration:
 
-3. Deploy the application:
-   ```bash
-   az webapp deployment source config-local-git --name hustlemode-app --resource-group your-resource-group
-   git remote add azure <git-url>
-   git push azure main
-   ```
+```env
+WHATSAPP_TOKEN=EACPL4t2aebo... 
+WHATSAPP_PHONE_NUMBER_ID=682917338218717
+WHATSAPP_VERIFY_TOKEN=fa22d4e7-cba4-48cf-9b36-af6190bf9c67
+WHATSAPP_PHONE_NUMBER=15556583575
+```
 
-### 5. Testing
+### Configure in Azure Portal
+1. Go to Function App: `hustlemode-premium-bot`
+2. Navigate to Configuration → Application settings
+3. Add/update the environment variables
+4. Click Save and restart the Function App
 
-1. Test webhook:
-   ```bash
-   curl -X POST https://your-app.azurewebsites.net/webhook/whatsapp \
-     -H "Content-Type: application/json" \
-     -H "X-Hub-Signature-256: your-signature" \
-     -d '{"entry":[{"changes":[{"field":"messages"}]}]}'
-   ```
+## 📱 WhatsApp Configuration
 
-2. Test message sending:
-   ```bash
-   curl -X POST https://your-app.azurewebsites.net/api/send \
-     -H "Content-Type: application/json" \
-     -d '{"to":"+1234567890","message":"STAY HARD"}'
-   ```
+### Meta for Developers Setup
+1. **App Configuration**:
+   - Webhook URL: `https://hustlemode-premium-bot.azurewebsites.net/api/webhook/whatsapp`
+   - Verify Token: `fa22d4e7-cba4-48cf-9b36-af6190bf9c67`
+   - Webhook Fields: `messages` ✅
 
-## Monitoring
+2. **API Details**:
+   - Business Account ID: `715387334407630`
+   - Phone Number ID: `682917338218717` 
+   - API Version: `v22.0`
 
-1. Set up Azure Monitor:
-   - Configure Application Insights
-   - Set up alerts for errors
-   - Monitor message delivery rates
+## 🧪 Testing & Verification
 
-2. Log monitoring:
-   - Check Azure App Service logs
-   - Monitor webhook responses
-   - Track message delivery status
+### Health Check
+```bash
+curl https://hustlemode-premium-bot.azurewebsites.net/api/health
+```
+Expected: `200 OK` with health status
 
-## Security Considerations
+### Webhook Verification
+```bash
+curl "https://hustlemode-premium-bot.azurewebsites.net/api/webhook/whatsapp?hub.mode=subscribe&hub.challenge=TEST&hub.verify_token=fa22d4e7-cba4-48cf-9b36-af6190bf9c67"
+```
+Expected: Returns `TEST` (the challenge value)
 
-1. **API Security**
-   - Keep API keys secure
-   - Rotate tokens regularly
-   - Use HTTPS only
+### Live Bot Test
+Send a WhatsApp message to **+15556583575** with "hi" to test the full flow.
 
-2. **Data Protection**
-   - Encrypt sensitive data
-   - Implement rate limiting
-   - Monitor for abuse
+## 📊 Monitoring & Debugging
 
-3. **Compliance**
-   - Follow WhatsApp Business Policy
-   - Implement data retention
-   - Handle user consent
+### Application Insights
+- **Dashboard**: [View in Azure Portal](https://portal.azure.com/#resource/subscriptions/346876ba-71e4-417a-a63a-9a42f434a0ae/resourceGroups/hustlemode.ai/providers/microsoft.insights/components/hustlemode-premium-bot/overview)
+- **Live Logs**: Real-time request/response monitoring
+- **Performance**: Response times and error tracking
 
-## Troubleshooting
+### Log Streaming
+```bash
+# View live logs
+az webapp log tail --name hustlemode-premium-bot --resource-group hustlemode.ai
+```
 
-1. **Webhook Issues**
-   - Check webhook URL
-   - Verify signature
-   - Monitor response codes
+## 🛡️ Security & Best Practices
 
-2. **Message Delivery**
-   - Check phone number format
-   - Verify message content
-   - Monitor delivery status
+### Repository Hygiene
+- **Use clean deployment**: Never commit zip files or build artifacts
+- **Run bloat check**: `./scripts/check-bloat.sh` before commits
+- **Follow rules**: Check `.cursor/rules/repository.mdc` for guidelines
 
-3. **API Errors**
-   - Check API credentials
-   - Verify rate limits
-   - Monitor error logs
+### WhatsApp Security
+- **Token Management**: Rotate access tokens regularly in Meta for Developers
+- **Webhook Security**: Verify all incoming requests using the verify token
+- **HTTPS Only**: All communication uses secure HTTPS endpoints
 
-## Maintenance
+### Azure Security
+- **Function App**: Configured with managed identity
+- **Application Insights**: No sensitive data logged
+- **Environment Variables**: Stored securely in Azure configuration
 
-1. **Regular Updates**
-   - Update dependencies
-   - Check API changes
-   - Monitor deprecations
+## 🔄 Maintenance
 
-2. **Backup**
-   - Backup configuration
-   - Export user data
-   - Save message history
+### Regular Tasks
+1. **Monitor Performance**: Check Application Insights weekly
+2. **Update Dependencies**: Review `azure-functions-deploy/requirements.txt` monthly
+3. **Token Rotation**: Update WhatsApp tokens as needed
+4. **Repository Cleanup**: Run `./scripts/check-bloat.sh` regularly
 
-3. **Scaling**
-   - Monitor usage
-   - Scale resources
-   - Optimize performance 
+### Scaling
+Current EP1 plan supports:
+- **Concurrent Functions**: Up to 20 instances
+- **Memory**: 3.5 GB per instance  
+- **No Cold Starts**: Dedicated resources
+- **Cost**: ~$150-300/month for production workloads
+
+## 🚨 Troubleshooting
+
+### Common Issues
+
+#### Deployment Failures
+```bash
+# Check function app status
+az functionapp show --name hustlemode-premium-bot --resource-group hustlemode.ai --query "state"
+
+# Restart function app
+az functionapp restart --name hustlemode-premium-bot --resource-group hustlemode.ai
+```
+
+#### WhatsApp Not Responding
+1. Check webhook URL in Meta for Developers
+2. Verify environment variables in Azure Portal
+3. Test health endpoint: `curl https://hustlemode-premium-bot.azurewebsites.net/api/health`
+4. Check Application Insights for error logs
+
+#### Function Errors
+1. **View logs**: Use Application Insights live logs
+2. **Check dependencies**: Verify `requirements.txt` versions
+3. **Restart function**: Azure Portal → Function App → Restart
+
+### Support Resources
+- **Azure Documentation**: [Azure Functions Python Guide](https://docs.microsoft.com/en-us/azure/azure-functions/functions-reference-python)
+- **WhatsApp API**: [Meta for Developers Documentation](https://developers.facebook.com/docs/whatsapp/)
+- **Application Insights**: [Monitoring Guide](https://docs.microsoft.com/en-us/azure/azure-monitor/app/app-insights-overview)
+
+---
+**Last Updated**: June 9, 2025  
+**Architecture**: Azure Functions Premium  
+**Status**: ✅ PRODUCTION READY 
