@@ -1,0 +1,115 @@
+{
+  "name": "users",
+  "version": "1.0.0",
+  "lastUpdated": "2025-01-16",
+  "description": "Main user table for HustleMode.ai bot users with authentication and profile data",
+  "fields": [
+    {
+      "name": "id",
+      "type": "uuid",
+      "description": "Primary key, auto-generated UUID",
+      "nullable": false,
+      "default": "gen_random_uuid()"
+    },
+    {
+      "name": "phone_number",
+      "type": "character varying(20)",
+      "description": "User's WhatsApp phone number, unique identifier",
+      "nullable": false,
+      "unique": true
+    },
+    {
+      "name": "email",
+      "type": "character varying(255)",
+      "description": "User's email address",
+      "nullable": true,
+      "unique": true
+    },
+    {
+      "name": "name",
+      "type": "character varying(255)",
+      "description": "User's full name",
+      "nullable": true
+    },
+    {
+      "name": "timezone",
+      "type": "character varying(50)",
+      "description": "User's timezone for scheduling check-ins",
+      "nullable": true,
+      "default": "UTC"
+    },
+    {
+      "name": "notification_settings",
+      "type": "jsonb",
+      "description": "User notification preferences",
+      "nullable": true,
+      "default": "{\"weeklyReports\": true, \"dailyReminders\": true}"
+    },
+    {
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "description": "Account creation timestamp",
+      "nullable": true,
+      "default": "CURRENT_TIMESTAMP"
+    },
+    {
+      "name": "last_active",
+      "type": "timestamp with time zone",
+      "description": "Last user activity timestamp",
+      "nullable": true,
+      "default": "CURRENT_TIMESTAMP"
+    },
+    {
+      "name": "status",
+      "type": "character varying(20)",
+      "description": "User account status",
+      "nullable": true,
+      "default": "active",
+      "constraints": ["active", "inactive", "blocked"]
+    }
+  ],
+  "indexes": [
+    {
+      "name": "users_pkey",
+      "type": "PRIMARY KEY",
+      "columns": ["id"]
+    },
+    {
+      "name": "users_phone_number_key",
+      "type": "UNIQUE",
+      "columns": ["phone_number"]
+    },
+    {
+      "name": "users_email_key",
+      "type": "UNIQUE",
+      "columns": ["email"]
+    },
+    {
+      "name": "idx_users_phone_number",
+      "type": "btree",
+      "columns": ["phone_number"]
+    },
+    {
+      "name": "idx_users_email",
+      "type": "btree",
+      "columns": ["email"]
+    },
+    {
+      "name": "idx_users_last_active",
+      "type": "btree",
+      "columns": ["last_active"]
+    },
+    {
+      "name": "idx_users_status",
+      "type": "btree",
+      "columns": ["status"]
+    }
+  ],
+  "constraints": [
+    {
+      "name": "users_status_check",
+      "type": "CHECK",
+      "definition": "status IN ('active', 'inactive', 'blocked')"
+    }
+  ]
+} 

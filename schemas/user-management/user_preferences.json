@@ -1,0 +1,124 @@
+{
+  "name": "user_preferences",
+  "version": "1.0.0",
+  "lastUpdated": "2025-01-16",
+  "description": "User preferences for check-ins, Goggins intensity, and notification settings",
+  "fields": [
+    {
+      "name": "id",
+      "type": "uuid",
+      "description": "Primary key, auto-generated UUID",
+      "nullable": false,
+      "default": "gen_random_uuid()"
+    },
+    {
+      "name": "user_id",
+      "type": "uuid",
+      "description": "Foreign key to users table",
+      "nullable": true,
+      "references": "users(id) ON DELETE CASCADE"
+    },
+    {
+      "name": "check_in_frequency",
+      "type": "character varying(20)",
+      "description": "How often user wants check-ins",
+      "nullable": true,
+      "default": "daily",
+      "constraints": ["daily", "every_other_day", "weekly", "custom"]
+    },
+    {
+      "name": "check_in_time",
+      "type": "time without time zone",
+      "description": "Preferred time for daily check-ins",
+      "nullable": true,
+      "default": "09:00:00"
+    },
+    {
+      "name": "check_in_timezone",
+      "type": "character varying(50)",
+      "description": "Timezone for check-in scheduling",
+      "nullable": true,
+      "default": "UTC"
+    },
+    {
+      "name": "goggins_intensity",
+      "type": "character varying(10)",
+      "description": "Intensity level for Goggins-style responses",
+      "nullable": true,
+      "default": "high",
+      "constraints": ["low", "medium", "high", "brutal"]
+    },
+    {
+      "name": "reminder_enabled",
+      "type": "boolean",
+      "description": "Whether to send check-in reminders",
+      "nullable": true,
+      "default": true
+    },
+    {
+      "name": "weekend_check_ins",
+      "type": "boolean",
+      "description": "Whether to include weekends in check-ins",
+      "nullable": true,
+      "default": true
+    },
+    {
+      "name": "custom_check_in_days",
+      "type": "jsonb",
+      "description": "Custom days for check-ins when frequency is custom",
+      "nullable": true
+    },
+    {
+      "name": "ai_memory_enabled",
+      "type": "boolean",
+      "description": "Whether to enable Mem0 AI memory features",
+      "nullable": true,
+      "default": true
+    },
+    {
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "description": "Preferences creation timestamp",
+      "nullable": true,
+      "default": "CURRENT_TIMESTAMP"
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamp with time zone",
+      "description": "Last preferences update timestamp",
+      "nullable": true,
+      "default": "CURRENT_TIMESTAMP"
+    }
+  ],
+  "indexes": [
+    {
+      "name": "user_preferences_pkey",
+      "type": "PRIMARY KEY",
+      "columns": ["id"]
+    },
+    {
+      "name": "idx_user_preferences_user_id",
+      "type": "btree",
+      "columns": ["user_id"]
+    }
+  ],
+  "constraints": [
+    {
+      "name": "user_preferences_check_in_frequency_check",
+      "type": "CHECK",
+      "definition": "check_in_frequency IN ('daily', 'every_other_day', 'weekly', 'custom')"
+    },
+    {
+      "name": "user_preferences_goggins_intensity_check",
+      "type": "CHECK",
+      "definition": "goggins_intensity IN ('low', 'medium', 'high', 'brutal')"
+    }
+  ],
+  "triggers": [
+    {
+      "name": "update_user_preferences_updated_at",
+      "type": "BEFORE UPDATE",
+      "function": "update_updated_at_column()"
+    }
+  ]
+} 

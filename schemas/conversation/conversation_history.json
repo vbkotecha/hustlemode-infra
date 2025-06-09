@@ -1,0 +1,124 @@
+{
+  "name": "conversation_history",
+  "version": "1.0.0",
+  "lastUpdated": "2025-01-16",
+  "description": "WhatsApp conversation history with AI analysis and memory integration",
+  "fields": [
+    {
+      "name": "id",
+      "type": "uuid",
+      "description": "Primary key, auto-generated UUID",
+      "nullable": false,
+      "default": "gen_random_uuid()"
+    },
+    {
+      "name": "user_id",
+      "type": "uuid",
+      "description": "Foreign key to users table",
+      "nullable": true,
+      "references": "users(id) ON DELETE CASCADE"
+    },
+    {
+      "name": "whatsapp_message_id",
+      "type": "character varying(255)",
+      "description": "WhatsApp message ID from API",
+      "nullable": true
+    },
+    {
+      "name": "message_type",
+      "type": "character varying(20)",
+      "description": "Direction of message",
+      "nullable": true,
+      "constraints": ["incoming", "outgoing"]
+    },
+    {
+      "name": "content",
+      "type": "text",
+      "description": "Message content text",
+      "nullable": false
+    },
+    {
+      "name": "intent",
+      "type": "character varying(50)",
+      "description": "Detected user intent",
+      "nullable": true
+    },
+    {
+      "name": "entities",
+      "type": "jsonb",
+      "description": "Extracted entities from the message",
+      "nullable": true
+    },
+    {
+      "name": "sentiment",
+      "type": "character varying(20)",
+      "description": "Detected sentiment of the message",
+      "nullable": true
+    },
+    {
+      "name": "context",
+      "type": "jsonb",
+      "description": "Conversation context and metadata",
+      "nullable": true
+    },
+    {
+      "name": "mem0_memory_id",
+      "type": "character varying(255)",
+      "description": "Reference to Mem0 memory entry",
+      "nullable": true
+    },
+    {
+      "name": "azure_openai_request_id",
+      "type": "character varying(255)",
+      "description": "Azure OpenAI request ID for tracing",
+      "nullable": true
+    },
+    {
+      "name": "processing_time_ms",
+      "type": "integer",
+      "description": "Message processing time in milliseconds",
+      "nullable": true
+    },
+    {
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "description": "Message timestamp",
+      "nullable": true,
+      "default": "CURRENT_TIMESTAMP"
+    }
+  ],
+  "indexes": [
+    {
+      "name": "conversation_history_pkey",
+      "type": "PRIMARY KEY",
+      "columns": ["id"]
+    },
+    {
+      "name": "idx_conversation_history_user_id",
+      "type": "btree",
+      "columns": ["user_id"]
+    },
+    {
+      "name": "idx_conversation_history_created_at",
+      "type": "btree",
+      "columns": ["created_at"]
+    },
+    {
+      "name": "idx_conversation_history_intent",
+      "type": "btree",
+      "columns": ["intent"]
+    },
+    {
+      "name": "idx_conversation_history_mem0_memory_id",
+      "type": "btree",
+      "columns": ["mem0_memory_id"]
+    }
+  ],
+  "constraints": [
+    {
+      "name": "conversation_history_message_type_check",
+      "type": "CHECK",
+      "definition": "message_type IN ('incoming', 'outgoing')"
+    }
+  ]
+} 

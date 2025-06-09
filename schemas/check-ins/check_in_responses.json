@@ -1,0 +1,171 @@
+{
+  "name": "check_in_responses",
+  "version": "1.0.0",
+  "lastUpdated": "2025-01-16",
+  "description": "User responses to check-ins with progress ratings, challenges, wins and AI analysis",
+  "fields": [
+    {
+      "name": "id",
+      "type": "uuid",
+      "description": "Primary key, auto-generated UUID",
+      "nullable": false,
+      "default": "gen_random_uuid()"
+    },
+    {
+      "name": "check_in_id",
+      "type": "uuid",
+      "description": "Foreign key to check_ins table",
+      "nullable": true,
+      "references": "check_ins(id) ON DELETE CASCADE"
+    },
+    {
+      "name": "user_id",
+      "type": "uuid",
+      "description": "Foreign key to users table",
+      "nullable": true,
+      "references": "users(id) ON DELETE CASCADE"
+    },
+    {
+      "name": "goal_id",
+      "type": "uuid",
+      "description": "Foreign key to goals table",
+      "nullable": true,
+      "references": "goals(id) ON DELETE CASCADE"
+    },
+    {
+      "name": "progress_rating",
+      "type": "integer",
+      "description": "User's self-assessment of progress (1-10)",
+      "nullable": true
+    },
+    {
+      "name": "current_value",
+      "type": "numeric(10,2)",
+      "description": "Current progress value reported",
+      "nullable": true
+    },
+    {
+      "name": "completion_percentage",
+      "type": "numeric(5,2)",
+      "description": "Estimated completion percentage",
+      "nullable": true
+    },
+    {
+      "name": "challenges_faced",
+      "type": "text",
+      "description": "Challenges and obstacles user is facing",
+      "nullable": true
+    },
+    {
+      "name": "wins_achieved",
+      "type": "text",
+      "description": "Recent wins and achievements",
+      "nullable": true
+    },
+    {
+      "name": "energy_level",
+      "type": "integer",
+      "description": "User's energy level (1-10)",
+      "nullable": true
+    },
+    {
+      "name": "motivation_level",
+      "type": "integer",
+      "description": "User's motivation level (1-10)",
+      "nullable": true
+    },
+    {
+      "name": "next_actions",
+      "type": "text",
+      "description": "Planned next actions",
+      "nullable": true
+    },
+    {
+      "name": "needs_help",
+      "type": "boolean",
+      "description": "Whether user needs help or support",
+      "nullable": true,
+      "default": false
+    },
+    {
+      "name": "help_needed",
+      "type": "text",
+      "description": "Description of help needed",
+      "nullable": true
+    },
+    {
+      "name": "raw_response",
+      "type": "text",
+      "description": "Raw user response text",
+      "nullable": true
+    },
+    {
+      "name": "ai_analysis",
+      "type": "jsonb",
+      "description": "AI analysis of the response",
+      "nullable": true
+    },
+    {
+      "name": "goggins_response",
+      "type": "text",
+      "description": "Generated Goggins-style response",
+      "nullable": true
+    },
+    {
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "description": "Response creation timestamp",
+      "nullable": true,
+      "default": "CURRENT_TIMESTAMP"
+    }
+  ],
+  "indexes": [
+    {
+      "name": "check_in_responses_pkey",
+      "type": "PRIMARY KEY",
+      "columns": ["id"]
+    },
+    {
+      "name": "idx_check_in_responses_check_in_id",
+      "type": "btree",
+      "columns": ["check_in_id"]
+    },
+    {
+      "name": "idx_check_in_responses_user_id",
+      "type": "btree",
+      "columns": ["user_id"]
+    },
+    {
+      "name": "idx_check_in_responses_goal_id",
+      "type": "btree",
+      "columns": ["goal_id"]
+    },
+    {
+      "name": "idx_check_in_responses_created_at",
+      "type": "btree",
+      "columns": ["created_at"]
+    }
+  ],
+  "constraints": [
+    {
+      "name": "check_in_responses_progress_rating_check",
+      "type": "CHECK",
+      "definition": "progress_rating >= 1 AND progress_rating <= 10"
+    },
+    {
+      "name": "check_in_responses_energy_level_check",
+      "type": "CHECK",
+      "definition": "energy_level >= 1 AND energy_level <= 10"
+    },
+    {
+      "name": "check_in_responses_motivation_level_check",
+      "type": "CHECK",
+      "definition": "motivation_level >= 1 AND motivation_level <= 10"
+    },
+    {
+      "name": "check_in_responses_completion_percentage_check",
+      "type": "CHECK",
+      "definition": "completion_percentage >= 0 AND completion_percentage <= 100"
+    }
+  ]
+} 

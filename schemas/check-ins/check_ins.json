@@ -1,0 +1,109 @@
+{
+  "name": "check_ins",
+  "version": "1.0.0",
+  "lastUpdated": "2025-01-16",
+  "description": "Scheduled check-ins for goal accountability with questions and status tracking",
+  "fields": [
+    {
+      "name": "id",
+      "type": "uuid",
+      "description": "Primary key, auto-generated UUID",
+      "nullable": false,
+      "default": "gen_random_uuid()"
+    },
+    {
+      "name": "user_id",
+      "type": "uuid",
+      "description": "Foreign key to users table",
+      "nullable": true,
+      "references": "users(id) ON DELETE CASCADE"
+    },
+    {
+      "name": "goal_id",
+      "type": "uuid",
+      "description": "Foreign key to goals table",
+      "nullable": true,
+      "references": "goals(id) ON DELETE CASCADE"
+    },
+    {
+      "name": "scheduled_at",
+      "type": "timestamp with time zone",
+      "description": "When this check-in is scheduled",
+      "nullable": false
+    },
+    {
+      "name": "completed_at",
+      "type": "timestamp with time zone",
+      "description": "When this check-in was completed",
+      "nullable": true
+    },
+    {
+      "name": "status",
+      "type": "character varying(20)",
+      "description": "Current status of the check-in",
+      "nullable": true,
+      "default": "pending",
+      "constraints": ["pending", "completed", "skipped", "missed"]
+    },
+    {
+      "name": "check_in_type",
+      "type": "character varying(20)",
+      "description": "Type of check-in",
+      "nullable": true,
+      "default": "regular",
+      "constraints": ["regular", "weekly_review", "milestone", "emergency"]
+    },
+    {
+      "name": "questions",
+      "type": "jsonb",
+      "description": "Questions to ask during this check-in",
+      "nullable": true
+    },
+    {
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "description": "Check-in creation timestamp",
+      "nullable": true,
+      "default": "CURRENT_TIMESTAMP"
+    }
+  ],
+  "indexes": [
+    {
+      "name": "check_ins_pkey",
+      "type": "PRIMARY KEY",
+      "columns": ["id"]
+    },
+    {
+      "name": "idx_check_ins_user_id",
+      "type": "btree",
+      "columns": ["user_id"]
+    },
+    {
+      "name": "idx_check_ins_goal_id",
+      "type": "btree",
+      "columns": ["goal_id"]
+    },
+    {
+      "name": "idx_check_ins_scheduled_at",
+      "type": "btree",
+      "columns": ["scheduled_at"]
+    },
+    {
+      "name": "idx_check_ins_status",
+      "type": "btree",
+      "columns": ["status"]
+    }
+  ],
+  "constraints": [
+    {
+      "name": "check_ins_status_check",
+      "type": "CHECK",
+      "definition": "status IN ('pending', 'completed', 'skipped', 'missed')"
+    },
+    {
+      "name": "check_ins_check_in_type_check",
+      "type": "CHECK",
+      "definition": "check_in_type IN ('regular', 'weekly_review', 'milestone', 'emergency')"
+    }
+  ]
+} 

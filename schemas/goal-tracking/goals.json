@@ -1,0 +1,185 @@
+{
+  "name": "goals",
+  "version": "1.0.0",
+  "lastUpdated": "2025-01-16",
+  "description": "User goals with categories, priorities, accountability levels and success criteria",
+  "fields": [
+    {
+      "name": "id",
+      "type": "uuid",
+      "description": "Primary key, auto-generated UUID",
+      "nullable": false,
+      "default": "gen_random_uuid()"
+    },
+    {
+      "name": "user_id",
+      "type": "uuid",
+      "description": "Foreign key to users table",
+      "nullable": true,
+      "references": "users(id) ON DELETE CASCADE"
+    },
+    {
+      "name": "title",
+      "type": "character varying(255)",
+      "description": "Goal title/name",
+      "nullable": false
+    },
+    {
+      "name": "description",
+      "type": "text",
+      "description": "Detailed goal description",
+      "nullable": true
+    },
+    {
+      "name": "category",
+      "type": "character varying(50)",
+      "description": "Goal category",
+      "nullable": true,
+      "default": "general",
+      "constraints": ["fitness", "career", "learning", "personal", "health", "financial", "general"]
+    },
+    {
+      "name": "target_value",
+      "type": "numeric(10,2)",
+      "description": "Target value for measurable goals",
+      "nullable": true
+    },
+    {
+      "name": "target_unit",
+      "type": "character varying(50)",
+      "description": "Unit of measurement for target value",
+      "nullable": true
+    },
+    {
+      "name": "current_value",
+      "type": "numeric(10,2)",
+      "description": "Current progress value",
+      "nullable": true,
+      "default": 0
+    },
+    {
+      "name": "target_date",
+      "type": "date",
+      "description": "Target completion date",
+      "nullable": true
+    },
+    {
+      "name": "priority",
+      "type": "character varying(10)",
+      "description": "Goal priority level",
+      "nullable": true,
+      "default": "medium",
+      "constraints": ["low", "medium", "high", "critical"]
+    },
+    {
+      "name": "status",
+      "type": "character varying(20)",
+      "description": "Current goal status",
+      "nullable": true,
+      "default": "active",
+      "constraints": ["active", "paused", "completed", "failed", "cancelled"]
+    },
+    {
+      "name": "success_criteria",
+      "type": "text",
+      "description": "Clear criteria for goal completion",
+      "nullable": true
+    },
+    {
+      "name": "obstacles",
+      "type": "jsonb",
+      "description": "Known obstacles and challenges",
+      "nullable": true
+    },
+    {
+      "name": "why_important",
+      "type": "text",
+      "description": "Why this goal is important to the user",
+      "nullable": true
+    },
+    {
+      "name": "accountability_level",
+      "type": "character varying(10)",
+      "description": "Level of accountability required",
+      "nullable": true,
+      "default": "high",
+      "constraints": ["low", "medium", "high"]
+    },
+    {
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "description": "Goal creation timestamp",
+      "nullable": true,
+      "default": "CURRENT_TIMESTAMP"
+    },
+    {
+      "name": "updated_at",
+      "type": "timestamp with time zone",
+      "description": "Last goal update timestamp",
+      "nullable": true,
+      "default": "CURRENT_TIMESTAMP"
+    },
+    {
+      "name": "completed_at",
+      "type": "timestamp with time zone",
+      "description": "Goal completion timestamp",
+      "nullable": true
+    }
+  ],
+  "indexes": [
+    {
+      "name": "goals_pkey",
+      "type": "PRIMARY KEY",
+      "columns": ["id"]
+    },
+    {
+      "name": "idx_goals_user_id",
+      "type": "btree",
+      "columns": ["user_id"]
+    },
+    {
+      "name": "idx_goals_category",
+      "type": "btree",
+      "columns": ["category"]
+    },
+    {
+      "name": "idx_goals_status",
+      "type": "btree",
+      "columns": ["status"]
+    },
+    {
+      "name": "idx_goals_target_date",
+      "type": "btree",
+      "columns": ["target_date"]
+    }
+  ],
+  "constraints": [
+    {
+      "name": "goals_category_check",
+      "type": "CHECK",
+      "definition": "category IN ('fitness', 'career', 'learning', 'personal', 'health', 'financial', 'general')"
+    },
+    {
+      "name": "goals_priority_check",
+      "type": "CHECK",
+      "definition": "priority IN ('low', 'medium', 'high', 'critical')"
+    },
+    {
+      "name": "goals_status_check",
+      "type": "CHECK",
+      "definition": "status IN ('active', 'paused', 'completed', 'failed', 'cancelled')"
+    },
+    {
+      "name": "goals_accountability_level_check",
+      "type": "CHECK",
+      "definition": "accountability_level IN ('low', 'medium', 'high')"
+    }
+  ],
+  "triggers": [
+    {
+      "name": "update_goals_updated_at",
+      "type": "BEFORE UPDATE",
+      "function": "update_updated_at_column()"
+    }
+  ]
+} 
