@@ -1,23 +1,12 @@
 ---
-description:
-globs:
+description: 
+globs: 
 alwaysApply: false
 ---
 ---
 description: "Azure Functions deployment configuration rules with exact resource names and commands for HustleMode.ai"
-auto_attachments:
-  - "deployment-config.json"
-  - "scripts/deploy-clean.sh"
-  - ".github/workflows/azure-functions-deploy.yml"
-  - "azure-functions-deploy/**"
-apply_to:
-  - deployment
-  - azure_functions
-  - ci_cd
-tags:
-  - azure
-  - deployment
-  - configuration
+globs: "scripts/**/*,deployment-config.json,.github/workflows/**/*"
+alwaysApply: false
 ---
 
 # Deployment Configuration Rules

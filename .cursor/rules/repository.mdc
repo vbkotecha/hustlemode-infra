@@ -1,24 +1,12 @@
 ---
-description:
-globs:
-alwaysApply: false
+description: 
+globs: 
+alwaysApply: true
 ---
 ---
 description: "Repository management rules for HustleMode.ai - prevents bloat, enforces clean architecture, and maintains Azure Functions focus"
-auto_attachments:
-  - "**/.gitignore"
-  - "**/README.md"
-  - "**/CHANGELOG.md"
-  - "scripts/**"
-  - ".github/workflows/**"
-apply_to:
-  - repository_structure
-  - file_creation
-  - deployment
-tags:
-  - cleanup
-  - anti-bloat
-  - azure-functions
+globs: "**/*"
+alwaysApply: true
 ---
 
 # Repository Management Rules
