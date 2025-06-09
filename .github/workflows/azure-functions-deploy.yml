@@ -4,13 +4,39 @@ on:
   push:
     branches:
       - main
-    paths:
-      - 'azure-functions-deploy/**'
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
+  anti-bloat-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 'Checkout Repository'
+      uses: actions/checkout@v4
+
+    - name: 'Run Anti-Bloat Check'
+      run: |
+        chmod +x scripts/check-bloat.sh
+        ./scripts/check-bloat.sh
+
+    - name: 'Report Results'
+      if: success()
+      run: echo "🎯 Repository is clean and bloat-free! 🔥"
+      
+    - name: 'Report Violations'
+      if: failure()
+      run: |
+        echo "❌ Repository bloat detected!"
+        echo "Review the violations above and fix them before merging."
+        exit 1
+
   deploy:
     runs-on: ubuntu-latest
+    needs: anti-bloat-check
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     
     steps:
     - name: 'Checkout GitHub Action'
