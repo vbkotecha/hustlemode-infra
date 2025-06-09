@@ -3,6 +3,25 @@ description:
 globs:
 alwaysApply: false
 ---
+---
+description: "HustleMode.ai architecture guidelines for Azure Functions, AI integration, and system design principles"
+auto_attachments:
+  - "azure-functions-deploy/**"
+  - "ai/**"
+  - "src/**"
+  - "architecture.md"
+apply_to:
+  - architecture
+  - system_design
+  - azure_functions
+  - ai_integration
+tags:
+  - architecture
+  - azure
+  - ai
+  - design
+---
+
 # HustleMode.ai Architecture
 
 ## Core Principles

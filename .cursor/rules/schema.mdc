@@ -3,6 +3,22 @@ description:
 globs: 
 alwaysApply: false
 ---
+---
+description: "Data schema management guidelines for database schemas, API schemas, and version control"
+auto_attachments:
+  - "schemas/**/*.json"
+  - "**/*schema*.json"
+  - "**/CHANGELOG.md"
+apply_to:
+  - schema_design
+  - database
+  - api_development
+tags:
+  - schemas
+  - database
+  - versioning
+---
+
 # Schema Management Guidelines
 
 ## Directory Structure

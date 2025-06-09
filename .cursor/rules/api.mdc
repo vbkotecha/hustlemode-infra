@@ -3,6 +3,24 @@ description:
 globs:
 alwaysApply: false
 ---
+---
+description: "API design guidelines for RESTful endpoints, request/response formats, and security best practices"
+auto_attachments:
+  - "api/**"
+  - "azure-functions-deploy/**"
+  - "**/*api*.py"
+  - "**/*endpoint*.py"
+apply_to:
+  - api_development
+  - endpoints
+  - security
+tags:
+  - api
+  - rest
+  - security
+  - documentation
+---
+
 # API Design Guidelines
 
 ## Endpoint Structure

@@ -3,6 +3,23 @@ description:
 globs:
 alwaysApply: false
 ---
+---
+description: "AI prompt management guidelines for version control, naming conventions, and template structure"
+auto_attachments:
+  - "prompts/**"
+  - "**/*prompt*.md"
+  - "ai/**"
+apply_to:
+  - prompt_engineering
+  - ai_development
+  - template_management
+tags:
+  - prompts
+  - ai
+  - templates
+  - versioning
+---
+
 # Prompt Management Guidelines
 
 ## Structure
