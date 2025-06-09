@@ -3,29 +3,14 @@
   "version": "1.0.0",
   "description": "AI-powered accountability assistant with omnichannel support",
   "private": true,
-  "workspaces": [
-    "src/bot",
-    "src/functions",
-    "src/ai",
-    "src/shared"
-  ],
   "scripts": {
-    "dev": "concurrently \"npm run dev:bot\" \"npm run dev:functions\"",
-    "dev:bot": "cd src/bot && npm run dev",
-    "dev:functions": "cd src/functions && npm run dev",
-    "build": "npm run build:bot && npm run build:functions",
-    "build:bot": "cd src/bot && npm run build",
-    "build:functions": "cd src/functions && npm run build",
-    "test": "npm run test:bot && npm run test:functions",
-    "test:bot": "cd src/bot && npm test",
-    "test:functions": "cd src/functions && npm test",
-    "lint": "npm run lint:bot && npm run lint:functions",
-    "lint:bot": "cd src/bot && npm run lint",
-    "lint:functions": "cd src/functions && npm run lint"
+    "dev": "cd src/api && uvicorn main:app --reload",
+    "start": "cd src/api && uvicorn main:app",
+    "test": "pytest tests/",
+    "lint": "flake8 src/"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2",
-    "typescript": "^5.3.3"
+    "concurrently": "^8.2.2"
   },
   "engines": {
     "node": ">=18.0.0"

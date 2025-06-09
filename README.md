@@ -1,88 +1,99 @@
 # HustleMode.ai
 
-HustleMode.ai is a GPT-powered motivational assistant designed to help users stay consistent with their goals and routines. It uses Azure AI Studio (Foundry) to orchestrate prompts and flows, providing a stateless, prompt-based workflow through public API endpoints.
+HustleMode.ai is a GPT-powered motivational assistant designed to help users stay consistent with their goals and routines. Currently implemented as a WhatsApp bot with David Goggins-style motivational responses.
 
 ## Architecture
 
 ### Core Components
 
-1. **Prompt Layer**
-   - Centralized prompt management
-   - Version-controlled prompt templates
-   - Environment-specific configurations
-
-2. **AI Orchestration**
-   - Azure AI Studio (Foundry) integration
-   - Flow management and routing
-   - Response processing and formatting
-
-3. **API Layer**
-   - RESTful endpoints
+1. **API Layer**
+   - FastAPI-based REST API
+   - WhatsApp webhook integration
    - Stateless request handling
-   - Standardized response formats
 
-4. **Future Integration Points**
-   - WhatsApp
-   - SMS
-   - Email
+2. **Backend Services**
+   - Prompt management
+   - Cost control
+   - Caching layer
+
+3. **Functions**
+   - Serverless function handlers
+   - Database schema management
 
 ## Project Structure
 
 ```
 hustlemode-infra/
-├── prompts/              # Version-controlled prompt templates
-│   ├── goals/           # Goal-related prompts
-│   ├── motivation/      # Motivational prompts
-│   └── routines/        # Routine-related prompts
-├── api/                 # API implementation
-│   ├── v1/             # API version 1
-│   └── docs/           # API documentation
-├── flows/              # Azure AI Studio flows
-│   ├── goal-setting/   # Goal setting flows
-│   └── check-in/       # Progress check-in flows
-└── tests/              # Test suites
-    ├── prompts/        # Prompt tests
-    └── api/            # API tests
+├── src/                 # Source code
+│   ├── api/            # FastAPI application
+│   │   ├── main.py     # Main API application
+│   │   ├── v1/         # API version 1
+│   │   └── docs/       # API documentation
+│   ├── backend/        # Backend services
+│   │   ├── cache.py    # Caching implementation
+│   │   ├── cost_control.py  # Cost management
+│   │   └── prompts.py  # Prompt handling
+│   └── functions/      # Serverless functions
+│       ├── handler.py  # Function handlers
+│       └── schema.sql  # Database schema
+├── prompts/            # Prompt templates
+│   ├── goals/         # Goal-related prompts
+│   └── motivation/    # Motivational prompts
+├── flows/             # AI workflow definitions
+│   └── azure-ai-studio/
+├── schemas/           # Data schemas
+│   ├── azure-search/
+│   ├── cosmos-db/
+│   └── postgres/
+├── tests/             # Test suites
+│   ├── api/          # API tests
+│   └── prompts/      # Prompt tests
+├── deployment-config.json  # Deployment configuration
+├── requirements.txt   # Python dependencies
+├── package.json      # Node.js scripts
+└── .env.example      # Environment variables template
 ```
 
 ## Getting Started
 
 1. Clone the repository
-2. Set up Azure AI Studio (Foundry) credentials
-3. Configure environment variables:
+2. Set up environment variables:
    ```bash
    cp .env.example .env
+   # Edit .env with your configuration
    ```
-4. Install dependencies:
+3. Install Python dependencies:
    ```bash
-   npm install
+   pip install -r requirements.txt
+   ```
+4. Run the API locally:
+   ```bash
+   npm run dev
+   # or directly: cd src/api && uvicorn main:app --reload
    ```
 
 ## Development
 
-### Prompt Management
-- Store prompts in `/prompts` directory
-- Use semantic versioning
-- Include metadata with each prompt
-- Test all prompt variations
-
 ### API Development
-- Follow RESTful conventions
-- Version all endpoints
-- Implement proper error handling
-- Document using OpenAPI/Swagger
+- The main API is in `src/api/main.py`
+- Uses FastAPI for REST endpoints
+- WhatsApp webhook integration for bot functionality
 
 ### Testing
-- Unit test all prompt variations
-- Integration test API endpoints
-- Load test for concurrent requests
+```bash
+npm run test  # Run all tests
+npm run lint  # Run linting
+```
 
-## Security
+### Deployment
+The application is configured for deployment to Azure App Service. See `deployment-config.json` for configuration details.
 
-- API key management
-- Rate limiting
-- Input validation
-- Response sanitization
+## Environment Variables
+
+See `.env.example` for all required environment variables:
+- WhatsApp Business API credentials
+- Database connection settings
+- Azure service configurations
 
 ## Contributing
 
