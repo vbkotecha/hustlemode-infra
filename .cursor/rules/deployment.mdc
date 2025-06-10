@@ -15,33 +15,30 @@ alwaysApply: false
 Always use these exact values when providing deployment commands:
 
 - **Resource Group**: `hustlemode.ai`
-- **App Service Name**: `hustlemode`
-- **App Service Plan**: `hustlemode-plan`
+- **Function App Name**: `hustlemode-api`
 - **Location**: `eastus`
 - **Runtime**: `PYTHON:3.11`
-- **SKU**: `B1`
+- **Hosting Plan**: `Consumption Plan`
+- **Service Type**: `Azure Functions v2`
 
 ## Command Templates
 
-### Azure App Service Commands
+### Azure Functions Commands
 ```bash
-# Create App Service Plan
-az appservice plan create --name hustlemode-plan --resource-group hustlemode.ai --sku B1 --location eastus
+# Deploy Azure Functions (Recommended)
+cd azure-functions-deploy && func azure functionapp publish hustlemode-api --python --build remote
 
-# Create Web App
-az webapp create --name hustlemode --resource-group hustlemode.ai --plan hustlemode-plan --runtime "PYTHON:3.11"
+# Create Function App
+az functionapp create --name hustlemode-api --resource-group hustlemode.ai --consumption-plan-location eastus --runtime python --runtime-version 3.11 --functions-version 4
 
 # Configure Environment Variables
-az webapp config appsettings set --name hustlemode --resource-group hustlemode.ai --settings @.env
+az functionapp config appsettings set --name hustlemode-api --resource-group hustlemode.ai --settings @.env
 
-# Set up Local Git Deployment
-az webapp deployment source config-local-git --name hustlemode --resource-group hustlemode.ai
-
-# Restart App Service
-az webapp restart --name hustlemode --resource-group hustlemode.ai
+# Restart Function App
+az functionapp restart --name hustlemode-api --resource-group hustlemode.ai
 
 # View Logs
-az webapp log tail --name hustlemode --resource-group hustlemode.ai
+az functionapp log tail --name hustlemode-api --resource-group hustlemode.ai
 ```
 
 ### Database Commands
@@ -55,7 +52,13 @@ az postgres flexible-server db create --resource-group hustlemode.ai --server-na
 
 ## Git Configuration
 - **GitHub Repository**: `https://github.com/vbkotecha/hustlemode-infra`
-- **Azure Git Remote**: Will be provided after running local git deployment setup
+- **GitHub Actions**: `https://github.com/vbkotecha/hustlemode-infra/actions`
+
+## Deployment URLs
+- **Function App URL**: `https://hustlemode-api.azurewebsites.net/`
+- **WhatsApp Webhook**: `https://hustlemode-api.azurewebsites.net/api/messaging/whatsapp`
+- **Health Check**: `https://hustlemode-api.azurewebsites.net/api/health`
+- **Kudu SCM**: `https://hustlemode-api.scm.azurewebsites.net/`
 
 ## Mandatory Rules
 1. Always use these exact resource names in all deployment commands
@@ -63,5 +66,13 @@ az postgres flexible-server db create --resource-group hustlemode.ai --server-na
 3. Always reference the deployment-config.json file for current values
 4. Update deployment-config.json if any values change
 
+## GitHub Secrets Required
+- `AZUREAPPSERVICE_PUBLISHPROFILE_FFEB2282094642A1A8B5E3AFAE67C0DC` - Function App publish profile
+
+## Deployment Methods
+1. **Azure Functions Core Tools** (Recommended): `func azure functionapp publish hustlemode-api --python --build remote`
+2. **Clean Script**: `./scripts/deploy-clean.sh --auto`
+3. **GitHub Actions**: Automated ZIP Deploy via workflow
+
 ## FQDN
-The deployed app will be available at: `https://hustlemode.azurewebsites.net`
+The deployed app will be available at: `https://hustlemode-api.azurewebsites.net`
