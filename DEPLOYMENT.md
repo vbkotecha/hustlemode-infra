@@ -68,9 +68,21 @@ func azure functionapp publish hustlemode-api --python --build remote
 
 ### Method 3: GitHub Actions (Automated)
 
-Deployment automatically triggers on push to main branch when files in `azure-functions-deploy/` change.
+Deployment automatically triggers on push to main branch. The workflow includes:
 
-**Note**: GitHub Actions workflow is working but should be modified carefully as requested.
+**Features:**
+- Anti-bloat repository checks before deployment
+- Single streamlined job (build + deploy combined)
+- Platform-specific package installation for Linux x86_64
+- Direct ZIP Deploy via Azure Functions REST API
+- Deployment verification and success confirmation
+- Uses latest publish profile authentication
+
+**Benefits:**
+- Faster deployments (no artifact upload/download overhead)
+- Simplified debugging (single job logs)
+- Consistent package structure with local builds
+- Reliable ZIP Deploy with explicit verification
 
 ## 🔧 Environment Configuration
 

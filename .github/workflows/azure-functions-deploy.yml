@@ -37,13 +37,13 @@ jobs:
         echo "Review the violations above and fix them before merging."
         exit 1
 
-  build:
+  deploy:
     runs-on: ubuntu-latest
     needs: anti-bloat-check
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
       contents: read
-
+    
     steps:
     - name: 'Checkout Repository'
       uses: actions/checkout@v4
@@ -53,14 +53,14 @@ jobs:
       with:
         python-version: ${{ env.PYTHON_VERSION }}
 
-    - name: 'Create and start virtual environment'
+    - name: 'Build Azure Functions Package'
       run: |
+        echo "🔧 Building Azure Functions deployment package..."
+        
+        # Create virtual environment
         python -m venv venv
         source venv/bin/activate
-
-    - name: 'Install dependencies for Azure Functions'
-      run: |
-        source venv/bin/activate
+        
         pushd '${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
         
         # Create proper Azure Functions package structure
@@ -83,29 +83,12 @@ jobs:
           --no-compile \
           --upgrade
         
-        popd
-
-    - name: 'Zip artifact for deployment'
-      run: |
-        cd ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
-        # Only zip the function app files, not the venv
+        # Create deployment zip (exclude venv)
         zip -r ../release.zip ./* -x "venv/*"
-
-    - name: 'Upload artifact for deployment job'
-      uses: actions/upload-artifact@v4
-      with:
-        name: python-app
-        path: release.zip
-
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build
-    
-    steps:
-    - name: 'Download artifact from build job'
-      uses: actions/download-artifact@v4
-      with:
-        name: python-app
+        
+        popd
+        
+        echo "✅ Package built: release.zip"
 
     - name: 'Deploy via ZIP Deploy to Azure Functions'
       run: |

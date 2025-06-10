@@ -40,8 +40,8 @@
     "github_actions": "https://github.com/vbkotecha/hustlemode-infra/actions",
     "methods": [
       "Azure Functions Core Tools (func azure functionapp publish) - RECOMMENDED",
-      "Clean Script (./scripts/deploy-clean.sh --auto)",
-      "GitHub Actions → Azure Functions (ZIP Deploy)"
+      "Clean Script (./scripts/deploy-clean.sh --auto) - Local ZIP Deploy",
+      "GitHub Actions (streamlined build + deploy) - Automated ZIP Deploy"
     ],
     "source_directory": "azure-functions-deploy",
     "function_key": "your_function_key_here",
@@ -83,6 +83,8 @@
     "mvp_status": "COMPLETED",
     "response_time": "< 2 seconds",
     "scalability": "unlimited_concurrent_users",
-    "cost_model": "pay_per_execution"
+    "cost_model": "pay_per_execution",
+    "ci_cd_optimization": "streamlined_single_job_workflow",
+    "deployment_method": "direct_zip_deploy_api"
   }
 } 
