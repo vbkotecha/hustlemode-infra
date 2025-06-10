@@ -37,13 +37,13 @@ jobs:
         echo "Review the violations above and fix them before merging."
         exit 1
 
-  deploy:
+  build:
     runs-on: ubuntu-latest
     needs: anti-bloat-check
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
       contents: read
-    
+
     steps:
     - name: 'Checkout Repository'
       uses: actions/checkout@v4
@@ -53,105 +53,49 @@ jobs:
       with:
         python-version: ${{ env.PYTHON_VERSION }}
 
-    - name: 'Build Azure Functions Package'
+    - name: 'Create and start virtual environment'
       run: |
-        echo "🔧 Building Azure Functions deployment package..."
-        
-        # Clean any existing build artifacts
-        rm -rf .build .temp
-        
-        # Create clean build directory (matches deploy-clean.sh)
-        BUILD_DIR=".build/functions-$(date +%s)"
-        mkdir -p "$BUILD_DIR"
-        
-        echo "📦 Preparing clean Azure Functions deployment package..."
-        
-        # Copy ONLY Azure Functions deployment files to clean build directory
-        cp -r ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/* "$BUILD_DIR/"
-        
-        echo "🐍 Creating virtual environment and installing packages..."
-        
-        # Create virtual environment in build directory
-        python -m venv "$BUILD_DIR/venv"
-        source "$BUILD_DIR/venv/bin/activate"
-        
-        # Create proper Azure Functions package structure
-        mkdir -p "$BUILD_DIR/.python_packages/lib/site-packages"
-        
-        # Install packages for Linux x86_64 (Azure Functions platform)
-        pip install --upgrade pip
-        echo "🔧 Installing packages for Linux x86_64 platform (Azure Functions)..."
-        pip install -r "$BUILD_DIR/requirements.txt" \
-          --target "$BUILD_DIR/.python_packages/lib/site-packages" \
-          --platform linux_x86_64 \
-          --implementation cp \
-          --python-version 3.11 \
-          --only-binary=:all: \
-          --no-compile \
-          --no-deps
-        
-        # Install dependencies with fallback for any missing packages
-        echo "🔧 Installing dependencies with fallback to universal packages..."
-        pip install -r "$BUILD_DIR/requirements.txt" \
-          --target "$BUILD_DIR/.python_packages/lib/site-packages" \
-          --no-compile \
-          --upgrade
-        
-        # Deactivate virtual environment
-        deactivate
-        
-        # Remove virtual environment directory (not needed in deployment)
-        rm -rf "$BUILD_DIR/venv"
-        
-        echo "✅ Packages installed locally"
-        
-        # Create deployment zip from clean build directory (matches deploy-clean.sh exactly)
-        cd "$BUILD_DIR"
-        zip -r "../release.zip" .
-        cd - > /dev/null
-        
-        echo "✅ Clean deployment package created: release.zip"
+        python -m venv venv
+        source venv/bin/activate
 
-    - name: 'Deploy via ZIP Deploy to Azure Functions'
+    - name: 'Install dependencies'
       run: |
-        echo "🚀 Starting ZIP Deploy to Azure Functions..."
-        
-        # Extract publish profile details
-        PUBLISH_PROFILE='${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_570EFB7F49FD40F5B139C52B770A5A1C }}'
-        
-        # Extract username and password from publish profile
-        USERNAME=$(echo "$PUBLISH_PROFILE" | grep -o 'userName="[^"]*"' | cut -d'"' -f2)
-        PASSWORD=$(echo "$PUBLISH_PROFILE" | grep -o 'userPWD="[^"]*"' | cut -d'"' -f2)
-        
-        # Deploy via ZIP Deploy API
-        curl -X POST \
-          -u "$USERNAME:$PASSWORD" \
-          -H "Content-Type: application/zip" \
-          --data-binary @release.zip \
-          "https://hustlemode-api.scm.azurewebsites.net/api/zipdeploy?isAsync=false"
-        
-        echo "📦 ZIP Deploy completed!"
+        source venv/bin/activate
+        cd ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+        pip install -r requirements.txt
 
-    - name: 'Verify Deployment'
+    - name: 'Zip artifact for deployment'
       run: |
-        echo "🔍 Verifying deployment..."
-        sleep 30  # Wait for deployment to settle
+        cd ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+        zip -r release.zip ./*
+
+    - name: 'Upload artifact for deployment job'
+      uses: actions/upload-artifact@v4
+      with:
+        name: python-app
+        path: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/release.zip
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    
+    steps:
+    - name: 'Download artifact from build job'
+      uses: actions/download-artifact@v4
+      with:
+        name: python-app
+
+    - name: 'Unzip artifact for deployment'
+      run: unzip release.zip     
         
-        # Check if the function app is responding
-        RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" "https://hustlemode-api.azurewebsites.net/")
-        
-        if [ "$RESPONSE" -eq 200 ] || [ "$RESPONSE" -eq 404 ]; then
-          echo "✅ Function app is responding (HTTP $RESPONSE)"
-        else
-          echo "❌ Function app verification failed (HTTP $RESPONSE)"
-          exit 1
-        fi
+    - name: 'Deploy to Azure Functions'
+      uses: Azure/functions-action@v1
+      id: deploy-to-function
+      with:
+        app-name: 'hustlemode-premium-bot'
+        slot-name: 'Production'
+        package: '.'
+        publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_FFEB2282094642A1A8B5E3AFAE67C0DC }}
 
     - name: 'Deployment Success'
-      run: echo "🔥 HustleMode.ai Azure Functions deployed via ZIP Deploy successfully! STAY HARD! 💪"
-
-    - name: 'Cleanup Build Artifacts'
-      run: |
-        echo "🧹 Cleaning up build artifacts..."
-        rm -rf .build .temp release.zip
-        echo "✅ Build artifacts cleaned up" 
+      run: echo "🔥 HustleMode.ai Azure Functions deployed successfully! STAY HARD! 💪" 
