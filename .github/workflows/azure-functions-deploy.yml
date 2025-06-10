@@ -87,15 +87,29 @@ jobs:
 
     - name: 'Unzip artifact for deployment'
       run: unzip release.zip     
+
+    - name: 'Deploy via ZIP Deploy to Azure Functions'
+      run: |
+        echo "🚀 Starting ZIP Deploy to Azure Functions..."
         
-    - name: 'Deploy to Azure Functions'
-      uses: Azure/functions-action@v1
-      id: deploy-to-function
-      with:
-        app-name: 'hustlemode-premium-bot'
-        slot-name: 'Production'
-        package: '.'
-        publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_FFEB2282094642A1A8B5E3AFAE67C0DC }}
+        # Create zip for deployment
+        zip -r deploy.zip . -x "*.zip"
+        
+        # Extract publish profile details
+        PUBLISH_PROFILE='${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_FFEB2282094642A1A8B5E3AFAE67C0DC }}'
+        
+        # Extract username and password from publish profile
+        USERNAME=$(echo "$PUBLISH_PROFILE" | grep -o 'userName="[^"]*"' | cut -d'"' -f2)
+        PASSWORD=$(echo "$PUBLISH_PROFILE" | grep -o 'userPWD="[^"]*"' | cut -d'"' -f2)
+        
+        # Deploy via ZIP Deploy API
+        curl -X POST \
+          -u "$USERNAME:$PASSWORD" \
+          -H "Content-Type: application/zip" \
+          --data-binary @deploy.zip \
+          "https://hustlemode-premium-bot.scm.azurewebsites.net/api/zipdeploy?isAsync=false"
+        
+        echo "📦 ZIP Deploy completed!"
 
     - name: 'Deployment Success'
       run: echo "🔥 HustleMode.ai Azure Functions deployed successfully! STAY HARD! 💪" 
