@@ -93,7 +93,7 @@ jobs:
       uses: Azure/functions-action@v1
       id: deploy-to-function
       with:
-        app-name: 'hustlemode-premium-bot'
+        app-name: 'hustlemode-api'
         slot-name: 'Production'
         package: '.'
         publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_FFEB2282094642A1A8B5E3AFAE67C0DC }}

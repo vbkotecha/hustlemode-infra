@@ -1,2 +1,2 @@
-azure-functions==1.19.0
-azure-core>=1.30.0
+azure-functions
+requests
