@@ -68,21 +68,27 @@ func azure functionapp publish hustlemode-api --python --build remote
 
 ### Method 3: GitHub Actions (Automated)
 
-Deployment automatically triggers on push to main branch. The workflow includes:
+Deployment automatically triggers on push to main branch with a **unified 3-stage pipeline**:
+
+**Pipeline Stages:**
+1. **Anti-Bloat Check**: Repository hygiene verification (runs on all pushes/PRs)
+2. **Build**: Dependency installation and artifact creation (main branch only)
+3. **Deploy**: Direct ZIP deployment to Azure Functions (main branch only)
 
 **Features:**
-- Anti-bloat repository checks before deployment
-- Single streamlined job (build + deploy combined)
-- Platform-specific package installation for Linux x86_64
-- Direct ZIP Deploy via Azure Functions REST API
-- Deployment verification and success confirmation
-- Uses latest publish profile authentication
+- **Quality Gate**: Anti-bloat check prevents deployment of bloated code
+- **Unified Pipeline**: Single workflow with dependent stages (like Jenkins)
+- **Artifact-Based**: Build stage creates deployment ZIP for deploy stage
+- **Direct ZIP Deploy**: Uses Azure Functions REST API for reliable deployment
+- **Pull Request Support**: Anti-bloat check runs on PRs (no deployment)
+- **Secure Authentication**: Uses publish profile for deployment credentials
 
 **Benefits:**
-- Faster deployments (no artifact upload/download overhead)
-- Simplified debugging (single job logs)
-- Consistent package structure with local builds
-- Reliable ZIP Deploy with explicit verification
+- **Jenkins-style Pipeline**: Clear stage dependencies and progression
+- **Repository Hygiene**: Enforced clean architecture before deployment
+- **Fast Deployments**: Direct API calls without GitHub Action overhead
+- **Reliable Authentication**: No Azure login issues with publish profile approach
+- **Clear Debugging**: Each stage has focused, specific logs
 
 ## 🔧 Environment Configuration
 
@@ -250,7 +256,7 @@ az functionapp restart --name hustlemode-api --resource-group hustlemode.ai
 - **Application Insights**: https://docs.microsoft.com/en-us/azure/azure-monitor/app/app-insights-overview
 
 ---
-**Last Updated**: June 10, 2025  
-**Architecture**: Azure Functions v2 (Consumption Plan)  
+**Last Updated**: June 9, 2025  
+**Architecture**: Azure Functions v2 (Consumption Plan) - 3-Stage Pipeline (Anti-Bloat → Build → Deploy)  
 **Status**: ✅ PRODUCTION READY WITH INTELLIGENT RESPONSES  
 **Function Key**: `your_function_key_here` 
