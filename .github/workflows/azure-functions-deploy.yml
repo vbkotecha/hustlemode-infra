@@ -56,13 +56,25 @@ jobs:
     - name: 'Install dependencies'
       run: |
         cd ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+        echo "📦 Installing Python dependencies..."
         mkdir -p .python_packages/lib/site-packages
         pip install -r requirements.txt --target .python_packages/lib/site-packages
+        echo "✅ Dependencies installed. Checking structure:"
+        ls -la
+        echo "📁 Contents of .python_packages/lib/site-packages/:"
+        ls -la .python_packages/lib/site-packages/
 
     - name: 'Zip artifact for deployment'
       run: |
         cd ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
-        zip -r release.zip ./*
+        echo "📦 Creating deployment package..."
+        echo "📁 Files to be zipped:"
+        find . -type f | head -20
+        zip -r release.zip .
+        echo "✅ Zip created. Size:"
+        ls -lh release.zip
+        echo "📁 Contents of zip:"
+        unzip -l release.zip | head -20
 
     - name: 'Upload artifact for deployment job'
       uses: actions/upload-artifact@v4
