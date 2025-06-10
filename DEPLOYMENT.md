@@ -68,27 +68,31 @@ func azure functionapp publish hustlemode-api --python --build remote
 
 ### Method 3: GitHub Actions (Automated)
 
-Deployment automatically triggers on push to main branch with a **unified 3-stage pipeline**:
+Deployment automatically triggers on push to main branch with a **streamlined 2-stage pipeline**:
 
-**Pipeline Stages:**
-1. **Anti-Bloat Check**: Repository hygiene verification (runs on all pushes/PRs)
-2. **Build**: Dependency installation and artifact creation (main branch only)
-3. **Deploy**: Direct ZIP deployment to Azure Functions (main branch only)
+**Pipeline Flow:**
+1. **Anti-Bloat Check** → Repository hygiene verification (runs on all pushes/PRs)
+2. **Deploy** → Install packages + ZIP deploy + verify (main branch only)
+
+**Deploy Stage Steps:**
+- Setup Python 3.11
+- Install dependencies to `.python_packages/lib/site-packages/`
+- Create deployment ZIP with all files and packages
+- Deploy directly via Azure ZIP Deploy API
+- Verify health and webhook endpoints
 
 **Features:**
 - **Quality Gate**: Anti-bloat check prevents deployment of bloated code
-- **Unified Pipeline**: Single workflow with dependent stages (like Jenkins)
-- **Artifact-Based**: Build stage creates deployment ZIP for deploy stage
-- **Direct ZIP Deploy**: Uses Azure Functions REST API for reliable deployment
+- **Direct Deployment**: No artifact complexity - build and deploy in single job
+- **Python Packaging**: Proper `.python_packages/` structure for Azure Functions
+- **Endpoint Verification**: Tests health and webhook endpoints post-deployment
 - **Pull Request Support**: Anti-bloat check runs on PRs (no deployment)
-- **Secure Authentication**: Uses publish profile for deployment credentials
 
 **Benefits:**
-- **Jenkins-style Pipeline**: Clear stage dependencies and progression
+- **Fast & Simple**: Direct deployment without upload/download overhead
 - **Repository Hygiene**: Enforced clean architecture before deployment
-- **Fast Deployments**: Direct API calls without GitHub Action overhead
-- **Reliable Authentication**: No Azure login issues with publish profile approach
-- **Clear Debugging**: Each stage has focused, specific logs
+- **Reliable**: Uses publish profile authentication with direct ZIP Deploy API
+- **End-to-End Verification**: Ensures deployment actually works
 
 ## 🔧 Environment Configuration
 
@@ -257,6 +261,6 @@ az functionapp restart --name hustlemode-api --resource-group hustlemode.ai
 
 ---
 **Last Updated**: June 9, 2025  
-**Architecture**: Azure Functions v2 (Consumption Plan) - 3-Stage Pipeline (Anti-Bloat → Build → Deploy)  
+**Architecture**: Azure Functions v2 (Consumption Plan) - 2-Stage Pipeline (Anti-Bloat → Deploy)  
 **Status**: ✅ PRODUCTION READY WITH INTELLIGENT RESPONSES  
 **Function Key**: `your_function_key_here` 

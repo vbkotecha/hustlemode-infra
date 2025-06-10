@@ -41,7 +41,7 @@
     "methods": [
       "Azure Functions Core Tools (func azure functionapp publish) - RECOMMENDED",
       "Clean Script (./scripts/deploy-clean.sh --auto) - Local ZIP Deploy",
-      "GitHub Actions (3-stage pipeline: anti-bloat → build with proper Python packaging → deploy) - Automated ZIP Deploy"
+      "GitHub Actions (2-stage pipeline: anti-bloat → deploy with Python packaging + verification) - Direct ZIP Deploy"
     ],
     "source_directory": "azure-functions-deploy",
     "function_key": "your_function_key_here",
