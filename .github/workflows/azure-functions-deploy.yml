@@ -57,19 +57,32 @@ jobs:
       run: |
         echo "🔧 Building Azure Functions deployment package..."
         
-        # Create virtual environment
-        python -m venv venv
-        source venv/bin/activate
+        # Clean any existing build artifacts
+        rm -rf .build .temp
         
-        pushd '${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
+        # Create clean build directory (matches deploy-clean.sh)
+        BUILD_DIR=".build/functions-$(date +%s)"
+        mkdir -p "$BUILD_DIR"
+        
+        echo "📦 Preparing clean Azure Functions deployment package..."
+        
+        # Copy ONLY Azure Functions deployment files to clean build directory
+        cp -r ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/* "$BUILD_DIR/"
+        
+        echo "🐍 Creating virtual environment and installing packages..."
+        
+        # Create virtual environment in build directory
+        python -m venv "$BUILD_DIR/venv"
+        source "$BUILD_DIR/venv/bin/activate"
         
         # Create proper Azure Functions package structure
-        mkdir -p .python_packages/lib/site-packages
+        mkdir -p "$BUILD_DIR/.python_packages/lib/site-packages"
         
         # Install packages for Linux x86_64 (Azure Functions platform)
         pip install --upgrade pip
-        pip install -r requirements.txt \
-          --target .python_packages/lib/site-packages \
+        echo "🔧 Installing packages for Linux x86_64 platform (Azure Functions)..."
+        pip install -r "$BUILD_DIR/requirements.txt" \
+          --target "$BUILD_DIR/.python_packages/lib/site-packages" \
           --platform linux_x86_64 \
           --implementation cp \
           --python-version 3.11 \
@@ -78,17 +91,26 @@ jobs:
           --no-deps
         
         # Install dependencies with fallback for any missing packages
-        pip install -r requirements.txt \
-          --target .python_packages/lib/site-packages \
+        echo "🔧 Installing dependencies with fallback to universal packages..."
+        pip install -r "$BUILD_DIR/requirements.txt" \
+          --target "$BUILD_DIR/.python_packages/lib/site-packages" \
           --no-compile \
           --upgrade
         
-        # Create deployment zip (exclude venv)
-        zip -r ../release.zip ./* -x "venv/*"
+        # Deactivate virtual environment
+        deactivate
         
-        popd
+        # Remove virtual environment directory (not needed in deployment)
+        rm -rf "$BUILD_DIR/venv"
         
-        echo "✅ Package built: release.zip"
+        echo "✅ Packages installed locally"
+        
+        # Create deployment zip from clean build directory (matches deploy-clean.sh exactly)
+        cd "$BUILD_DIR"
+        zip -r "../release.zip" .
+        cd - > /dev/null
+        
+        echo "✅ Clean deployment package created: release.zip"
 
     - name: 'Deploy via ZIP Deploy to Azure Functions'
       run: |
@@ -126,4 +148,10 @@ jobs:
         fi
 
     - name: 'Deployment Success'
-      run: echo "🔥 HustleMode.ai Azure Functions deployed via ZIP Deploy successfully! STAY HARD! 💪" 
+      run: echo "🔥 HustleMode.ai Azure Functions deployed via ZIP Deploy successfully! STAY HARD! 💪"
+
+    - name: 'Cleanup Build Artifacts'
+      run: |
+        echo "🧹 Cleaning up build artifacts..."
+        rm -rf .build .temp release.zip
+        echo "✅ Build artifacts cleaned up" 
