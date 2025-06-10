@@ -96,7 +96,7 @@ jobs:
         app-name: 'hustlemode-api'
         slot-name: 'Production'
         package: '.'
-        publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_FFEB2282094642A1A8B5E3AFAE67C0DC }}
+        publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_570EFB7F49FD40F5B139C52B770A5A1C }}
 
     - name: 'Deployment Success'
       run: echo "🔥 HustleMode.ai Azure Functions deployed successfully! STAY HARD! 💪" 
