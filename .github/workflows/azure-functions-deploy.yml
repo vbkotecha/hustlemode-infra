@@ -93,5 +93,33 @@ jobs:
         
         echo "📦 ZIP Deploy completed!"
 
+    - name: 'Verify Deployment'
+      run: |
+        echo "🔍 Verifying deployment..."
+        sleep 30  # Wait for deployment to settle
+        
+        # Check if the function app is responding
+        echo "🏥 Testing health endpoint..."
+        HEALTH_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" "https://hustlemode-api.azurewebsites.net/api/health")
+        
+        if [ "$HEALTH_RESPONSE" -eq 200 ] || [ "$HEALTH_RESPONSE" -eq 404 ]; then
+          echo "✅ Function app is responding (HTTP $HEALTH_RESPONSE)"
+        else
+          echo "❌ Function app verification failed (HTTP $HEALTH_RESPONSE)"
+          echo "🔍 Checking function app status..."
+          curl -v "https://hustlemode-api.azurewebsites.net/"
+          exit 1
+        fi
+        
+        # Test webhook endpoint
+        echo "📱 Testing WhatsApp webhook endpoint..."
+        WEBHOOK_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" "https://hustlemode-api.azurewebsites.net/api/messaging/whatsapp")
+        
+        if [ "$WEBHOOK_RESPONSE" -eq 200 ] || [ "$WEBHOOK_RESPONSE" -eq 405 ]; then
+          echo "✅ WhatsApp webhook endpoint is accessible (HTTP $WEBHOOK_RESPONSE)"
+        else
+          echo "⚠️  WhatsApp webhook returned HTTP $WEBHOOK_RESPONSE (may need function key)"
+        fi
+
     - name: 'Deployment Success'
       run: echo "🔥 HustleMode.ai Azure Functions deployed successfully! STAY HARD! 💪" 
