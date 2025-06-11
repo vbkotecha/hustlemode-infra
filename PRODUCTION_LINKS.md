@@ -23,10 +23,12 @@
 ## 📱 WhatsApp Configuration
 
 ### Meta for Developers
-- **Webhook URL**: https://hustlemode-api.azurewebsites.net/api/messaging/whatsapp
+- **Webhook URL**: https://hustlemode-api.azurewebsites.net/api/messaging/whatsapp?code=gtSjj_laC1mjoon8u30eSs9KCXZl-HKqDgkLDiIw_aQTAzFuQtLgcw==
+- **Function Key**: gtSjj_laC1mjoon8u30eSs9KCXZl-HKqDgkLDiIw_aQTAzFuQtLgcw==
 - **Verify Token**: fa22d4e7-cba4-48cf-9b36-af6190bf9c67
 - **Webhook Fields**: messages ✅
 - **API Version**: v22.0
+- **⚠️ CRITICAL**: Webhook URL MUST include function key for Azure Functions authentication
 
 ### WhatsApp Business Details
 - **Phone Number**: +15556583575
@@ -100,17 +102,17 @@ AZURE_OPENAI_DEPLOYMENT_NAME=hustlemode-ai
 
 ### Webhook Verification Test
 ```bash
-curl "https://hustlemode-api.azurewebsites.net/api/messaging/whatsapp?code=your_function_key_here&hub.mode=subscribe&hub.challenge=TEST&hub.verify_token=fa22d4e7-cba4-48cf-9b36-af6190bf9c67"
+curl "https://hustlemode-api.azurewebsites.net/api/messaging/whatsapp?code=gtSjj_laC1mjoon8u30eSs9KCXZl-HKqDgkLDiIw_aQTAzFuQtLgcw==&hub.mode=subscribe&hub.challenge=TEST&hub.verify_token=fa22d4e7-cba4-48cf-9b36-af6190bf9c67"
 ```
 
 ### Health Check
 ```bash
-curl "https://hustlemode-api.azurewebsites.net/api/health?code=your_function_key_here"
+curl "https://hustlemode-api.azurewebsites.net/api/health?code=DpQDhRRmtz_p2nr9LccEXZLspZwiShCS81tHB8ze1eJRAzFuIQWOTg=="
 ```
 
 ### WhatsApp Message Simulation
 ```bash
-curl -X POST "https://hustlemode-api.azurewebsites.net/api/messaging/whatsapp?code=your_function_key_here" \
+curl -X POST "https://hustlemode-api.azurewebsites.net/api/messaging/whatsapp?code=gtSjj_laC1mjoon8u30eSs9KCXZl-HKqDgkLDiIw_aQTAzFuQtLgcw==" \
 -H "Content-Type: application/json" \
 -d '{"object":"whatsapp_business_account","entry":[{"id":"715387334407630","changes":[{"value":{"messaging_product":"whatsapp","metadata":{"display_phone_number":"15556583575","phone_number_id":"682917338218717"},"messages":[{"from":"17817470041","id":"test_msg","timestamp":"1733875200","text":{"body":"I need motivation!"},"type":"text"}]},"field":"messages"}]}]}'
 ```

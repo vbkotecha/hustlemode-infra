@@ -5,11 +5,19 @@ alwaysApply: false
 ---
 ---
 description: "Azure Functions deployment configuration rules with exact resource names and commands for HustleMode.ai"
-globs: "scripts/**/*,deployment-config.json,.github/workflows/**/*"
+globs: "scripts/**/*,deployment-config.json,.github/workflows/**/*,DEPLOYMENT.md"
 alwaysApply: false
 ---
 
 # HustleMode.ai Deployment Rules
+
+## ⚠️ CRITICAL: Documentation Synchronization
+
+**MANDATORY**: Any changes to deployment configuration MUST update both:
+- `DEPLOYMENT.md` - Complete deployment guide with examples
+- `deployment-config.json` - Authoritative configuration values
+
+**These files must ALWAYS stay synchronized** to prevent deployment issues and configuration drift.
 
 ## 🎯 Azure Configuration (Authoritative Values)
 
@@ -65,30 +73,42 @@ pip install -r requirements.txt --target .python_packages/lib/site-packages
 - ❌ Never use virtual environments for Azure Functions deployment
 - ❌ Never use `zip -r deploy.zip ./*` (misses .python_packages)
 
-## 📚 Documentation Sync Requirements
+## 🚨 MANDATORY Documentation Sync Requirements
 
-### When Files Change, Update These:
+### 🔄 Change Propagation Rules (ALWAYS REQUIRED)
 
-#### deployment-config.json → Update:
-- DEPLOYMENT.md URLs and configuration values
-- GitHub workflow app names and endpoints
-- This cursor rule if resource names change
+#### Any deployment-config.json changes → MUST UPDATE:
+- ✅ **DEPLOYMENT.md**: All URLs, configuration values, and examples
+- ✅ **GitHub workflow**: App names and endpoints
+- ✅ **PRODUCTION_LINKS.md**: Live URLs and testing commands
+- ✅ **This cursor rule**: If resource names change
 
-#### .github/workflows/azure-functions-deploy.yml → Update:
-- DEPLOYMENT.md Method 3 section
-- deployment-config.json deployment methods
-- Pipeline stage descriptions
+#### Any .github/workflows/azure-functions-deploy.yml changes → MUST UPDATE:
+- ✅ **DEPLOYMENT.md**: Method 3 (GitHub Actions) section
+- ✅ **deployment-config.json**: Deployment methods array
+- ✅ **Pipeline documentation**: Stage descriptions
 
-#### DEPLOYMENT.md → Update:
-- Last modified date
-- Verify consistency with deployment-config.json
-- Test all curl commands with current endpoints
+#### Any DEPLOYMENT.md changes → MUST UPDATE:
+- ✅ **Last modified date**: Current date
+- ✅ **deployment-config.json**: Verify all values match
+- ✅ **Test all URLs**: Ensure curl commands work with current endpoints
 
-### Documentation Standards
+### 📋 Documentation Synchronization Checklist
+
+Before committing ANY deployment changes:
+- [ ] **DEPLOYMENT.md** reflects all current configuration values
+- [ ] **deployment-config.json** contains authoritative source of truth
+- [ ] **All URLs are identical** across all files (no placeholders)
+- [ ] **Function keys are current** in all examples
+- [ ] **Dates are updated** to reflect modification time
+- [ ] **All curl commands tested** and working
+
+### Documentation Standards (STRICT REQUIREMENTS)
 - **DEPLOYMENT.md**: Must reflect current 2-stage pipeline architecture
-- **deployment-config.json**: Must match Azure Portal configuration
-- **All URLs**: Must be consistent across all files
-- **Dates**: Must be current (June 9, 2025)
+- **deployment-config.json**: Must match Azure Portal configuration exactly
+- **All URLs**: Must be consistent across all files (zero tolerance for drift)
+- **Dates**: Must be current (June 11, 2025)
+- **Function Keys**: Must be real and working (no placeholder values)
 
 ## 🔧 Deployment Methods
 
@@ -127,14 +147,22 @@ func azure functionapp publish hustlemode-api --python --build remote
 
 ## 🎯 Quality Assurance
 
-### Before Any Deployment Change:
-1. Verify all three files are consistent
-2. Test documented URLs and endpoints
-3. Ensure GitHub workflow matches documentation
-4. Validate Python packaging follows requirements
-5. Update last modified dates
+### 🚨 BEFORE ANY DEPLOYMENT CHANGE - MANDATORY CHECKLIST:
+1. **Documentation Sync**: Verify DEPLOYMENT.md and deployment-config.json are consistent
+2. **URL Testing**: Test ALL documented URLs and endpoints work with current function keys
+3. **Pipeline Match**: Ensure GitHub workflow matches documentation exactly
+4. **Python Packaging**: Validate packaging follows `.python_packages/lib/site-packages/` requirements
+5. **Date Updates**: Update last modified dates in DEPLOYMENT.md
+6. **Cross-Reference**: Check PRODUCTION_LINKS.md matches updated configuration
+7. **Function Keys**: Verify all curl examples use real, working function keys
+
+### 🚫 DEPLOYMENT BLOCKERS:
+- ❌ **Inconsistent URLs** between DEPLOYMENT.md and deployment-config.json
+- ❌ **Placeholder values** (like "your_function_key_here") in documentation
+- ❌ **Outdated function keys** in curl examples
+- ❌ **Missing documentation updates** after configuration changes
 
 ---
 **Purpose**: Single source of truth for all deployment requirements
 **Scope**: Configuration, documentation, packaging, and pipeline architecture
-**Updates**: Must be synchronized with deployment-config.json and DEPLOYMENT.md
+**⚠️ CRITICAL**: DEPLOYMENT.md and deployment-config.json MUST stay synchronized at all times

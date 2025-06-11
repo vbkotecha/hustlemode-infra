@@ -17,7 +17,9 @@
     "users_api": "https://hustlemode-api.azurewebsites.net/api/users"
   },
   "whatsapp": {
-    "webhook_url": "https://hustlemode-api.azurewebsites.net/api/messaging/whatsapp",
+    "webhook_url": "https://hustlemode-api.azurewebsites.net/api/messaging/whatsapp?code=gtSjj_laC1mjoon8u30eSs9KCXZl-HKqDgkLDiIw_aQTAzFuQtLgcw==",
+    "webhook_url_base": "https://hustlemode-api.azurewebsites.net/api/messaging/whatsapp",
+    "function_key": "gtSjj_laC1mjoon8u30eSs9KCXZl-HKqDgkLDiIw_aQTAzFuQtLgcw==",
     "verify_token": "fa22d4e7-cba4-48cf-9b36-af6190bf9c67",
     "phone_number": "+15556583575",
     "business_account_id": "715387334407630",
@@ -33,7 +35,8 @@
       "goal_related_messages",
       "general_support",
       "non_text_messages"
-    ]
+    ],
+    "authentication_note": "WhatsApp webhook URL MUST include function key parameter for Azure Functions authentication"
   },
   "deployment": {
     "github_repo": "https://github.com/vbkotecha/hustlemode-infra",

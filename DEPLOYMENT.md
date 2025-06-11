@@ -121,9 +121,10 @@ AZURE_OPENAI_DEPLOYMENT_NAME=hustlemode-ai
 
 ### Meta for Developers Setup
 1. **App Configuration**:
-   - Webhook URL: `https://hustlemode-api.azurewebsites.net/api/messaging/whatsapp`
+   - Webhook URL: `https://hustlemode-api.azurewebsites.net/api/messaging/whatsapp?code=gtSjj_laC1mjoon8u30eSs9KCXZl-HKqDgkLDiIw_aQTAzFuQtLgcw==`
    - Verify Token: `fa22d4e7-cba4-48cf-9b36-af6190bf9c67`
    - Webhook Fields: `messages` ✅
+   - **⚠️ CRITICAL**: Webhook URL MUST include the function key parameter (`?code=...`) for authentication
 
 2. **API Details**:
    - Business Account ID: `715387334407630`
@@ -237,11 +238,14 @@ az functionapp restart --name hustlemode-api --resource-group hustlemode.ai
 ```
 
 #### WhatsApp Not Responding
-1. **Verify webhook URL** in Meta for Developers
-2. **Check environment variables** in Azure Portal
-3. **Test health endpoint** with function key
-4. **Check Application Insights** for error logs
-5. **Verify function key** in URL parameters
+1. **🚨 MOST COMMON ISSUE**: Webhook URL missing function key
+   - Meta for Developers webhook URL MUST include: `?code=gtSjj_laC1mjoon8u30eSs9KCXZl-HKqDgkLDiIw_aQTAzFuQtLgcw==`
+   - Without function key: WhatsApp gets 401 Unauthorized → no message delivery
+   - Verify webhook URL in Meta for Developers includes complete URL with function key
+2. **Check environment variables** in Azure Portal (WHATSAPP_TOKEN, WHATSAPP_VERIFY_TOKEN)
+3. **Test health endpoint** with function key to ensure functions are running
+4. **Check Application Insights** for 401 authentication errors or other error logs
+5. **Verify WhatsApp Business API token** is still valid (system user tokens don't expire)
 
 #### Function Authentication Errors
 - All function calls require the function key parameter: `?code=your_function_key_here`
