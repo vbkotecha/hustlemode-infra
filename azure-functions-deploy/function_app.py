@@ -383,7 +383,7 @@ def whatsapp_webhook(req: func.HttpRequest) -> func.HttpResponse:
     arg_name="response",
     prompt="You are David Goggins. Someone just told you: '{message}'. Respond with intense motivation in your signature style. Keep it under 100 words and use catchphrases like 'STAY HARD'. Be tough but supportive.",
     max_tokens="150",
-    model="%AZURE_OPENAI_DEPLOYMENT_NAME%"
+    model="hustlemode-ai"
 )
 def generate_motivation(req: func.HttpRequest, response: str) -> func.HttpResponse:
     """Generate David Goggins-style motivation."""
@@ -427,7 +427,7 @@ def generate_motivation(req: func.HttpRequest, response: str) -> func.HttpRespon
     arg_name="response",
     prompt="Say 'Hello from HustleMode.ai! OpenAI integration is working perfectly.' in an encouraging tone.",
     max_tokens="50",
-    model="%AZURE_OPENAI_DEPLOYMENT_NAME%"
+    model="hustlemode-ai"
 )
 def test_openai(req: func.HttpRequest, response: str) -> func.HttpResponse:
     """Test OpenAI integration."""
