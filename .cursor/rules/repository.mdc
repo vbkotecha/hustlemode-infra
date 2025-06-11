@@ -101,9 +101,15 @@ rm -rf temp/
 
 ## 📝 Documentation Standards
 
+### 🚨 MANDATORY: Changelog Updates
+- **MUST** update `CHANGELOG.md` for all functional/configuration changes
+- **Required for**: API changes, bug fixes, new features, config updates, integration fixes
+- **Format**: Use action verbs (Added, Fixed, Enhanced) with date and specific details
+- **Not required for**: Comment changes, formatting, typo fixes
+
 ### Required Updates
 - Update `README.md` when architecture changes
-- Keep `CHANGELOG.md` current with all changes
+- Keep `CHANGELOG.md` current with all changes (see requirements above)
 - Document deployment processes in `DEPLOYMENT.md`
 - Maintain `PRODUCTION_LINKS.md` accuracy
 

@@ -114,6 +114,19 @@ hustlemode-infra/
 
 ## [Unreleased]
 
+### 🔧 Technical Improvements
+#### Enhanced OpenAI Logging - 2025-06-11
+- **Added** `logLevel` configuration for `Microsoft.Azure.WebJobs.Extensions.OpenAI` in `host.json`
+- **Enhanced** Application Insights logging with detailed OpenAI extension telemetry
+- **Improved** debugging capabilities for AI API calls, token usage, and integration issues
+- **Visibility** Complete OpenAI request/response flow logging for production monitoring
+
+#### OpenAI Configuration Fixes - 2025-06-11
+- **Fixed** Azure OpenAI model configuration in function decorators
+- **Replaced** placeholder `%AZURE_OPENAI_DEPLOYMENT_NAME%` with actual deployment name `hustlemode-ai`
+- **Updated** both `test_openai` and `generate_motivation` functions for proper model binding
+- **Resolved** OpenAI extension binding issues causing 500 errors
+
 ### Next Steps
 - Add user data persistence with PostgreSQL
 - Implement goal tracking and progress monitoring
