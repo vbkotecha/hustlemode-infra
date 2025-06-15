@@ -5,8 +5,14 @@ import uuid
 import requests
 from datetime import datetime
 import azure.functions as func
+from assistant import assistant_apis
+import whatsapp_api
+from constants import ASSISTANT_NOT_AVAILABLE
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.FUNCTION)
+
+# Register the assistant blueprint
+app.register_functions(assistant_apis)
 
 # ============================================================================
 # HEALTH CHECK & SYSTEM STATUS
@@ -39,7 +45,10 @@ def health_check(req: func.HttpRequest) -> func.HttpResponse:
                 "/api/goals", 
                 "/api/users",
                 "/api/messaging/whatsapp",
-                "/api/ai/motivate"
+                "/api/ai/motivate",
+                "/api/assistants/message",
+                "/api/users/{phone}/conversations",
+                "/api/users/{phone}/preferences"
             ]
         }
         
@@ -261,62 +270,21 @@ def create_user(req: func.HttpRequest) -> func.HttpResponse:
 # WHATSAPP INTEGRATION
 # ============================================================================
 
-def send_whatsapp_message(to_phone: str, message: str) -> bool:
-    """Send a message via WhatsApp Business API."""
-    
-    try:
-        whatsapp_token = os.getenv("WHATSAPP_TOKEN")
-        phone_number_id = os.getenv("WHATSAPP_PHONE_NUMBER_ID", "682917338218717")
-        
-        if not whatsapp_token:
-            logging.error("❌ WHATSAPP_TOKEN not configured")
-            return False
-        
-        url = f"https://graph.facebook.com/v18.0/{phone_number_id}/messages"
-        
-        headers = {
-            "Authorization": f"Bearer {whatsapp_token}",
-            "Content-Type": "application/json"
-        }
-        
-        payload = {
-            "messaging_product": "whatsapp",
-            "to": to_phone,
-            "type": "text",
-            "text": {
-                "body": message
-            }
-        }
-        
-        response = requests.post(url, headers=headers, json=payload, timeout=10)
-        
-        if response.status_code == 200:
-            logging.info(f"✅ WhatsApp message sent to {to_phone}")
-            return True
-        else:
-            logging.error(f"❌ WhatsApp API error: {response.status_code} - {response.text}")
-            return False
-            
-    except Exception as e:
-        logging.error(f"❌ Error sending WhatsApp message: {str(e)}")
-        return False
+# WhatsApp functions moved to whatsapp_api.py module
 
 @app.function_name("whatsapp_webhook")
 @app.route(route="messaging/whatsapp", methods=["GET", "POST"])
 def whatsapp_webhook(req: func.HttpRequest) -> func.HttpResponse:
-    """WhatsApp webhook handler with message processing and response."""
+    """WhatsApp webhook handler that forwards messages to assistant API."""
     
     logging.info('📱 WhatsApp webhook called')
     
     try:
         if req.method == "GET":
             # Handle webhook verification
-            verify_token = os.getenv("WHATSAPP_VERIFY_TOKEN")
-            mode = req.params.get("hub.mode")
-            token = req.params.get("hub.verify_token") 
-            challenge = req.params.get("hub.challenge")
+            is_verification, challenge = whatsapp_api.is_whatsapp_verification(req.params)
             
-            if mode == "subscribe" and token == verify_token:
+            if is_verification:
                 logging.info("✅ WhatsApp webhook verified successfully")
                 return func.HttpResponse(challenge, status_code=200)
             else:
@@ -330,42 +298,41 @@ def whatsapp_webhook(req: func.HttpRequest) -> func.HttpResponse:
             if not data:
                 return func.HttpResponse("OK", status_code=200)
             
-            logging.info(f"📥 Received WhatsApp data: {json.dumps(data, indent=2)}")
+            logging.info(f"📥 Received WhatsApp data")
             
-            # Process WhatsApp webhook data
-            entries = data.get("entry", [])
-            for entry in entries:
-                changes = entry.get("changes", [])
-                for change in changes:
-                    if change.get("field") == "messages":
-                        value = change.get("value", {})
-                        messages = value.get("messages", [])
+            # Extract phone and message using the WhatsApp API module
+            phone_number, message = whatsapp_api.extract_whatsapp_data(data)
+            
+            if phone_number and message:
+                logging.info(f"📥 Message from {phone_number}: {message}")
+                
+                # Send to assistant API for processing
+                try:
+                    # Use global assistant message endpoint
+                    assistant_url = f"http://localhost:7071/api/assistants/message"
+                    
+                    assistant_response = requests.post(
+                        assistant_url,
+                        json={
+                            "phone": phone_number,
+                            "message": message,
+                            "platform": "whatsapp"
+                        },
+                        timeout=30
+                    )
+                    
+                    if assistant_response.status_code == 200:
+                        result = assistant_response.json()
+                        logging.info(f"✅ Assistant handled message: {result.get('sent', False)}")
+                    else:
+                        logging.warning(f"⚠️ Assistant API issue: {assistant_response.status_code}")
+                        # Emergency fallback
+                        whatsapp_api.send_whatsapp_message(phone_number, ASSISTANT_NOT_AVAILABLE)
                         
-                        for message in messages:
-                            message_type = message.get("type")
-                            sender = message.get("from")
-                            
-                            if message_type == "text":
-                                text_content = message.get("text", {}).get("body", "")
-                                logging.info(f"📥 Received text from {sender}: {text_content}")
-                                
-                                # Generate response based on message content
-                                if any(keyword in text_content.lower() for keyword in ["motivation", "motivate", "inspire", "help", "goals"]):
-                                    response_message = f"🔥 STAY HARD! You reached out for motivation - that's already a WIN! {text_content} is just an excuse trying to hold you back. YOU are in control. YOU decide if you're going to be average or extraordinary. The only person who can stop you is YOU. Now get out there and TAKE WHAT'S YOURS! 💪"
-                                elif "goal" in text_content.lower():
-                                    response_message = "🎯 Goals without action are just dreams! What specific goal are you working on? Tell me and I'll help you create a battle plan to CRUSH it! Remember: You don't get what you wish for, you get what you WORK for. STAY HARD! 💯"
-                                elif any(greeting in text_content.lower() for greeting in ["hello", "hi", "hey", "start"]):
-                                    response_message = "💪 Welcome to HustleMode.ai! I'm your digital David Goggins, here to push you beyond your limits! Tell me what you need motivation for - goals, workouts, life challenges - and I'll give you the mental ammunition to DOMINATE! Type 'motivation' to get fired up! 🔥"
-                                else:
-                                    response_message = f"💪 I hear you! Remember: Every master was once a disaster. Every expert was once a beginner. Whatever you're facing, you've got this! Need motivation? Just ask! STAY HARD! 🔥"
-                                
-                                # Send response back to WhatsApp
-                                send_whatsapp_message(sender, response_message)
-                            
-                            else:
-                                logging.info(f"📨 Received {message_type} message from {sender}")
-                                # Send a generic response for non-text messages
-                                send_whatsapp_message(sender, "💪 I see your message! Text me your goals or say 'motivation' for some fire! STAY HARD! 🔥")
+                except Exception as assistant_error:
+                    logging.error(f"❌ Assistant API error: {str(assistant_error)}")
+                    # Emergency fallback
+                    whatsapp_api.send_whatsapp_message(phone_number, ASSISTANT_NOT_AVAILABLE)
             
             return func.HttpResponse("OK", status_code=200)
             
@@ -383,7 +350,7 @@ def whatsapp_webhook(req: func.HttpRequest) -> func.HttpResponse:
     arg_name="response",
     prompt="You are David Goggins. Someone just told you: '{message}'. Respond with intense motivation in your signature style. Keep it under 100 words and use catchphrases like 'STAY HARD'. Be tough but supportive.",
     max_tokens="150",
-    model="hustlemode-ai"
+    model="%CHAT_MODEL_DEPLOYMENT_NAME%"
 )
 def generate_motivation(req: func.HttpRequest, response: str) -> func.HttpResponse:
     """Generate David Goggins-style motivation."""
@@ -427,7 +394,7 @@ def generate_motivation(req: func.HttpRequest, response: str) -> func.HttpRespon
     arg_name="response",
     prompt="Say 'Hello from HustleMode.ai! OpenAI integration is working perfectly.' in an encouraging tone.",
     max_tokens="50",
-    model="hustlemode-ai"
+    model="%CHAT_MODEL_DEPLOYMENT_NAME%"
 )
 def test_openai(req: func.HttpRequest, response: str) -> func.HttpResponse:
     """Test OpenAI integration."""

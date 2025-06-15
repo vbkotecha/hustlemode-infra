@@ -1,0 +1,103 @@
+{
+  "name": "user_sessions",
+  "version": "1.0.0",
+  "lastUpdated": "2025-01-16",
+  "description": "Active user sessions for real-time conversation state and personality context",
+  "fields": [
+    {
+      "name": "id",
+      "type": "uuid",
+      "description": "Primary key, auto-generated UUID",
+      "nullable": false,
+      "default": "gen_random_uuid()"
+    },
+    {
+      "name": "user_id",
+      "type": "uuid",
+      "description": "Foreign key to users table",
+      "nullable": false,
+      "references": "users(id) ON DELETE CASCADE"
+    },
+    {
+      "name": "phone_number",
+      "type": "character varying(20)",
+      "description": "User's phone number for quick lookup",
+      "nullable": false
+    },
+    {
+      "name": "current_personality",
+      "type": "character varying(20)",
+      "description": "Active personality for this session",
+      "nullable": false,
+      "default": "goggins",
+      "constraints": ["goggins", "cheerleader", "comedian", "zen"]
+    },
+    {
+      "name": "session_context",
+      "type": "jsonb",
+      "description": "Current conversation context and state",
+      "nullable": true,
+      "default": "{}"
+    },
+    {
+      "name": "last_message_at",
+      "type": "timestamp with time zone",
+      "description": "Timestamp of last message in this session",
+      "nullable": false,
+      "default": "CURRENT_TIMESTAMP"
+    },
+    {
+      "name": "expires_at",
+      "type": "timestamp with time zone",
+      "description": "When this session expires (for cleanup)",
+      "nullable": false,
+      "default": "CURRENT_TIMESTAMP + INTERVAL '1 day'"
+    },
+    {
+      "name": "created_at",
+      "type": "timestamp with time zone",
+      "description": "Session creation timestamp",
+      "nullable": false,
+      "default": "CURRENT_TIMESTAMP"
+    }
+  ],
+  "indexes": [
+    {
+      "name": "user_sessions_pkey",
+      "type": "PRIMARY KEY",
+      "columns": ["id"]
+    },
+    {
+      "name": "idx_user_sessions_user_id",
+      "type": "btree",
+      "columns": ["user_id"]
+    },
+    {
+      "name": "idx_user_sessions_phone_number",
+      "type": "btree",
+      "columns": ["phone_number"]
+    },
+    {
+      "name": "idx_user_sessions_expires_at",
+      "type": "btree",
+      "columns": ["expires_at"]
+    },
+    {
+      "name": "idx_user_sessions_last_message_at",
+      "type": "btree",
+      "columns": ["last_message_at"]
+    }
+  ],
+  "constraints": [
+    {
+      "name": "user_sessions_current_personality_check",
+      "type": "CHECK",
+      "definition": "current_personality IN ('goggins', 'cheerleader', 'comedian', 'zen')"
+    },
+    {
+      "name": "user_sessions_phone_number_unique",
+      "type": "UNIQUE",
+      "columns": ["phone_number"]
+    }
+  ]
+} 
