@@ -1,291 +1,316 @@
 import json
 import logging
-import os
-import uuid
-import requests
-from datetime import datetime
 import azure.functions as func
-from assistant import assistant_apis
-import whatsapp_api
-from constants import ASSISTANT_NOT_AVAILABLE
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.FUNCTION)
 
-# Register the assistant blueprint
-app.register_functions(assistant_apis)
+# Azure Functions app configuration
 
 # ============================================================================
-# HEALTH CHECK & SYSTEM STATUS
+# HEALTH CHECK
 # ============================================================================
 
 @app.function_name("health")
 @app.route(route="health", methods=["GET"])
 def health_check(req: func.HttpRequest) -> func.HttpResponse:
-    """Comprehensive health check endpoint."""
+    """Health check endpoint."""
+    
+    health_status = {
+        "status": "healthy",
+        "message": "HustleMode.ai API is running",
+        "version": "2.0.0",
+        "platform": "Azure Functions v2 + OpenAI Extension"
+    }
+    
+    return func.HttpResponse(
+        json.dumps(health_status, indent=2),
+        status_code=200,
+        mimetype="application/json"
+    )
+
+# ============================================================================
+# ASSISTANT API - Using OpenAI Extension
+# ============================================================================
+
+@app.function_name("CreateAssistant")
+@app.route(route="assistants/{chatId}", methods=["PUT"])
+def create_assistant(req: func.HttpRequest) -> func.HttpResponse:
+    """Create AI assistant with personality instructions."""
     
     try:
-        # Check environment variables
-        openai_configured = bool(os.getenv("AZURE_OPENAI_ENDPOINT")) and bool(os.getenv("AZURE_OPENAI_KEY"))
-        whatsapp_configured = bool(os.getenv("WHATSAPP_TOKEN")) and bool(os.getenv("WHATSAPP_VERIFY_TOKEN"))
+        chatId = req.route_params.get("chatId")
+        input_json = req.get_json()
         
-        health_status = {
-            "status": "healthy",
-            "message": "HustleMode.ai API is running",
-            "version": "1.0.0",
-            "platform": "Azure Functions v2",
-            "timestamp": datetime.utcnow().isoformat(),
-            "features": {
-                "goal_management": True,
-                "user_management": True,
-                "whatsapp_integration": whatsapp_configured,
-                "ai_services": openai_configured
-            },
-            "endpoints": [
-                "/api/health",
-                "/api/goals", 
-                "/api/users",
-                "/api/messaging/whatsapp",
-                "/api/ai/motivate",
-                "/api/assistants/message",
-                "/api/users/{phone}/conversations",
-                "/api/users/{phone}/preferences"
-            ]
-        }
+        # Get personality from input (default to Goggins)
+        personality = input_json.get("personality", "goggins") if input_json else "goggins"
         
-        status_code = 200 if openai_configured else 503
+        logging.info(f"Creating assistant {chatId} with {personality} personality")
+        
+        # Store the personality in a simple format (we'll use this in message processing)
+        # In a real implementation, you'd store this in Azure Storage/Database
         
         return func.HttpResponse(
-            json.dumps(health_status, indent=2),
-            status_code=status_code,
+            json.dumps({"chatId": chatId, "personality": personality, "status": "created"}),
+            status_code=200,
             mimetype="application/json"
         )
         
     except Exception as e:
-        logging.error(f"❌ Health check failed: {str(e)}")
+        logging.error(f"❌ Error creating assistant: {str(e)}")
         return func.HttpResponse(
-            json.dumps({
-                "status": "unhealthy",
-                "error": str(e),
-                "timestamp": datetime.utcnow().isoformat()
-            }),
-            status_code=503,
-            mimetype="application/json"
-        )
-
-# ============================================================================
-# GOALS MANAGEMENT API
-# ============================================================================
-
-@app.function_name("create_goal")
-@app.route(route="goals", methods=["POST"])
-def create_goal(req: func.HttpRequest) -> func.HttpResponse:
-    """Create a new goal for a user."""
-    
-    try:
-        data = req.get_json()
-        
-        if not data:
-            return func.HttpResponse(
-                json.dumps({"error": "Request body required"}),
-                status_code=400,
-                mimetype="application/json"
-            )
-        
-        # Basic validation
-        required_fields = ["title", "description", "user_id"]
-        for field in required_fields:
-            if field not in data:
-                return func.HttpResponse(
-                    json.dumps({"error": f"Missing required field: {field}"}),
-                    status_code=400,
-                    mimetype="application/json"
-                )
-        
-        # Create goal object
-        goal = {
-            "goal_id": str(uuid.uuid4()),
-            "title": data["title"],
-            "description": data["description"],
-            "user_id": data["user_id"],
-            "target_date": data.get("target_date"),
-            "priority": data.get("priority", "medium"),
-            "status": "active",
-            "progress": 0,
-            "created_at": datetime.utcnow().isoformat()
-        }
-        
-        logging.info(f"📝 Created goal: {goal['goal_id']} for user: {goal['user_id']}")
-        
-        return func.HttpResponse(
-            json.dumps({
-                "success": True,
-                "goal": goal,
-                "message": "Goal created successfully"
-            }),
-            status_code=201,
-            mimetype="application/json"
-        )
-        
-    except Exception as e:
-        logging.error(f"❌ Error creating goal: {str(e)}")
-        return func.HttpResponse(
-            json.dumps({"error": str(e)}),
+            json.dumps({"error": "Failed to create assistant"}),
             status_code=500,
             mimetype="application/json"
         )
 
-@app.function_name("get_goals")
-@app.route(route="goals", methods=["GET"])
-def get_goals(req: func.HttpRequest) -> func.HttpResponse:
-    """Get goals for a user."""
+@app.function_name("PostMessage")
+@app.route(route="assistants/{chatId}", methods=["POST"])
+def post_message(req: func.HttpRequest) -> func.HttpResponse:
+    """Send message to AI assistant and return response."""
     
     try:
-        user_id = req.params.get('user_id')
+        import os
+        from openai import AzureOpenAI
         
-        if not user_id:
+        chatId = req.route_params.get("chatId")
+        input_json = req.get_json()
+        
+        if not input_json or "message" not in input_json:
             return func.HttpResponse(
-                json.dumps({"error": "user_id parameter required"}),
+                json.dumps({"error": "Message is required"}),
                 status_code=400,
                 mimetype="application/json"
             )
         
-        # Mock response for now - TODO: Connect to database
-        goals = [
-            {
-                "goal_id": "goal_1",
-                "title": "Run 5K",
-                "description": "Complete a 5K run in under 30 minutes",
-                "user_id": user_id,
-                "status": "active",
-                "progress": 60
-            }
-        ]
+        user_message = input_json["message"]
+        
+        # Get personality from request body, default to goggins
+        personality = input_json.get("personality", "goggins")
+        
+        # Define personality instructions
+        personality_instructions = {
+            "goggins": """You are David Goggins, the ultimate mental toughness coach. Your role is to provide intense, no-nonsense motivation and accountability.
+
+Core principles:
+- Push people beyond their comfort zone
+- No excuses, no shortcuts
+- Mental toughness is everything
+- Pain is temporary, quitting lasts forever
+- Use your signature phrases like "STAY HARD", "Who's gonna carry the boats?", "Good"
+
+When users share their goals or challenges:
+1. Acknowledge their courage to reach out
+2. Challenge their mindset if they're making excuses
+3. Provide specific, actionable advice
+4. End with powerful motivation
+
+Keep responses under 200 words but pack maximum impact.
+Be tough but supportive - you're here to help them win.""",
+            
+            "zen": """You are a wise Zen master who provides calm, mindful guidance. Your role is to offer peaceful wisdom and balanced perspective on goals and challenges.
+
+Core principles:
+- Speak with calm, centered wisdom
+- Focus on inner peace and balance
+- Use metaphors from nature and meditation
+- Emphasize the journey over the destination
+- Help find clarity through mindfulness
+
+Keep responses serene, wise, and under 200 words.
+The path to success begins with inner peace.""",
+            
+            "cheerleader": """You are an enthusiastic, positive cheerleader coach who celebrates every win and encourages through setbacks. Your role is to provide uplifting, energetic motivation that makes people feel capable and supported.
+
+Core principles:
+- Celebrate every small win with genuine excitement
+- Use lots of emojis and exclamation points! 
+- Turn setbacks into comebacks with positive reframing
+- Focus on what they CAN do, not what they can't
+- Use encouraging phrases like "You've got this!", "Amazing progress!", "I believe in you!"
+
+When users share their goals or challenges:
+1. Celebrate their courage to share with you
+2. Highlight their strengths and past successes
+3. Break big goals into exciting, achievable steps
+4. End with enthusiastic encouragement
+
+Keep responses upbeat, supportive, and under 200 words.
+Every step forward deserves celebration! 🎉""",
+            
+            "comedian": """You are a witty, humorous motivational coach who uses laughter to inspire and help people overcome challenges. Your role is to provide motivation through humor, clever observations, and light-hearted perspectives.
+
+Core principles:
+- Use appropriate humor to lighten heavy situations
+- Make clever observations about human nature and habits
+- Use funny analogies and metaphors
+- Help people laugh at their own excuses and fears
+- Keep it positive - humor should uplift, not tear down
+
+When users share their goals or challenges:
+1. Find the humor in the situation (gently!)
+2. Use funny analogies to reframe their perspective
+3. Make them laugh at their own excuses
+4. Provide actionable advice wrapped in humor
+
+Keep responses funny but genuinely helpful, under 200 words.
+Laughter is the best medicine, but action is the best cure! 😄"""
+        }
+        
+        system_message = personality_instructions.get(personality, personality_instructions["goggins"])
+        
+        # Initialize Azure OpenAI client (same as test_openai.py)
+        client = AzureOpenAI(
+            api_key=os.environ["AZURE_OPENAI_API_KEY"],
+            api_version="2024-02-01",
+            azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"]
+        )
+        
+        # Make the completion request
+        response = client.chat.completions.create(
+            model="gpt-4o",  # Direct model name like test_openai.py
+            messages=[
+                {"role": "system", "content": system_message},
+                {"role": "user", "content": user_message}
+            ],
+            max_tokens=200
+        )
+        
+        assistant_response = response.choices[0].message.content
+        
+        logging.info(f"🤖 AI assistant responded to chat {chatId}")
         
         return func.HttpResponse(
             json.dumps({
-                "success": True,
-                "goals": goals,
-                "count": len(goals)
+                "chatId": chatId,
+                "response": assistant_response,
+                "success": True
             }),
             status_code=200,
             mimetype="application/json"
         )
         
     except Exception as e:
-        logging.error(f"❌ Error fetching goals: {str(e)}")
+        logging.error(f"❌ Error in post_message: {str(e)}")
         return func.HttpResponse(
-            json.dumps({"error": str(e)}),
+            json.dumps({"error": f"Failed to process message: {str(e)}"}),
             status_code=500,
             mimetype="application/json"
         )
 
-@app.function_name("update_goal_progress")
-@app.route(route="goals/{goal_id}/progress", methods=["POST"])
-def update_goal_progress(req: func.HttpRequest) -> func.HttpResponse:
-    """Update progress for a specific goal."""
+@app.function_name("GetChatState")
+@app.route(route="assistants/{chatId}", methods=["GET"])
+def get_chat_state(req: func.HttpRequest) -> func.HttpResponse:
+    """Get chat conversation history."""
     
     try:
-        goal_id = req.route_params.get('goal_id')
-        data = req.get_json()
+        chatId = req.route_params.get("chatId")
         
-        if not data or 'progress' not in data:
-            return func.HttpResponse(
-                json.dumps({"error": "Progress value required"}),
-                status_code=400,
-                mimetype="application/json"
-            )
-        
-        progress = data['progress']
-        
-        logging.info(f"📈 Updated goal {goal_id} progress to {progress}%")
-        
+        # For now, return simple status (in real app, retrieve from storage)
         return func.HttpResponse(
             json.dumps({
-                "success": True,
-                "goal_id": goal_id,
-                "progress": progress,
-                "message": "Progress updated successfully"
+                "chatId": chatId,
+                "messages": [],
+                "totalMessages": 0,
+                "status": "Chat history not implemented yet",
+                "success": True
             }),
             status_code=200,
             mimetype="application/json"
         )
         
     except Exception as e:
-        logging.error(f"❌ Error updating progress: {str(e)}")
+        logging.error(f"❌ Error in get_chat_state: {str(e)}")
         return func.HttpResponse(
-            json.dumps({"error": str(e)}),
+            json.dumps({"error": "Failed to retrieve chat state"}),
             status_code=500,
             mimetype="application/json"
         )
 
 # ============================================================================
-# USER MANAGEMENT API
+# SIMPLE COMPLETION ENDPOINT (for testing)
 # ============================================================================
 
-@app.function_name("create_user")
-@app.route(route="users", methods=["POST"])
-def create_user(req: func.HttpRequest) -> func.HttpResponse:
-    """Create a new user."""
+@app.function_name("ask")
+@app.route(route="ask", methods=["POST"])
+def ask(req: func.HttpRequest) -> func.HttpResponse:
+    """Simple ask completion endpoint for testing."""
     
     try:
-        data = req.get_json()
+        import os
+        from openai import AzureOpenAI
         
-        if not data:
+        # Get the prompt from request
+        data = req.get_json()
+        prompt = data.get("prompt", "")
+        
+        if not prompt:
             return func.HttpResponse(
-                json.dumps({"error": "Request body required"}),
+                json.dumps({"error": "Prompt is required"}),
                 status_code=400,
                 mimetype="application/json"
             )
         
-        # Create user object
-        user = {
-            "user_id": str(uuid.uuid4()),
-            "name": data.get("name", ""),
-            "phone_number": data.get("phone_number", ""),
-            "created_at": datetime.utcnow().isoformat(),
-            "is_active": True
-        }
+        # Use same configuration as test_openai.py
+        client = AzureOpenAI(
+            api_key=os.environ["AZURE_OPENAI_API_KEY"],
+            api_version="2024-02-01",
+            azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"]
+        )
         
-        logging.info(f"👤 Created user: {user['user_id']} - {user['name']}")
+        # Make the completion request
+        response = client.chat.completions.create(
+            model="gpt-4o",  # Direct model name like test_openai.py
+            messages=[
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=500
+        )
+        
+        content = response.choices[0].message.content
+        
+        logging.info(f"✅ Ask endpoint successful for prompt: {prompt[:50]}...")
         
         return func.HttpResponse(
             json.dumps({
-                "success": True,
-                "user": user,
-                "message": "User created successfully"
+                "response": content,
+                "success": True
             }),
-            status_code=201,
+            status_code=200,
             mimetype="application/json"
         )
         
     except Exception as e:
-        logging.error(f"❌ Error creating user: {str(e)}")
+        logging.error(f"❌ Error in ask: {str(e)}")
         return func.HttpResponse(
-            json.dumps({"error": str(e)}),
+            json.dumps({
+                "response": "STAY HARD! Even when tech fails, your determination doesn't!",
+                "success": False,
+                "error": str(e)
+            }),
             status_code=500,
             mimetype="application/json"
         )
 
 # ============================================================================
-# WHATSAPP INTEGRATION
+# WHATSAPP WEBHOOK (Simple passthrough to assistant)
 # ============================================================================
-
-# WhatsApp functions moved to whatsapp_api.py module
 
 @app.function_name("whatsapp_webhook")
 @app.route(route="messaging/whatsapp", methods=["GET", "POST"])
 def whatsapp_webhook(req: func.HttpRequest) -> func.HttpResponse:
-    """WhatsApp webhook handler that forwards messages to assistant API."""
+    """WhatsApp webhook handler."""
     
     logging.info('📱 WhatsApp webhook called')
     
     try:
         if req.method == "GET":
-            # Handle webhook verification
-            is_verification, challenge = whatsapp_api.is_whatsapp_verification(req.params)
+            # Webhook verification
+            verify_token = req.params.get('hub.verify_token')
+            challenge = req.params.get('hub.challenge')
             
-            if is_verification:
-                logging.info("✅ WhatsApp webhook verified successfully")
+            # You should validate the verify_token here
+            if verify_token == "your_verify_token":  # Replace with your actual token
+                logging.info("✅ WhatsApp webhook verified")
                 return func.HttpResponse(challenge, status_code=200)
             else:
                 logging.warning("❌ WhatsApp webhook verification failed")
@@ -298,128 +323,31 @@ def whatsapp_webhook(req: func.HttpRequest) -> func.HttpResponse:
             if not data:
                 return func.HttpResponse("OK", status_code=200)
             
-            logging.info(f"📥 Received WhatsApp data")
+            logging.info(f"📥 Received WhatsApp data: {json.dumps(data)}")
             
-            # Extract phone and message using the WhatsApp API module
-            phone_number, message = whatsapp_api.extract_whatsapp_data(data)
-            
-            if phone_number and message:
-                logging.info(f"📥 Message from {phone_number}: {message}")
-                
-                # Send to assistant API for processing
-                try:
-                    # Use global assistant message endpoint
-                    assistant_url = f"http://localhost:7071/api/assistants/message"
-                    
-                    assistant_response = requests.post(
-                        assistant_url,
-                        json={
-                            "phone": phone_number,
-                            "message": message,
-                            "platform": "whatsapp"
-                        },
-                        timeout=30
-                    )
-                    
-                    if assistant_response.status_code == 200:
-                        result = assistant_response.json()
-                        logging.info(f"✅ Assistant handled message: {result.get('sent', False)}")
-                    else:
-                        logging.warning(f"⚠️ Assistant API issue: {assistant_response.status_code}")
-                        # Emergency fallback
-                        whatsapp_api.send_whatsapp_message(phone_number, ASSISTANT_NOT_AVAILABLE)
-                        
-                except Exception as assistant_error:
-                    logging.error(f"❌ Assistant API error: {str(assistant_error)}")
-                    # Emergency fallback
-                    whatsapp_api.send_whatsapp_message(phone_number, ASSISTANT_NOT_AVAILABLE)
+            # Extract message details (simplified - you'll need to implement proper parsing)
+            try:
+                if "entry" in data and len(data["entry"]) > 0:
+                    entry = data["entry"][0]
+                    if "changes" in entry and len(entry["changes"]) > 0:
+                        change = entry["changes"][0]
+                        if "value" in change and "messages" in change["value"]:
+                            messages = change["value"]["messages"]
+                            if len(messages) > 0:
+                                message = messages[0]
+                                phone_number = message["from"]
+                                text = message.get("text", {}).get("body", "")
+                                
+                                logging.info(f"📥 Message from {phone_number}: {text}")
+                                
+                                # TODO: Send to assistant API
+                                # For now, just log it
+                                
+            except Exception as parse_error:
+                logging.error(f"❌ Error parsing WhatsApp message: {str(parse_error)}")
             
             return func.HttpResponse("OK", status_code=200)
             
     except Exception as e:
         logging.error(f"❌ Error in WhatsApp webhook: {str(e)}")
-        return func.HttpResponse("Error", status_code=500)
-
-# ============================================================================
-# AI SERVICES
-# ============================================================================
-
-@app.function_name("generate_motivation")
-@app.route(route="ai/motivate", methods=["POST"])
-@app.text_completion_input(
-    arg_name="response",
-    prompt="You are David Goggins. Someone just told you: '{message}'. Respond with intense motivation in your signature style. Keep it under 100 words and use catchphrases like 'STAY HARD'. Be tough but supportive.",
-    max_tokens="150",
-    model="%CHAT_MODEL_DEPLOYMENT_NAME%"
-)
-def generate_motivation(req: func.HttpRequest, response: str) -> func.HttpResponse:
-    """Generate David Goggins-style motivation."""
-    
-    try:
-        # Parse the OpenAI response
-        response_json = json.loads(response)
-        content = response_json.get("content", "STAY HARD! No excuses!")
-        
-        logging.info(f'🔥 Generated Goggins motivation')
-        
-        return func.HttpResponse(
-            json.dumps({
-                "success": True,
-                "motivation": content,
-                "source": "David Goggins AI"
-            }),
-            status_code=200,
-            mimetype="application/json"
-        )
-        
-    except Exception as e:
-        logging.error(f'❌ Error in motivate function: {str(e)}')
-        return func.HttpResponse(
-            json.dumps({
-                "success": False,
-                "motivation": "STAY HARD! Even when the tech fails, you don't quit!",
-                "error": "Fallback motivation"
-            }),
-            status_code=500,
-            mimetype="application/json"
-        )
-
-# ============================================================================
-# TESTING ENDPOINTS
-# ============================================================================
-
-@app.function_name("test_openai")
-@app.route(route="test/openai", methods=["GET"])
-@app.text_completion_input(
-    arg_name="response",
-    prompt="Say 'Hello from HustleMode.ai! OpenAI integration is working perfectly.' in an encouraging tone.",
-    max_tokens="50",
-    model="%CHAT_MODEL_DEPLOYMENT_NAME%"
-)
-def test_openai(req: func.HttpRequest, response: str) -> func.HttpResponse:
-    """Test OpenAI integration."""
-    
-    try:
-        response_json = json.loads(response)
-        content = response_json.get("content", "OpenAI test response")
-        
-        return func.HttpResponse(
-            json.dumps({
-                "success": True,
-                "openai_response": content,
-                "test_status": "✅ OpenAI integration working"
-            }),
-            status_code=200,
-            mimetype="application/json"
-        )
-        
-    except Exception as e:
-        return func.HttpResponse(
-            json.dumps({
-                "success": False,
-                "error": str(e),
-                "test_status": "❌ OpenAI integration failed"
-            }),
-            status_code=500,
-            mimetype="application/json"
-        ) 
+        return func.HttpResponse("Error", status_code=500) 

@@ -47,7 +47,7 @@
       "GitHub Actions (2-stage pipeline: anti-bloat → deploy with Python packaging + verification) - Direct ZIP Deploy"
     ],
     "source_directory": "azure-functions-deploy",
-    "function_key": "your_function_key_here",
+    "function_key": "PLACEHOLDER_FUNCTION_KEY",
     "deployment_command": "cd azure-functions-deploy && func azure functionapp publish hustlemode-api --python --build remote"
   },
   "database": {
@@ -58,32 +58,46 @@
   "ai_services": {
     "azure_openai": {
       "endpoint": "https://hustlemode-ai.openai.azure.com/",
-      "deployment_name": "hustlemode-ai",
-      "model": "gpt-4",
-      "status": "configured_ready_for_activation"
+      "deployment_name": "gpt-4o",
+      "model": "gpt-4o",
+      "status": "ACTIVE_AND_DEPLOYED"
+    },
+    "personality_system": {
+      "implementation": "direct_openai_calls",
+      "personalities": ["goggins", "zen", "cheerleader", "comedian"],
+      "default_personality": "goggins",
+      "personality_selection": "via_request_body_parameter",
+      "conversation_memory": "stateless_currently"
     },
     "intelligent_responses": {
       "greeting_detection": ["hello", "hi", "hey", "start"],
       "motivation_triggers": ["motivation", "motivate", "inspire", "help", "goals"],
       "goal_triggers": ["goal", "goals"],
       "fallback": "general_support_message",
-      "personality": "david_goggins_authentic"
+      "personalities_available": {
+        "goggins": "tough_love_coach_stay_hard",
+        "zen": "mindful_guide_inner_peace",
+        "cheerleader": "positive_encourager_celebrate_wins",
+        "comedian": "humorous_motivator_laughter_therapy"
+      }
     }
   },
   "status": {
-    "last_updated": "2025-06-09",
-    "deployment_status": "LIVE_AND_INTELLIGENT",
+    "last_updated": "2025-01-16",
+    "deployment_status": "LIVE_WITH_4_PERSONALITIES",
     "service_health": "OPERATIONAL",
     "webhook_verified": true,
     "function_app_running": true,
     "intelligent_responses": true,
+    "personality_system": "LIVE_4_PERSONALITIES",
+    "openai_implementation": "DIRECT_SDK_CALLS",
     "whatsapp_token_type": "SYSTEM_USER_TOKEN",
     "whatsapp_token_updated": "2025-06-10",
     "whatsapp_token_expires": "NEVER",
-    "openai_integration": "CONFIGURED_READY",
-    "architecture": "Azure Functions v2 (Consumption Plan)",
+    "openai_integration": "ACTIVE_DIRECT_CALLS",
+    "architecture": "Azure Functions v2 + Direct OpenAI (Consumption Plan)",
     "repository_status": "CLEAN",
-    "mvp_status": "COMPLETED",
+    "mvp_status": "ENHANCED_WITH_4_PERSONALITIES",
     "response_time": "< 2 seconds",
     "scalability": "unlimited_concurrent_users",
     "cost_model": "pay_per_execution",

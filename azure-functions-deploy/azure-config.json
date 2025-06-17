@@ -1,0 +1,18 @@
+[
+  {
+    "name": "AZURE_OPENAI_ENDPOINT",
+    "value": "https://hustlemode-ai.openai.azure.com/"
+  },
+  {
+    "name": "AZURE_OPENAI_API_KEY",
+    "value": "PLACEHOLDER_AZURE_OPENAI_KEY"
+  },
+  {
+    "name": "CHAT_MODEL_DEPLOYMENT_NAME",
+    "value": "gpt-4o"
+  },
+  {
+    "name": "AZURE_OPENAI_CHAT_DEPLOYMENT_NAME",
+    "value": "gpt-4o"
+  }
+] 

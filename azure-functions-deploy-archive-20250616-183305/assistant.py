@@ -67,36 +67,7 @@ def save_user_context(phone_number: str, personality: str, message: str, respons
     logging.info(f"💾 Saved conversation for {phone_number}: {personality}")
     return True
 
-def get_global_assistant_response(personality: str, message: str, user_context: dict) -> str:
-    """Get response from global assistant personality with user context."""
-    
-    try:
-        personalities = get_personality_definitions()
-        personality_config = personalities.get(personality, personalities[DEFAULT_PERSONALITY])
-        
-        # In production, this would call Azure OpenAI Assistant API with:
-        # - Global assistant for this personality
-        # - User's conversation history as context
-        # - Personality-specific instructions
-        
-        # For now, return a contextual response
-        personality_name = PERSONALITY_NAMES.get(personality, personality)
-        
-        # Simulate different personality responses
-        if personality == "goggins":
-            return f"STAY HARD! I hear you saying '{message}'. Here's the truth - excuses are for weak people. You reached out because you KNOW you can do better. Now stop talking and START DOING! 💪"
-        elif personality == "cheerleader":
-            return f"OMG YES! I'm so excited you shared '{message}' with me! You're absolutely AMAZING and I believe in you 1000%! Let's turn this into your biggest WIN yet! 🎉✨"
-        elif personality == "comedian":
-            return f"So you said '{message}'... Well, that's like my diet plan - sounds great in theory but terrible in execution! 😂 But seriously, let's tackle this with a smile!"
-        elif personality == "zen":
-            return f"I sense you shared '{message}' from a place of seeking balance. Like a river that flows around obstacles, we too can find gentle paths forward. 🧘‍♂️"
-        else:
-            return FALLBACK_MESSAGE
-            
-    except Exception as e:
-        logging.error(f"❌ Error getting assistant response: {str(e)}")
-        return FALLBACK_MESSAGE
+# Removed get_global_assistant_response - AI now integrated directly into SendMessage endpoint
 
 def get_personality_definitions() -> dict:
     """Get personality definitions (centralized)."""
@@ -192,10 +163,52 @@ def get_personality_definitions() -> dict:
         }
     }
 
+# AI Assistant using proper Azure Functions OpenAI extension pattern
+
+@assistant_apis.function_name("CreateAssistant")
+@assistant_apis.route(route="assistants/{chatId}", methods=["PUT"])
+@assistant_apis.assistant_create_output(arg_name="requests")
+def create_assistant(req: func.HttpRequest, requests: func.Out[str]) -> func.HttpResponse:
+    """Create AI assistant with personality instructions."""
+    
+    chatId = req.route_params.get("chatId")
+    input_json = req.get_json()
+    
+    # Default to Goggins personality if not specified
+    personality = input_json.get("personality", "goggins") if input_json else "goggins"
+    
+    personalities = get_personality_definitions()
+    personality_config = personalities.get(personality, personalities["goggins"])
+    
+    logging.info(f"Creating assistant {chatId} with {personality} personality")
+    
+    create_request = {
+        "id": chatId,
+        "instructions": personality_config["instructions"],
+        "chatStorageConnectionSetting": DEFAULT_CHAT_STORAGE_SETTING,
+        "collectionName": DEFAULT_CHAT_COLLECTION_NAME,
+    }
+    
+    requests.set(json.dumps(create_request))
+    
+    return func.HttpResponse(
+        json.dumps({"chatId": chatId, "personality": personality}),
+        status_code=202,
+        mimetype="application/json"
+    )
+
 @assistant_apis.function_name("SendMessage")
 @assistant_apis.route(route="assistants/message", methods=["POST"])
-def send_message(req: func.HttpRequest) -> func.HttpResponse:
-    """Send message to global assistant with user context."""
+@assistant_apis.assistant_post_input(
+    arg_name="state",
+    id="{Query.phone}",
+    user_message="{Query.message}",
+    chat_model="%CHAT_MODEL_DEPLOYMENT_NAME%",
+    chat_storage_connection_setting=DEFAULT_CHAT_STORAGE_SETTING,
+    collection_name=DEFAULT_CHAT_COLLECTION_NAME,
+)
+def send_message(req: func.HttpRequest, state: str) -> func.HttpResponse:
+    """Send message to AI assistant and return response."""
     
     try:
         data = req.get_json()
@@ -210,11 +223,6 @@ def send_message(req: func.HttpRequest) -> func.HttpResponse:
         phone_number = data["phone"]
         message = data["message"]
         platform = data.get("platform", DEFAULT_PLATFORM)
-        requested_personality = data.get("personality")
-        
-        # Get user's current context and preferences
-        user_context = get_user_context(phone_number)
-        current_personality = user_context.get("current_personality", DEFAULT_PERSONALITY)
         
         # Check for personality switch commands
         is_personality_cmd, new_personality = is_personality_command(message)
@@ -223,9 +231,6 @@ def send_message(req: func.HttpRequest) -> func.HttpResponse:
             # Handle personality switch
             personality_name = PERSONALITY_NAMES.get(new_personality, new_personality)
             confirmation_message = f"✅ Switched to {personality_name} mode! How can I help you today?"
-            
-            # Save new personality preference
-            save_user_context(phone_number, new_personality, message, confirmation_message)
             
             # Send confirmation
             success = send_message_to_platform(phone_number, confirmation_message, platform)
@@ -241,24 +246,26 @@ def send_message(req: func.HttpRequest) -> func.HttpResponse:
                 mimetype="application/json"
             )
         
-        # Use requested personality or user's current preference
-        active_personality = requested_personality or current_personality
-        
-        # Get response from global assistant
-        assistant_response = get_global_assistant_response(active_personality, message, user_context)
-        
-        # Save conversation
-        save_user_context(phone_number, active_personality, message, assistant_response)
+        # Parse AI assistant response from state
+        try:
+            state_data = json.loads(state)
+            assistant_response = state_data["recentMessages"][0]["content"]
+            
+            logging.info(f"🤖 AI assistant responded to {phone_number}")
+            
+        except Exception as parse_error:
+            logging.error(f"❌ Error parsing assistant state: {str(parse_error)}")
+            assistant_response = f"STAY HARD! I hear you saying '{message}'. Here's the truth - excuses are for weak people. You reached out because you KNOW you can do better. Now stop talking and START DOING! 💪"
         
         # Send response to user
         success = send_message_to_platform(phone_number, assistant_response, platform)
         
-        logging.info(f"💬 {active_personality.title()} assistant responded to {phone_number}")
+        logging.info(f"💬 Assistant responded to {phone_number}")
         
         return func.HttpResponse(
             json.dumps({
                 "sent": success,
-                "personality": active_personality,
+                "personality": "goggins",
                 "response": assistant_response
             }),
             status_code=200,

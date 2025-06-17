@@ -1,19 +1,20 @@
 # HustleMode.ai Production Reference
 
-## 🚀 Live Bot Information
-- **WhatsApp Number**: +15556583575
-- **Bot Status**: ✅ LIVE and responding with intelligent, contextual responses
-- **Intelligence Level**: Smart message processing with intent detection
-- **Last Verified**: June 10, 2025
+## 🚀 Live AI Coaching System Information
+- **API Status**: ✅ LIVE with 4-Personality AI System
+- **Personalities**: Goggins (tough love), Zen (mindful), Cheerleader (positive), Comedian (humorous)
+- **AI Integration**: Direct OpenAI GPT-4 responses via Azure OpenAI SDK
+- **Intelligence Level**: Real-time AI-generated coaching responses with personality consistency
+- **Last Updated**: January 16, 2025
 
 ## 🔗 Production URLs
 
 ### Main Application
 - **Function App**: https://hustlemode-api.azurewebsites.net/
-- **Health Check**: https://hustlemode-api.azurewebsites.net/api/health
+- **Health Check**: https://hustlemode-api.azurewebsites.net/api/health?code=FUNCTION_KEY_HERE
+- **Simple Ask API**: https://hustlemode-api.azurewebsites.net/api/ask?code=FUNCTION_KEY_HERE
+- **Assistant API**: https://hustlemode-api.azurewebsites.net/api/assistants/{chatId}?code=FUNCTION_KEY_HERE
 - **WhatsApp Webhook**: https://hustlemode-api.azurewebsites.net/api/messaging/whatsapp
-- **OpenAI Test**: https://hustlemode-api.azurewebsites.net/api/test/openai
-- **AI Motivation**: https://hustlemode-api.azurewebsites.net/api/ai/motivate
 
 ### Azure Portal Links
 - **Function App**: https://portal.azure.com/#resource/subscriptions/346876ba-71e4-417a-a63a-9a42f434a0ae/resourceGroups/hustlemode.ai/providers/Microsoft.Web/sites/hustlemode-api
@@ -47,27 +48,33 @@ AZURE_OPENAI_KEY=your_azure_openai_api_key_here
 AZURE_OPENAI_DEPLOYMENT_NAME=hustlemode-ai
 ```
 
-## 🤖 Intelligent Bot Response System
+## 🎭 4-Personality AI Coaching System
 
-### 1. Greeting Messages
-**Triggers**: "hello", "hi", "hey", "start"
-**Response**: 💪 Welcome to HustleMode.ai! I'm your digital David Goggins...
+### 🔥 Goggins (Tough Love Coach)
+**API**: `POST /api/assistants/{chatId}?code=...` with `{"message": "...", "personality": "goggins"}`
+**Style**: STAY HARD mentality, no-excuse accountability, military discipline
+**Example**: "QUIT?! That's what your weak mind wants! Get back in there and STAY HARD! 💪"
 
-### 2. Motivation Requests
-**Triggers**: "motivation", "motivate", "inspire", "help", "goals"
-**Response**: 🔥 STAY HARD! You reached out for motivation - that's already a WIN!...
+### 🧘 Zen (Mindful Guide)  
+**API**: `POST /api/assistants/{chatId}?code=...` with `{"message": "...", "personality": "zen"}`
+**Style**: Calm wisdom, nature metaphors, balanced perspective
+**Example**: "Like a river meeting a boulder, we can flow around obstacles. Small steps still lead to the summit. 🍃"
 
-### 3. Goal-Related Messages
-**Triggers**: "goal", "goals"
-**Response**: 🎯 Goals without action are just dreams! What specific goal are you working on?...
+### 📣 Cheerleader (Positive Encourager)
+**API**: `POST /api/assistants/{chatId}?code=...` with `{"message": "...", "personality": "cheerleader"}`  
+**Style**: Enthusiastic celebration, positive reinforcement, high energy
+**Example**: "Hey superstar! You've been SHOWING UP! That's incredible! Let's make this FUN again! ✨"
 
-### 4. General Support
-**Triggers**: Any other text message
-**Response**: 💪 I hear you! Remember: Every master was once a disaster...
+### 😄 Comedian (Humorous Motivator)
+**API**: `POST /api/assistants/{chatId}?code=...` with `{"message": "...", "personality": "comedian"}`
+**Style**: Laughter therapy, reframes challenges with humor, light-hearted coaching  
+**Example**: "Your couch is very persuasive! But your future self is plotting revenge. Let's earn that pizza! 🍕💪"
 
-### 5. Non-Text Messages
-**Triggers**: Images, videos, audio, etc.
-**Response**: 💪 I see your message! Text me your goals or say 'motivation' for some fire!
+### 🚀 API Features
+- **Real-time AI**: Direct OpenAI GPT-4 responses
+- **Personality Consistency**: Each coach maintains character
+- **Dynamic Responses**: Never the same response twice
+- **Stateless Design**: Simple API calls with personality parameter
 
 ## 🏗️ Infrastructure Details
 
@@ -98,23 +105,46 @@ AZURE_OPENAI_DEPLOYMENT_NAME=hustlemode-ai
 - **Performance Metrics**: Response times, success rates
 - **Real-time Monitoring**: Azure Portal function monitoring
 
-## 📊 Testing Commands
-
-### Webhook Verification Test
-```bash
-curl "https://hustlemode-api.azurewebsites.net/api/messaging/whatsapp?code=gtSjj_laC1mjoon8u30eSs9KCXZl-HKqDgkLDiIw_aQTAzFuQtLgcw==&hub.mode=subscribe&hub.challenge=TEST&hub.verify_token=fa22d4e7-cba4-48cf-9b36-af6190bf9c67"
-```
+## 📊 Testing Commands - 4 Personality System
 
 ### Health Check
 ```bash
-curl "https://hustlemode-api.azurewebsites.net/api/health?code=DpQDhRRmtz_p2nr9LccEXZLspZwiShCS81tHB8ze1eJRAzFuIQWOTg=="
+curl "https://hustlemode-api.azurewebsites.net/api/health?code=FUNCTION_KEY_HERE"
 ```
 
-### WhatsApp Message Simulation
+### Simple Ask API Test
 ```bash
-curl -X POST "https://hustlemode-api.azurewebsites.net/api/messaging/whatsapp?code=gtSjj_laC1mjoon8u30eSs9KCXZl-HKqDgkLDiIw_aQTAzFuQtLgcw==" \
+curl -X POST "https://hustlemode-api.azurewebsites.net/api/ask?code=FUNCTION_KEY_HERE" \
 -H "Content-Type: application/json" \
--d '{"object":"whatsapp_business_account","entry":[{"id":"715387334407630","changes":[{"value":{"messaging_product":"whatsapp","metadata":{"display_phone_number":"15556583575","phone_number_id":"682917338218717"},"messages":[{"from":"17817470041","id":"test_msg","timestamp":"1733875200","text":{"body":"I need motivation!"},"type":"text"}]},"field":"messages"}]}]}'
+-d '{"prompt": "Hello, are you working?"}'
+```
+
+### 🔥 Goggins Personality Test
+```bash
+curl -X POST "https://hustlemode-api.azurewebsites.net/api/assistants/goggins123?code=FUNCTION_KEY_HERE" \
+-H "Content-Type: application/json" \
+-d '{"message": "I want to quit my workout", "personality": "goggins"}'
+```
+
+### 🧘 Zen Personality Test  
+```bash
+curl -X POST "https://hustlemode-api.azurewebsites.net/api/assistants/zen123?code=FUNCTION_KEY_HERE" \
+-H "Content-Type: application/json" \
+-d '{"message": "I feel overwhelmed with my goals", "personality": "zen"}'
+```
+
+### 📣 Cheerleader Personality Test
+```bash
+curl -X POST "https://hustlemode-api.azurewebsites.net/api/assistants/cheer123?code=FUNCTION_KEY_HERE" \
+-H "Content-Type: application/json" \
+-d '{"message": "I completed my first workout!", "personality": "cheerleader"}'
+```
+
+### 😄 Comedian Personality Test
+```bash
+curl -X POST "https://hustlemode-api.azurewebsites.net/api/assistants/funny123?code=FUNCTION_KEY_HERE" \
+-H "Content-Type: application/json" \
+-d '{"message": "I ate pizza instead of going to the gym", "personality": "comedian"}'
 ```
 
 ## 🔄 Deployment Process
@@ -140,22 +170,23 @@ Automatically deploys on push to main when `azure-functions-deploy/` files chang
 - **Azure OpenAI**: Pay-per-token usage
 
 ## 🎯 Current Capabilities
-- ✅ Intelligent message processing and response
-- ✅ WhatsApp Business API integration
-- ✅ OpenAI-powered responses (configured but not yet active)
-- ✅ Context-aware conversation handling
-- ✅ Goal and motivation support
-- ✅ Automated response to any message type
+- ✅ **4-Personality AI System**: Goggins, Zen, Cheerleader, Comedian all live and functional
+- ✅ **Direct OpenAI Integration**: Real-time AI responses using Azure OpenAI GPT-4
+- ✅ **Personality Selection**: Choose personality via API parameter
+- ✅ **Context-aware AI responses**: Dynamic, never-repeated coaching
+- ✅ **Production-ready API**: All endpoints working with function key authentication
+- ✅ **Stateless design**: Simple API calls, no complex state management
 
 ## 🚀 Next Development Goals
-1. Activate OpenAI integration for dynamic responses
-2. Add PostgreSQL user data persistence
-3. Implement goal tracking with progress monitoring
-4. Create user onboarding flow
-5. Add analytics dashboard
-6. Connect to full Mem0 conversation memory
+1. **WhatsApp Integration**: Connect 4-personality system to WhatsApp webhook
+2. **Conversation Memory**: Add PostgreSQL user data persistence across personalities
+3. **Goal Tracking**: Implement progress monitoring with AI coaching insights
+4. **Analytics Dashboard**: Track personality usage and coaching effectiveness
+5. **Voice Integration**: Add audio message processing and voice responses
+6. **Advanced Memory**: Long-term context with Mem0 integration
 
 ---
-**Last Updated**: June 10, 2025  
-**Status**: ✅ PRODUCTION READY & INTELLIGENT RESPONSES ACTIVE 
-**Test Number**: +17817470041 (test account limitation) 
+**Last Updated**: January 16, 2025  
+**Status**: ✅ PRODUCTION READY WITH 4 AI PERSONALITIES ACTIVE 
+**Architecture**: Azure Functions v2 + Direct OpenAI SDK
+**Next Phase**: WhatsApp integration with personality selection 
