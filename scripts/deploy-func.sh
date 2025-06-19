@@ -54,16 +54,16 @@ cd azure-functions-deploy
 
 # Deploy using Azure Functions Core Tools (this installs Python deps automatically)
 echo "🚀 Publishing to Azure Functions..."
-func azure functionapp publish hustlemode-premium-bot --python
+func azure functionapp publish hustlemode-api --python
 
 # Check deployment status
 if [ $? -eq 0 ]; then
     echo "✅ Deployment completed successfully!"
-    echo "🔗 Function App URL: https://hustlemode-premium-bot.azurewebsites.net"
+    echo "🔗 Function App URL: https://hustlemode-api.azurewebsites.net"
     echo "🧪 Test endpoints:"
-    echo "   - Health: https://hustlemode-premium-bot.azurewebsites.net/api/health"
-    echo "   - Token Status: https://hustlemode-premium-bot.azurewebsites.net/api/token/status"
-    echo "   - LLM Test: https://hustlemode-premium-bot.azurewebsites.net/api/llm/test"
+    echo "   - Health: https://hustlemode-api.azurewebsites.net/api/health"
+    echo "   - Assistant: https://hustlemode-api.azurewebsites.net/api/assistants/{chatId}"
+    echo "   - WhatsApp: https://hustlemode-api.azurewebsites.net/api/messaging/whatsapp"
 else
     echo "🚨 Deployment failed!"
     exit 1

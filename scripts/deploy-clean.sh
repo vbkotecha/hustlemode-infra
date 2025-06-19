@@ -6,9 +6,9 @@
 set -e
 
 # Parse command line arguments
-AUTO_DEPLOY=false
+AUTO_DEPLOY=true
 AUTO_CLEANUP=true
-SKIP_PROMPTS=false
+SKIP_PROMPTS=true
 
 while [[ $# -gt 0 ]]; do
     case $1 in
