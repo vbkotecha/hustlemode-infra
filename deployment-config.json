@@ -1,107 +1,80 @@
 {
+  "meta": {
+    "description": "HustleMode.ai Production Configuration - Authoritative Source",
+    "last_updated": "2025-01-16",
+    "version": "2.0-simplified-mvp"
+  },
   "azure": {
     "function_app_name": "hustlemode-api",
     "resource_group": "hustlemode.ai",
     "location": "eastus",
-    "hosting_plan": "Consumption Plan",
+    "hosting_plan": "Premium Plan",
     "runtime": "PYTHON:3.11",
     "service_type": "Azure Functions v2"
   },
-  "urls": {
-    "app_url": "https://hustlemode-api.azurewebsites.net/",
-    "webhook_url": "https://hustlemode-api.azurewebsites.net/api/messaging/whatsapp",
-    "health_check": "https://hustlemode-api.azurewebsites.net/api/health",
-    "openai_test": "https://hustlemode-api.azurewebsites.net/api/test/openai",
-    "motivation": "https://hustlemode-api.azurewebsites.net/api/ai/motivate",
-    "goals_api": "https://hustlemode-api.azurewebsites.net/api/goals",
-    "users_api": "https://hustlemode-api.azurewebsites.net/api/users"
+  "endpoints": {
+    "base_url": "https://hustlemode-api.azurewebsites.net",
+    "health": "/api/health",
+    "assistant_create": "/api/assistants",
+    "assistant_message": "/api/assistants/{chatId}",
+    "assistant_state": "/api/assistants/{chatId}/state",
+    "completion": "/api/completion",
+    "whatsapp_webhook": "/api/messaging/whatsapp",
+    "whatsapp_send": "/api/messaging/whatsapp/send",
+    "user_conversations": "/api/users/{userId}/conversations",
+    "user_preferences": "/api/users/{userId}/preferences"
+  },
+  "personalities": {
+    "available": ["taskmaster", "cheerleader"],
+    "default": "taskmaster",
+    "taskmaster": {
+      "name": "Taskmaster Mode",
+      "description": "Tough love accountability coach",
+      "max_words": "8-12",
+      "style": "military_discipline_no_excuses"
+    },
+    "cheerleader": {
+      "name": "Cheerleader Mode", 
+      "description": "Enthusiastic positive support",
+      "max_words": "8-12",
+      "style": "celebration_encouragement"
+    }
   },
   "whatsapp": {
-    "webhook_url": "https://hustlemode-api.azurewebsites.net/api/messaging/whatsapp?code=gtSjj_laC1mjoon8u30eSs9KCXZl-HKqDgkLDiIw_aQTAzFuQtLgcw==",
-    "webhook_url_base": "https://hustlemode-api.azurewebsites.net/api/messaging/whatsapp",
-    "function_key": "gtSjj_laC1mjoon8u30eSs9KCXZl-HKqDgkLDiIw_aQTAzFuQtLgcw==",
-    "verify_token": "fa22d4e7-cba4-48cf-9b36-af6190bf9c67",
-    "phone_number": "+15556583575",
-    "business_account_id": "715387334407630",
+    "business_phone": "+15556583575",
+    "test_recipient": "+17817470041",
     "phone_number_id": "682917338218717",
+    "business_account_id": "715387334407630",
+    "verify_token": "fa22d4e7-cba4-48cf-9b36-af6190bf9c67",
     "api_version": "v22.0",
-    "access_token_type": "system_user_token",
-    "access_token_expires": "never",
-    "status": "live_and_responding_intelligently",
-    "test_number": "+17817470041",
-    "response_types": [
-      "greeting_messages",
-      "motivation_requests", 
-      "goal_related_messages",
-      "general_support",
-      "non_text_messages"
-    ],
-    "authentication_note": "WhatsApp webhook URL MUST include function key parameter for Azure Functions authentication"
+    "webhook_url_format": "{base_url}/api/messaging/whatsapp?code={function_key}",
+    "webhook_fields": ["messages"]
+  },
+  "authentication": {
+    "type": "function_key",
+    "required_for": "all_endpoints",
+    "format": "?code={function_key}",
+    "note": "Function keys must be obtained from Azure Portal"
   },
   "deployment": {
     "github_repo": "https://github.com/vbkotecha/hustlemode-infra",
-    "github_actions": "https://github.com/vbkotecha/hustlemode-infra/actions",
-    "methods": [
-      "Azure Functions Core Tools (func azure functionapp publish) - RECOMMENDED",
-      "Clean Script (./scripts/deploy-clean.sh --auto) - Local ZIP Deploy",
-      "GitHub Actions (2-stage pipeline: anti-bloat → deploy with Python packaging + verification) - Direct ZIP Deploy"
-    ],
     "source_directory": "azure-functions-deploy",
-    "function_key": "PLACEHOLDER_FUNCTION_KEY",
-    "deployment_command": "cd azure-functions-deploy && func azure functionapp publish hustlemode-api --python --build remote"
+    "recommended_method": "func azure functionapp publish hustlemode-api --python --build remote",
+    "alternative_methods": [
+      "./scripts/deploy-clean.sh --auto",
+      "GitHub Actions (automatic on main branch)"
+    ]
   },
-  "database": {
-    "postgres_server": "hustlemode-db",
-    "postgres_database": "hustlemode",
-    "status": "ready_for_integration"
-  },
-  "ai_services": {
-    "azure_openai": {
-      "endpoint": "https://hustlemode-ai.openai.azure.com/",
-      "deployment_name": "gpt-4o",
-      "model": "gpt-4o",
-      "status": "ACTIVE_AND_DEPLOYED"
-    },
-    "personality_system": {
-      "implementation": "direct_openai_calls",
-      "personalities": ["goggins", "zen", "cheerleader", "comedian"],
-      "default_personality": "goggins",
-      "personality_selection": "via_request_body_parameter",
-      "conversation_memory": "stateless_currently"
-    },
-    "intelligent_responses": {
-      "greeting_detection": ["hello", "hi", "hey", "start"],
-      "motivation_triggers": ["motivation", "motivate", "inspire", "help", "goals"],
-      "goal_triggers": ["goal", "goals"],
-      "fallback": "general_support_message",
-      "personalities_available": {
-        "goggins": "tough_love_coach_stay_hard",
-        "zen": "mindful_guide_inner_peace",
-        "cheerleader": "positive_encourager_celebrate_wins",
-        "comedian": "humorous_motivator_laughter_therapy"
-      }
-    }
-  },
-  "status": {
-    "last_updated": "2025-01-16",
-    "deployment_status": "LIVE_WITH_4_PERSONALITIES",
-    "service_health": "OPERATIONAL",
-    "webhook_verified": true,
-    "function_app_running": true,
-    "intelligent_responses": true,
-    "personality_system": "LIVE_4_PERSONALITIES",
-    "openai_implementation": "DIRECT_SDK_CALLS",
-    "whatsapp_token_type": "SYSTEM_USER_TOKEN",
-    "whatsapp_token_updated": "2025-06-10",
-    "whatsapp_token_expires": "NEVER",
-    "openai_integration": "ACTIVE_DIRECT_CALLS",
-    "architecture": "Azure Functions v2 + Direct OpenAI (Consumption Plan)",
-    "repository_status": "CLEAN",
-    "mvp_status": "ENHANCED_WITH_4_PERSONALITIES",
-    "response_time": "< 2 seconds",
-    "scalability": "unlimited_concurrent_users",
-    "cost_model": "pay_per_execution",
-    "ci_cd_optimization": "streamlined_single_job_workflow",
-    "deployment_method": "direct_zip_deploy_api"
+  "environment_variables": {
+    "required": [
+      "WHATSAPP_TOKEN",
+      "WHATSAPP_PHONE_NUMBER_ID", 
+      "WHATSAPP_VERIFY_TOKEN",
+      "AZURE_OPENAI_ENDPOINT",
+      "AZURE_OPENAI_KEY",
+      "AZURE_OPENAI_DEPLOYMENT_NAME"
+    ],
+    "whatsapp_token_type": "system_user_token",
+    "whatsapp_token_expires": "never"
   }
 } 

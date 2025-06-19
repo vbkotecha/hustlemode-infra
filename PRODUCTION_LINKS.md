@@ -1,153 +1,110 @@
-# HustleMode.ai Production Reference
+# HustleMode.ai Production Operations Guide
 
-## 🚀 Live AI Coaching System Information
-- **API Status**: ✅ LIVE with 4-Personality AI System
-- **Personalities**: Goggins (tough love), Zen (mindful), Cheerleader (positive), Comedian (humorous)
-- **AI Integration**: Direct OpenAI GPT-4 responses via Azure OpenAI SDK
-- **Intelligence Level**: Real-time AI-generated coaching responses with personality consistency
+## 🎯 Current MVP Status
+- **Status**: ✅ LIVE - Simplified 2-Personality System
+- **Personalities**: Taskmaster (tough love) + Cheerleader (positive support)  
+- **Architecture**: Azure Functions Premium Plan + OpenAI GPT-4
+- **Message Length**: Ultra-concise (8-12 words max)
 - **Last Updated**: January 16, 2025
 
-## 🔗 Production URLs
+> 📋 **Configuration Reference**: See `deployment-config.json` for all authoritative configuration values
 
-### Main Application
-- **Function App**: https://hustlemode-api.azurewebsites.net/
-- **Health Check**: https://hustlemode-api.azurewebsites.net/api/health?code=FUNCTION_KEY_HERE
-- **Simple Ask API**: https://hustlemode-api.azurewebsites.net/api/ask?code=FUNCTION_KEY_HERE
-- **Assistant API**: https://hustlemode-api.azurewebsites.net/api/assistants/{chatId}?code=FUNCTION_KEY_HERE
-- **WhatsApp Webhook**: https://hustlemode-api.azurewebsites.net/api/messaging/whatsapp
+## 🔗 Live URLs
+
+### Core Endpoints
+```bash
+# Base URL (from deployment-config.json)
+BASE_URL="https://hustlemode-api.azurewebsites.net"
+
+# Get function key from Azure Portal first, then:
+FUNCTION_KEY="your_function_key_here"
+```
+
+**Key Endpoints:**
+- Health Check: `${BASE_URL}/api/health?code=${FUNCTION_KEY}`
+- Assistant API: `${BASE_URL}/api/assistants/{chatId}?code=${FUNCTION_KEY}`
+- WhatsApp Webhook: `${BASE_URL}/api/messaging/whatsapp?code=${FUNCTION_KEY}`
 
 ### Azure Portal Links
-- **Function App**: https://portal.azure.com/#resource/subscriptions/346876ba-71e4-417a-a63a-9a42f434a0ae/resourceGroups/hustlemode.ai/providers/Microsoft.Web/sites/hustlemode-api
-- **Application Insights**: https://portal.azure.com/#resource/subscriptions/346876ba-71e4-417a-a63a-9a42f434a0ae/resourceGroups/hustlemode.ai/providers/microsoft.insights/components/hustlemode-api/overview
-- **Resource Group**: https://portal.azure.com/#resource/subscriptions/346876ba-71e4-417a-a63a-9a42f434a0ae/resourceGroups/hustlemode.ai
+- **Function App**: [hustlemode-api](https://portal.azure.com/#resource/subscriptions/346876ba-71e4-417a-a63a-9a42f434a0ae/resourceGroups/hustlemode.ai/providers/Microsoft.Web/sites/hustlemode-api)
+- **Application Insights**: [Monitoring](https://portal.azure.com/#resource/subscriptions/346876ba-71e4-417a-a63a-9a42f434a0ae/resourceGroups/hustlemode.ai/providers/microsoft.insights/components/hustlemode-api/overview)
+- **Resource Group**: [hustlemode.ai](https://portal.azure.com/#resource/subscriptions/346876ba-71e4-417a-a63a-9a42f434a0ae/resourceGroups/hustlemode.ai)
 
 ## 📱 WhatsApp Configuration
 
-### Meta for Developers
-- **Webhook URL**: https://hustlemode-api.azurewebsites.net/api/messaging/whatsapp?code=gtSjj_laC1mjoon8u30eSs9KCXZl-HKqDgkLDiIw_aQTAzFuQtLgcw==
-- **Function Key**: gtSjj_laC1mjoon8u30eSs9KCXZl-HKqDgkLDiIw_aQTAzFuQtLgcw==
-- **Verify Token**: fa22d4e7-cba4-48cf-9b36-af6190bf9c67
-- **Webhook Fields**: messages ✅
-- **API Version**: v22.0
-- **⚠️ CRITICAL**: Webhook URL MUST include function key for Azure Functions authentication
+### Meta for Developers Setup
+- **Webhook URL**: `https://hustlemode-api.azurewebsites.net/api/messaging/whatsapp?code={FUNCTION_KEY}`
+- **Verify Token**: `fa22d4e7-cba4-48cf-9b36-af6190bf9c67`
+- **Webhook Fields**: ✅ messages
+- **⚠️ CRITICAL**: Webhook URL MUST include function key for Azure authentication
 
-### WhatsApp Business Details
-- **Phone Number**: +15556583575
-- **Business Account ID**: 715387334407630
-- **Phone Number ID**: 682917338218717
-- **API Endpoint**: https://graph.facebook.com/v22.0/682917338218717/messages
+### Phone Numbers
+- **Business Number**: +15556583575 (sends messages)
+- **Test Recipient**: +17817470041 (receives messages during testing)
 
-## 🔑 Environment Variables
+## 🎭 2-Personality MVP System
 
-```env
-WHATSAPP_TOKEN=your_whatsapp_system_user_token_here
-WHATSAPP_PHONE_NUMBER_ID=682917338218717
-WHATSAPP_VERIFY_TOKEN=fa22d4e7-cba4-48cf-9b36-af6190bf9c67
-AZURE_OPENAI_ENDPOINT=https://hustlemode-ai.openai.azure.com/
-AZURE_OPENAI_KEY=your_azure_openai_api_key_here
-AZURE_OPENAI_DEPLOYMENT_NAME=hustlemode-ai
+### 💪 Taskmaster Mode (Default)
+**Style**: Military discipline, no excuses, tough love  
+**Response Length**: 8-12 words maximum  
+**Example**: "Stop whining. Go work out. Now! 🏋️‍♂️" (6 words)
+
+### 🎉 Cheerleader Mode  
+**Style**: Enthusiastic celebration, positive reinforcement  
+**Response Length**: 8-12 words maximum  
+**Example**: "YES! You're crushing it! 🎉 Keep going!" (7 words)
+
+## 🧪 Testing Commands
+
+### 1. Health Check
+```bash
+curl "https://hustlemode-api.azurewebsites.net/api/health?code=${FUNCTION_KEY}"
 ```
 
-## 🎭 4-Personality AI Coaching System
-
-### 🔥 Goggins (Tough Love Coach)
-**API**: `POST /api/assistants/{chatId}?code=...` with `{"message": "...", "personality": "goggins"}`
-**Style**: STAY HARD mentality, no-excuse accountability, military discipline
-**Example**: "QUIT?! That's what your weak mind wants! Get back in there and STAY HARD! 💪"
-
-### 🧘 Zen (Mindful Guide)  
-**API**: `POST /api/assistants/{chatId}?code=...` with `{"message": "...", "personality": "zen"}`
-**Style**: Calm wisdom, nature metaphors, balanced perspective
-**Example**: "Like a river meeting a boulder, we can flow around obstacles. Small steps still lead to the summit. 🍃"
-
-### 📣 Cheerleader (Positive Encourager)
-**API**: `POST /api/assistants/{chatId}?code=...` with `{"message": "...", "personality": "cheerleader"}`  
-**Style**: Enthusiastic celebration, positive reinforcement, high energy
-**Example**: "Hey superstar! You've been SHOWING UP! That's incredible! Let's make this FUN again! ✨"
-
-### 😄 Comedian (Humorous Motivator)
-**API**: `POST /api/assistants/{chatId}?code=...` with `{"message": "...", "personality": "comedian"}`
-**Style**: Laughter therapy, reframes challenges with humor, light-hearted coaching  
-**Example**: "Your couch is very persuasive! But your future self is plotting revenge. Let's earn that pizza! 🍕💪"
-
-### 🚀 API Features
-- **Real-time AI**: Direct OpenAI GPT-4 responses
-- **Personality Consistency**: Each coach maintains character
-- **Dynamic Responses**: Never the same response twice
-- **Stateless Design**: Simple API calls with personality parameter
-
-## 🏗️ Infrastructure Details
-
-### Azure Function App
-- **Name**: hustlemode-api
-- **Plan**: Consumption Plan (Linux)
-- **Resource Group**: hustlemode.ai
-- **Region**: East US
-- **Runtime**: Python 3.11
-- **Architecture**: Azure Functions v2
-
-### Features
-- ✅ Serverless scaling (0 to thousands)
-- ✅ Application Insights logging
-- ✅ OpenAI extension integration
-- ✅ WhatsApp Business API integration
-- ✅ Intelligent message processing
-- ✅ Cost-effective pay-per-execution
-
-### Dependencies
-- azure-functions
-- requests (for WhatsApp API calls)
-- OpenAI extension (Preview bundle v4.*)
-
-### Monitoring
-- **Application Insights**: Full request/response logging
-- **Function Logs**: Complete execution traces
-- **Performance Metrics**: Response times, success rates
-- **Real-time Monitoring**: Azure Portal function monitoring
-
-## 📊 Testing Commands - 4 Personality System
-
-### Health Check
+### 2. Taskmaster Personality Test
 ```bash
-curl "https://hustlemode-api.azurewebsites.net/api/health?code=FUNCTION_KEY_HERE"
-```
-
-### Simple Ask API Test
-```bash
-curl -X POST "https://hustlemode-api.azurewebsites.net/api/ask?code=FUNCTION_KEY_HERE" \
+curl -X POST "https://hustlemode-api.azurewebsites.net/api/assistants/test123?code=${FUNCTION_KEY}" \
 -H "Content-Type: application/json" \
--d '{"prompt": "Hello, are you working?"}'
+-d '{"message": "I want to quit my workout", "personality": "taskmaster"}'
 ```
 
-### 🔥 Goggins Personality Test
+### 3. Cheerleader Personality Test
 ```bash
-curl -X POST "https://hustlemode-api.azurewebsites.net/api/assistants/goggins123?code=FUNCTION_KEY_HERE" \
--H "Content-Type: application/json" \
--d '{"message": "I want to quit my workout", "personality": "goggins"}'
-```
-
-### 🧘 Zen Personality Test  
-```bash
-curl -X POST "https://hustlemode-api.azurewebsites.net/api/assistants/zen123?code=FUNCTION_KEY_HERE" \
--H "Content-Type: application/json" \
--d '{"message": "I feel overwhelmed with my goals", "personality": "zen"}'
-```
-
-### 📣 Cheerleader Personality Test
-```bash
-curl -X POST "https://hustlemode-api.azurewebsites.net/api/assistants/cheer123?code=FUNCTION_KEY_HERE" \
+curl -X POST "https://hustlemode-api.azurewebsites.net/api/assistants/test123?code=${FUNCTION_KEY}" \
 -H "Content-Type: application/json" \
 -d '{"message": "I completed my first workout!", "personality": "cheerleader"}'
 ```
 
-### 😄 Comedian Personality Test
+### 4. WhatsApp Webhook Simulation
 ```bash
-curl -X POST "https://hustlemode-api.azurewebsites.net/api/assistants/funny123?code=FUNCTION_KEY_HERE" \
+curl -X POST "https://hustlemode-api.azurewebsites.net/api/messaging/whatsapp?code=${FUNCTION_KEY}" \
 -H "Content-Type: application/json" \
--d '{"message": "I ate pizza instead of going to the gym", "personality": "comedian"}'
+-d '{
+  "object": "whatsapp_business_account",
+  "entry": [{
+    "id": "715387334407630",
+    "changes": [{
+      "value": {
+        "messaging_product": "whatsapp",
+        "metadata": {
+          "display_phone_number": "17817470041",
+          "phone_number_id": "682917338218717"
+        },
+        "messages": [{
+          "from": "17817470041",
+          "id": "test_msg_123",
+          "timestamp": "1733875200",
+          "text": {"body": "I need motivation!"},
+          "type": "text"
+        }]
+      },
+      "field": "messages"
+    }]
+  }]
+}'
 ```
 
-## 🔄 Deployment Process
+## 🚀 Deployment Operations
 
 ### Method 1: Azure Functions Core Tools (Recommended)
 ```bash
@@ -155,38 +112,61 @@ cd azure-functions-deploy
 func azure functionapp publish hustlemode-api --python --build remote
 ```
 
-### Method 2: Clean Script 
+### Method 2: Clean Script
 ```bash
 ./scripts/deploy-clean.sh --auto
 ```
 
-### Method 3: GitHub Actions (Automatic)
-Automatically deploys on push to main when `azure-functions-deploy/` files change.
+### Method 3: GitHub Actions
+Automatically deploys on push to main branch when `azure-functions-deploy/` files change.
 
-## 💰 Cost Information
-- **Consumption Plan**: Pay-per-execution (very cost-effective)
-- **Application Insights**: Included in consumption plan
-- **WhatsApp Business API**: Free tier (1000 conversations/month)
-- **Azure OpenAI**: Pay-per-token usage
+## 🔍 Monitoring & Troubleshooting
 
-## 🎯 Current Capabilities
-- ✅ **4-Personality AI System**: Goggins, Zen, Cheerleader, Comedian all live and functional
-- ✅ **Direct OpenAI Integration**: Real-time AI responses using Azure OpenAI GPT-4
-- ✅ **Personality Selection**: Choose personality via API parameter
-- ✅ **Context-aware AI responses**: Dynamic, never-repeated coaching
-- ✅ **Production-ready API**: All endpoints working with function key authentication
-- ✅ **Stateless design**: Simple API calls, no complex state management
+### Key Metrics to Monitor
+- **Response Time**: Should be < 2 seconds
+- **Error Rate**: Should be < 1%
+- **Function Executions**: Track usage patterns
+- **WhatsApp Webhook Success**: Monitor message delivery
 
-## 🚀 Next Development Goals
-1. **WhatsApp Integration**: Connect 4-personality system to WhatsApp webhook
-2. **Conversation Memory**: Add PostgreSQL user data persistence across personalities
-3. **Goal Tracking**: Implement progress monitoring with AI coaching insights
-4. **Analytics Dashboard**: Track personality usage and coaching effectiveness
-5. **Voice Integration**: Add audio message processing and voice responses
-6. **Advanced Memory**: Long-term context with Mem0 integration
+### Common Issues
+1. **401 Unauthorized**: Function key missing or invalid
+2. **WhatsApp Not Responding**: Check webhook URL includes function key
+3. **Slow Responses**: Monitor Application Insights for bottlenecks
+4. **OpenAI Errors**: Check Azure OpenAI service status and quotas
+
+### Logs Access
+- **Azure Portal**: Function App → Functions → Monitor
+- **Application Insights**: Query logs with KQL
+- **Real-time**: Function App → Log stream
+
+## 🔑 Security Checklist
+
+### Function Keys
+- [ ] **Obtain from Azure Portal**: Functions → App keys → Function keys
+- [ ] **Update WhatsApp webhook**: Include `?code={key}` parameter
+- [ ] **Test all endpoints**: Verify authentication works
+- [ ] **Rotate periodically**: Generate new keys as needed
+
+### Environment Variables
+- [ ] **WhatsApp Token**: System user token (never expires)
+- [ ] **Azure OpenAI**: Endpoint and key configured
+- [ ] **Verify Token**: WhatsApp webhook verification token set
+
+## 💰 Cost Monitoring
+
+### Premium Plan Benefits
+- **No Cold Starts**: Always warm instances
+- **Better Performance**: Guaranteed compute resources  
+- **Higher Scale Limits**: More concurrent executions
+- **VNet Integration**: Enhanced security options
+
+### Usage Patterns to Monitor
+- Function execution count and duration
+- Azure OpenAI token usage
+- Application Insights data ingestion
+- Storage account transactions
 
 ---
+**Configuration Source**: `deployment-config.json`  
 **Last Updated**: January 16, 2025  
-**Status**: ✅ PRODUCTION READY WITH 4 AI PERSONALITIES ACTIVE 
-**Architecture**: Azure Functions v2 + Direct OpenAI SDK
-**Next Phase**: WhatsApp integration with personality selection 
+**Status**: ✅ Production Ready - 2-Personality MVP System 
