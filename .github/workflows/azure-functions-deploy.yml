@@ -128,4 +128,4 @@ jobs:
         fi
 
     - name: 'Deployment Success'
-      run: echo "🔥 HustleMode.ai Azure Functions deployed successfully! STAY HARD! 💪" 
+      run: echo "🔥 HustleMode.ai Azure Functions deployed successfully! 💪" 
