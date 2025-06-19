@@ -1,183 +1,180 @@
-# HustleMode.ai Azure Functions API
+# HustleMode.ai Azure Functions
 
-## Overview
+**🎯 2-Personality MVP AI Coaching System**
 
-**Clean Azure Functions implementation using direct OpenAI API calls** for HustleMode.ai motivational coaching platform.
+Ultra-concise AI coaching with 2 focused personalities delivering 8-12 word responses optimized for mobile messaging.
 
-This implementation uses **direct Azure OpenAI SDK calls** instead of the Azure Functions OpenAI Extension for better reliability, debugging, and control.
+## 🎭 Personality System
 
-## Architecture: Direct vs Extension Approach
+### Available Personalities
+- **💪 Taskmaster** (Default): Tough love accountability coach
+- **🎉 Cheerleader**: Enthusiastic positive support and celebration
 
-### ✅ Direct OpenAI Calls (Current Implementation)
-```python
-from openai import AzureOpenAI
-client = AzureOpenAI(api_key="...", azure_endpoint="...")
-response = client.chat.completions.create(model="gpt-4o", messages=[...])
+### Response Examples
+- **Taskmaster**: "Stop whining. Go work out. Now! 🏋️‍♂️" (6 words)
+- **Cheerleader**: "YES! You're crushing it! 🎉 Keep going!" (7 words)
+
+## 🏗️ Architecture
+
+### Modular Structure
+```
+azure-functions-deploy/
+├── apis/                    # Modular API blueprints
+│   ├── __init__.py         # Blueprint exports
+│   ├── health.py           # Health check endpoints
+│   ├── assistant.py        # AI assistant with personalities
+│   ├── completion.py       # Simple completion endpoint
+│   ├── whatsapp.py        # WhatsApp integration
+│   └── user_management.py # User data management
+├── personalities/          # 2-personality MVP system
+│   ├── __init__.py        # Personality exports
+│   ├── taskmaster.py      # Tough love coach
+│   └── cheerleader.py     # Positive encourager
+├── function_app.py        # Blueprint registration (8 lines)
+├── constants.py           # Configuration constants
+├── assistant_utils.py     # Helper functions
+├── whatsapp_api.py        # WhatsApp Business API
+└── requirements.txt       # Dependencies
 ```
 
-**Advantages:**
-- ✅ **Simpler setup** - just API key and endpoint needed  
-- ✅ **Full control** over OpenAI requests and responses
-- ✅ **Easy debugging** - you see exactly what's happening
-- ✅ **Better error handling** - direct access to errors
-- ✅ **No dependency issues** - works with any Azure Functions runtime
-
-### ❌ Azure Functions OpenAI Extension (Previous)
-```python
-@app.assistant_post_input(model="gpt-4o", ...)
-def post_message(req, state: str):  # Extension handles OpenAI calls
-```
-
-**Disadvantages:**
-- ❌ Complex configuration required (extensions, host.json)
-- ❌ Limited control over OpenAI interactions
-- ❌ Harder to debug when things go wrong
-- ❌ Extension dependency issues
-- ❌ Black box behavior
-
-## Configuration
-
-### Environment Variables
-```
-AZURE_OPENAI_ENDPOINT=https://hustlemode-ai.openai.azure.com/
-AZURE_OPENAI_API_KEY=your-api-key-here
-FUNCTIONS_WORKER_RUNTIME=python
-AzureWebJobsStorage=your-storage-connection-string
-```
-
-### Azure OpenAI Deployment
-- **Model**: `gpt-4o`
-- **Deployment Name**: `gpt-4o`
-- **API Version**: `2024-02-01`
-
-## API Endpoints
+## 🚀 API Endpoints
 
 ### Health Check
-```bash
+```http
 GET /api/health
 ```
-Basic health status endpoint.
 
-### Simple Ask (Stateless)
-```bash
-POST /api/ask
-Content-Type: application/json
-
-{
-  "prompt": "Your question here"
-}
-```
-
-**Response:**
-```json
-{
-  "response": "AI response here",
-  "success": true
-}
-```
-
-### Assistant API (Personality-based)
-
-#### Create Assistant
-```bash
-PUT /api/assistants/{chatId}
-Content-Type: application/json
-
-{
-  "personality": "goggins"  // or "zen"
-}
-```
-
-#### Send Message to Assistant
-```bash
+### Assistant API (Personality-Based)
+```http
 POST /api/assistants/{chatId}
 Content-Type: application/json
 
 {
-  "message": "Your message here"
+  "message": "I need motivation!",
+  "personality": "taskmaster"  // or "cheerleader"
 }
 ```
 
-**Response:**
+### Simple Completion
+```http
+POST /api/completion
+Content-Type: application/json
+
+{
+  "prompt": "Give me motivation!"
+}
+```
+
+### WhatsApp Integration
+```http
+POST /api/messaging/whatsapp  (webhook)
+GET /api/messaging/whatsapp   (verification)
+```
+
+### User Management
+```http
+GET /api/users/{userId}/conversations
+PUT /api/users/{userId}/preferences
+```
+
+## 🎯 Personality Switching
+
+### Voice Commands
+- **"switch to taskmaster"** → Tough love mode
+- **"be my cheerleader"** → Positive support mode
+- **"change personality"** → Switch between modes
+
+### API Parameter
 ```json
 {
-  "chatId": "your-chat-id",
-  "response": "Personality-based response",
-  "success": true
+  "message": "I completed my workout!",
+  "personality": "cheerleader"
 }
 ```
 
-#### Get Chat History
-```bash
-GET /api/assistants/{chatId}
-```
+## 📱 Mobile Optimization
 
-### Personalities
+### Ultra-Concise Responses
+- **Maximum**: 12 words per response
+- **Target**: 8-10 words for optimal mobile experience
+- **Text-Message Perfect**: Fits comfortably in single text bubble
+- **Action-Oriented**: Every response inspires immediate action
 
-#### Goggins (Default)
-Intense, no-nonsense motivation and accountability:
-- Mental toughness focus
-- "STAY HARD" energy
-- Challenge-oriented responses
-- Action-focused advice
+## 🔧 Development
 
-#### Zen
-Calm, mindful guidance:
-- Inner peace and balance
-- Nature metaphors
-- Journey over destination
-- Mindful approaches
+### Adding New API Groups
+1. Create new file in `apis/` directory
+2. Implement Azure Functions blueprint pattern
+3. Export blueprint in `apis/__init__.py`
+4. Register in `function_app.py`
 
-## Testing
+### Personality Guidelines
+- Maintain character consistency within word limits
+- Provide fallback responses for when AI unavailable
+- Test across all messaging platforms
+- Validate word count limits (8-12 words max)
+
+## 🧪 Testing
 
 ### Local Development
 ```bash
-# Install dependencies
-pip install -r requirements.txt
-
-# Start local functions
-func start --host 0.0.0.0 --port 7071
-
-# Test endpoints
-curl -X POST "http://localhost:7071/api/ask" \
-  -H "Content-Type: application/json" \
-  -d '{"prompt": "Hello"}'
+func start
 ```
 
-### Production Testing
+### Test Endpoints
 ```bash
-# Test ask endpoint
-curl -X POST "https://hustlemode-api.azurewebsites.net/api/ask?code=FUNCTION_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{"prompt": "Hello"}'
+# Health check
+curl http://localhost:7071/api/health
 
-# Test Goggins assistant
-curl -X POST "https://hustlemode-api.azurewebsites.net/api/assistants/test123?code=FUNCTION_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{"message": "I want to get fit but keep making excuses"}'
+# Taskmaster personality
+curl -X POST http://localhost:7071/api/assistants/test123 \
+-H "Content-Type: application/json" \
+-d '{"message": "I want to quit my workout", "personality": "taskmaster"}'
+
+# Cheerleader personality
+curl -X POST http://localhost:7071/api/assistants/test123 \
+-H "Content-Type: application/json" \
+-d '{"message": "I completed my first workout!", "personality": "cheerleader"}'
 ```
 
-## Deployment
+## 🚀 Deployment
 
-Uses `../scripts/deploy-clean.sh` for consistent Azure deployments:
-
+### Recommended Method
 ```bash
-cd /path/to/hustlemode-infra
+cd azure-functions-deploy
+func azure functionapp publish hustlemode-api --python --build remote
+```
+
+### Alternative (Clean Script)
+```bash
+# From repository root
 ./scripts/deploy-clean.sh
 ```
 
-## Key Benefits of This Implementation
+## 📊 Environment Variables
 
-1. **Reliability**: Direct SDK calls are more stable than extensions
-2. **Debugging**: Full visibility into OpenAI requests/responses  
-3. **Control**: Complete control over personality system logic
-4. **Simplicity**: Minimal configuration needed
-5. **Performance**: No extension overhead
+Required in `local.settings.json`:
+```json
+{
+  "Values": {
+    "WHATSAPP_TOKEN": "your_whatsapp_token",
+    "WHATSAPP_PHONE_NUMBER_ID": "682917338218717",
+    "WHATSAPP_VERIFY_TOKEN": "fa22d4e7-cba4-48cf-9b36-af6190bf9c67",
+    "AZURE_OPENAI_ENDPOINT": "https://hustlemode-ai.openai.azure.com/",
+    "AZURE_OPENAI_KEY": "your_azure_openai_key",
+    "AZURE_OPENAI_DEPLOYMENT_NAME": "hustlemode-ai"
+  }
+}
+```
 
-## Future Enhancements
+## 🎯 Core Principles
 
-- [ ] Add conversation memory with Azure Storage
-- [ ] Implement user-specific personality preferences
-- [ ] Add more personality types (Coach, Therapist, etc.)
-- [ ] WhatsApp integration for message delivery
-- [ ] Rate limiting and usage analytics 
+- **Ultra-Concise**: Maximum 12 words per response
+- **2-Personality Focus**: Taskmaster + Cheerleader covers 80% of coaching needs
+- **Platform-Agnostic**: Works across WhatsApp, iMessage, SMS
+- **Mobile-First**: Optimized for mobile messaging platforms
+- **Modular Architecture**: Easy to extend and maintain
+
+---
+**Status**: Production Ready - 2-Personality MVP System  
+**Focus**: Ultra-concise AI coaching for mobile messaging 
