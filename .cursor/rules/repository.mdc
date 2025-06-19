@@ -11,6 +11,26 @@ alwaysApply: true
 
 # Repository Management Rules
 
+## 🎯 HustleMode.ai Specific Guidelines
+
+### Configuration Management Philosophy
+- **Single Source of Truth**: `deployment-config.json` is the authoritative configuration source
+- **Documentation References**: Other files should reference deployment-config.json rather than duplicate values
+- **No Configuration Drift**: All files must stay synchronized with authoritative source
+- **Machine vs Human**: deployment-config.json for automation, PRODUCTION_LINKS.md for operations
+
+### 2-Personality MVP System Organization
+- **Simplified Focus**: Only Taskmaster and Cheerleader personalities in MVP
+- **Ultra-Concise Responses**: All personality responses must be 8-12 words maximum
+- **Modular Structure**: Each personality in separate file under `personalities/`
+- **No Personality Bloat**: Resist adding personalities without clear user demand
+
+### Platform-Agnostic Design Standards
+- **Universal Identification**: Phone number as primary key across all platforms
+- **Cross-Platform Memory**: Same conversation context regardless of messaging platform
+- **Future-Ready**: Architecture supports WhatsApp, iMessage, SMS without major changes
+- **Avoid Platform Lock-in**: Never tie core functionality to single messaging platform
+
 ## 🚫 Never Commit These Files
 - `*.zip` files (use `temp/` or `build/` directories instead)
 - Build artifacts (`functions-*.zip`, `azure-functions.zip`, etc.)
@@ -18,21 +38,42 @@ alwaysApply: true
 - Log files (`*.log`, `LogFiles/`)
 - OS-specific files (`.DS_Store`, `Thumbs.db`)
 - IDE-specific files (`.vscode/`, `.idea/`)
+- **MVP specification files** - Keep specifications in README.md instead
 
 ## 📁 Directory Structure Standards
 
 ### Primary Organization
 - **Azure Functions**: `azure-functions-deploy/` (single source of truth)
+- **Modular APIs**: `azure-functions-deploy/apis/` (blueprint architecture)
+- **Personality System**: `azure-functions-deploy/personalities/` (2-personality MVP)
 - **AI Services**: `ai/` for all AI-related code and documentation
 - **Prompts**: `prompts/` organized by category (goals, motivation)
 - **Documentation**: Core docs at root, component docs with components
 - **Scripts**: `scripts/` for deployment and utilities
 - **Automation**: `.github/workflows/` for CI/CD and quality checks
 
+### HustleMode.ai Modular Architecture
+```
+azure-functions-deploy/
+├── apis/                    # Modular API blueprints
+│   ├── health.py           # Health endpoints
+│   ├── assistant.py        # AI personality management
+│   ├── whatsapp.py        # WhatsApp integration
+│   └── user_management.py # User data endpoints
+├── personalities/          # 2-personality MVP system
+│   ├── taskmaster.py       # Tough love coach (8-12 words)
+│   └── cheerleader.py      # Positive encourager (8-12 words)
+├── function_app.py         # Blueprint registration only (8 lines max)
+├── constants.py            # Centralized configuration
+└── deployment-config.json  # AUTHORITATIVE configuration source
+```
+
 ### Duplication Prevention
 - ❌ Never create duplicate function directories
 - ❌ Never keep multiple copies of same files
+- ❌ Never duplicate configuration values across files
 - ✅ Maintain single source of truth for each component
+- ✅ Reference authoritative sources instead of copying
 - ✅ Use symbolic links for cross-references if needed
 
 ## 🏗️ Build & Deployment Rules
@@ -52,20 +93,29 @@ rm -rf temp/
 2. Build artifacts go to `temp/` directory (gitignored)
 3. Clean up temporary files after deployment
 4. Never commit deployment packages
+5. **Reference deployment-config.json** for all deployment values
 
 ## 🧹 Maintenance Requirements
+
+### Configuration Synchronization
+- **Primary Source**: `deployment-config.json` contains all authoritative values
+- **Documentation References**: Other files should reference config file, not duplicate
+- **Regular Sync Checks**: Verify all files reference same URLs, endpoints, configurations
+- **Update Process**: Change values in deployment-config.json first, then update references
 
 ### Regular Cleanup Tasks
 - Remove unused files and directories immediately
 - Consolidate duplicate code during development
 - Update documentation when structure changes
 - Review `.gitignore` for new exclusion patterns
+- **Eliminate redundant configuration** across multiple files
 
 ### Code Organization Standards
 - Group related functionality together
 - Use clear, descriptive directory names
 - Keep configuration files at appropriate levels
 - Maintain separation between dev/staging/prod artifacts
+- **Follow modular blueprint architecture** for APIs
 
 ## 🚀 Development Workflow Rules
 
@@ -75,6 +125,7 @@ rm -rf temp/
 - Keep build artifacts separate from source code
 - Document any new directory structures in README.md
 - Clean up experimental code immediately after use
+- **Avoid creating specification files** - use README.md sections instead
 
 ### Repository Hygiene
 - No orphaned files or directories
@@ -82,14 +133,22 @@ rm -rf temp/
 - No temporary files in version control  
 - No build artifacts in repository
 - Regular dependency cleanup
+- **No configuration duplication** between files
+
+### HustleMode.ai Specific Standards
+- **Function App Simplicity**: `function_app.py` should only register blueprints (8 lines max)
+- **Personality Consistency**: Each personality file maintains 8-12 word response limits
+- **Platform Agnostic**: Never tie functionality to specific messaging platform
+- **Ultra-Concise Focus**: All documentation should emphasize mobile-optimized responses
 
 ## 🛡️ Anti-Bloat Safeguards
 
 ### Required Checks Before Any Addition
 1. **Purpose Verification**: "Why does this file/directory need to exist?"
 2. **Duplication Check**: "Does this functionality already exist elsewhere?"
-3. **Future Maintenance**: "Will this be actively maintained or become orphaned?"
-4. **Integration Test**: "Does this integrate with our current Azure Functions architecture?"
+3. **Configuration Check**: "Should this be in deployment-config.json instead?"
+4. **Future Maintenance**: "Will this be actively maintained or become orphaned?"
+5. **Integration Test**: "Does this integrate with our current Azure Functions architecture?"
 
 ### Prohibited Patterns
 - ❌ "Future" or "planning" directories (use issues/docs instead)
@@ -98,26 +157,49 @@ rm -rf temp/
 - ❌ Experimental code without cleanup plan
 - ❌ Architecture mixing (FastAPI + Azure Functions + Lambda)
 - ❌ Schema files without active database implementation
+- ❌ **Duplicate MVP/specification files** (use README.md instead)
+- ❌ **Configuration duplication** across multiple files
+
+### HustleMode.ai Specific Prohibitions
+- ❌ Adding personalities beyond 2-personality MVP without user validation
+- ❌ Responses longer than 12 words in personality files
+- ❌ Platform-specific code that doesn't work universally
+- ❌ Hardcoded configuration values (use deployment-config.json)
+- ❌ Separate specification files (integrate into README.md)
 
 ## 📝 Documentation Standards
 
 ### 🚨 MANDATORY: Changelog Updates
 - **MUST** update `CHANGELOG.md` for all functional/configuration changes
-- **Required for**: API changes, bug fixes, new features, config updates, integration fixes
+- **Required for**: API changes, bug fixes, new features, config updates, integration fixes, personality changes
 - **Format**: Use action verbs (Added, Fixed, Enhanced) with date and specific details
 - **Not required for**: Comment changes, formatting, typo fixes
+
+### Configuration Documentation Rules
+- **Authoritative Source**: `deployment-config.json` contains all configuration values
+- **Reference Pattern**: Other files should reference config file instead of duplicating
+- **Synchronization**: Any configuration change must update deployment-config.json first
+- **Documentation Updates**: Update PRODUCTION_LINKS.md references, not duplicate values
 
 ### Required Updates
 - Update `README.md` when architecture changes
 - Keep `CHANGELOG.md` current with all changes (see requirements above)
 - Document deployment processes in `DEPLOYMENT.md`
-- Maintain `PRODUCTION_LINKS.md` accuracy
+- Maintain `PRODUCTION_LINKS.md` accuracy by referencing authoritative sources
+- **Never duplicate configuration** - always reference deployment-config.json
 
 ### Documentation Organization
 - Core documentation at repository root
 - Component documentation with respective components
 - Specialized documentation in dedicated directories
 - No duplicate documentation files
+- **Single source of truth** for all configuration values
+
+### HustleMode.ai Documentation Standards
+- **Ultra-Concise Examples**: Show 8-12 word response examples in all personality docs
+- **Platform-Agnostic Language**: Never assume single messaging platform
+- **Configuration References**: Always point to deployment-config.json for authoritative values
+- **MVP Focus**: Emphasize 2-personality system, avoid feature bloat documentation
 
 ## ⚠️ Deprecated Practices
 
@@ -131,9 +213,23 @@ rm -rf temp/
 - Empty API directories (`/api` with no implementation)
 - Outdated GitHub Actions workflows
 - Outdated deployment configurations (keep deployment-config.json current)
+- **Separate MVP/specification files** (use README.md sections instead)
+- **Configuration duplication** across multiple files
+
+### HustleMode.ai Deprecated Patterns
+- ❌ Hardcoded personality responses (use personality files)
+- ❌ Platform-specific messaging code (use universal patterns)
+- ❌ Responses longer than 12 words
+- ❌ Multiple configuration files with same information
+- ❌ Specification documents separate from README.md
 
 ### Migration Rules
 - Always move deprecated patterns to proper structure
 - Update scripts to use new patterns
 - Document migrations in CHANGELOG.md
 - Test new patterns before removing old ones
+- **Consolidate configuration** into deployment-config.json
+- **Migrate specifications** into README.md sections
+
+---
+**Core Philosophy**: Single source of truth for configuration, ultra-concise personality system, platform-agnostic design, and zero tolerance for duplication or bloat

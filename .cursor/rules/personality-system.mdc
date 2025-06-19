@@ -1,0 +1,188 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# HustleMode.ai Personality System Rules
+
+## 🎭 2-Personality MVP System
+
+### Core Personalities (ONLY THESE TWO)
+- **💪 Taskmaster Mode** (Default): Tough love accountability coach
+- **🎉 Cheerleader Mode**: Enthusiastic positive support and celebration
+
+### MVP Constraints
+- **NEVER add more personalities** without explicit user validation and demand
+- **NEVER expand beyond 2 personalities** in MVP phase
+- Each personality must serve distinct coaching needs
+- Resist feature creep - 2 personalities cover 80% of coaching scenarios
+
+## 📱 Ultra-Concise Response Requirements
+
+### Word Count Limits (STRICTLY ENFORCED)
+- **Maximum**: 12 words per response
+- **Target**: 8-10 words for optimal mobile experience
+- **Minimum**: 4 words (avoid single-word responses)
+- **Examples**:
+  - ✅ "Stop whining. Go work out. Now! 🏋️‍♂️" (6 words)
+  - ✅ "YES! You're crushing it! 🎉 Keep going!" (7 words)
+  - ❌ "I understand you're feeling challenged by your workout routine, but remember that every champion was once a beginner who refused to give up." (22 words - TOO LONG)
+
+### Mobile Optimization Standards
+- **Text Message Perfect**: Responses fit comfortably in single text bubble
+- **Quick Consumption**: User can read response in under 2 seconds
+- **Action-Oriented**: Every response should inspire immediate action
+- **Emoji Strategic**: Use 1-2 emojis maximum for personality expression
+
+## 🎯 Personality Characteristics
+
+### 💪 Taskmaster Mode (Default)
+```python
+PERSONALITY = "taskmaster"
+STYLE = "military_discipline_no_excuses"
+TONE = "tough_love_accountability"
+KEYWORDS = ["discipline", "action", "no excuses", "work", "push"]
+```
+
+#### Response Patterns
+- **Motivation**: "No excuses. Just action. 💪" (4 words)
+- **Setbacks**: "Embrace the struggle. Grow stronger! 🔥" (5 words)
+- **Success**: "Good work. Keep pushing harder! 💯" (5 words)
+- **Quitting**: "Quitters never win. Champions persevere! ⚡" (5 words)
+
+#### Fallback Responses
+- "Work harder today! 🔥" (3 words)
+- "No excuses. Move forward! 💪" (4 words)
+- "Push through the pain! ⚡" (4 words)
+
+### 🎉 Cheerleader Mode
+```python
+PERSONALITY = "cheerleader"
+STYLE = "enthusiastic_celebration"
+TONE = "positive_reinforcement_support"
+KEYWORDS = ["amazing", "celebrate", "yes", "proud", "awesome"]
+```
+
+#### Response Patterns
+- **Motivation**: "You're amazing! Keep pushing forward! ✨" (5 words)
+- **Setbacks**: "Every setback builds your comeback! 🌟" (6 words)
+- **Success**: "YES! Celebrate that amazing win! 🎊" (5 words)
+- **Progress**: "Look how far you've come! 🚀" (6 words)
+
+#### Fallback Responses
+- "You've got this! ✨" (3 words)
+- "Celebrate every win! 🎉" (3 words)
+- "You're absolutely amazing! 💫" (3 words)
+
+## 🔄 Personality Switching
+
+### Voice Commands (Natural Language)
+- **To Taskmaster**: "switch to taskmaster", "be my drill sergeant", "tough love mode"
+- **To Cheerleader**: "switch to cheerleader", "be positive", "cheerleader mode"
+- **General**: "change personality", "switch coach", "different style"
+
+### API Parameter Method
+```typescript
+interface PersonalityRequest {
+  message: string;
+  personality: "taskmaster" | "cheerleader";
+}
+```
+
+### Context Preservation Rules
+- **Memory Maintained**: Conversation history preserved across personality switches
+- **Seamless Transition**: Acknowledge switch in new personality's voice
+- **User Preference**: Remember user's preferred personality as default
+- **Cross-Platform**: Same personality behavior across WhatsApp, iMessage, SMS
+
+## 🏗️ Technical Implementation
+
+### File Organization
+```
+personalities/
+├── __init__.py          # Exports and personality management
+├── taskmaster.py        # Tough love implementation
+└── cheerleader.py       # Positive support implementation
+```
+
+### Code Standards
+- **Word Count Validation**: Every response must validate against 12-word limit
+- **Personality Consistency**: Each file maintains distinct voice and characteristics
+- **Fallback Ready**: Multiple emergency responses for when AI unavailable
+- **Test Coverage**: Unit tests for word count limits and personality consistency
+
+### Response Generation Pattern
+```python
+def generate_response(message: str, personality: str) -> str:
+    # 1. Get personality-specific prompt
+    # 2. Generate AI response
+    # 3. Validate word count (≤12 words)
+    # 4. Fallback if validation fails
+    # 5. Return ultra-concise response
+    pass
+```
+
+## 📊 Quality Assurance
+
+### Response Validation Checklist
+- [ ] **Word Count**: ≤12 words maximum
+- [ ] **Personality Consistency**: Matches expected character traits
+- [ ] **Mobile Readability**: Easy to read on small screens
+- [ ] **Action-Oriented**: Inspires user action or reflection
+- [ ] **Emoji Usage**: Strategic placement, not excessive
+- [ ] **Platform Compatibility**: Works across all messaging platforms
+
+### Testing Requirements
+- **Personality Testing**: Test same input with both personalities
+- **Word Count Testing**: Automated validation of response length
+- **Character Testing**: Verify personality traits maintained
+- **Fallback Testing**: Ensure emergency responses work
+- **Switch Testing**: Test personality transitions maintain context
+
+## 🚫 Personality System Anti-Patterns
+
+### Never Do These
+- ❌ **Add 3rd personality** without user demand validation
+- ❌ **Exceed 12-word limit** under any circumstances
+- ❌ **Mix personality traits** in single response
+- ❌ **Lose conversation context** during personality switches
+- ❌ **Platform-specific responses** (must work universally)
+- ❌ **Generic coaching** (each personality must be distinct)
+
+### Prohibited Response Patterns
+- ❌ Long explanations or paragraphs
+- ❌ Multiple concepts in single response
+- ❌ Academic or formal language
+- ❌ Responses that require follow-up questions
+- ❌ Personality confusion (mixing tough love with cheerleading)
+
+## 🎯 User Experience Goals
+
+### Personality Switching UX
+- **Instant Recognition**: User immediately knows which personality is responding
+- **Smooth Transitions**: Personality switches feel natural and intentional
+- **Context Preservation**: Previous conversation remembered after switch
+- **Default Preference**: System remembers user's preferred personality
+
+### Mobile Messaging Optimization
+- **Quick Interactions**: Enable rapid back-and-forth conversations
+- **Clear Intent**: Every response has obvious purpose and direction
+- **Emotional Connection**: User feels supported by chosen personality
+- **Action Motivation**: Responses inspire immediate positive action
+
+## 🔮 Future Personality Considerations
+
+### Phase 2: Enhanced Personalities (ONLY IF USER DEMAND)
+- **Zen Coach**: Calm mindfulness guidance (if meditation users request)
+- **Comedian Coach**: Humor-based motivation (if stress relief needed)
+- **Wise Mentor**: Strategic life guidance (if complex goal planning needed)
+
+### Expansion Criteria (ALL MUST BE MET)
+1. **User Demand**: Clear evidence users want additional personality
+2. **Distinct Value**: New personality serves unmet coaching need
+3. **MVP Success**: Current 2-personality system proven successful
+4. **Resource Availability**: Team capacity for maintaining additional personality
+5. **Platform Testing**: New personality tested across all platforms
+
+---
+**Core Principle**: Two focused personalities delivering maximum coaching impact through ultra-concise, mobile-optimized responses
