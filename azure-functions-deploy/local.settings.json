@@ -10,6 +10,12 @@
     "WHATSAPP_TOKEN": "PLACEHOLDER_WHATSAPP_TOKEN",
     "WHATSAPP_VERIFY_TOKEN": "PLACEHOLDER_WHATSAPP_VERIFY_TOKEN",
     "WHATSAPP_PHONE_NUMBER_ID": "682917338218717",
+    "DATABASE_HOST": "hustlemode-ai-postgres.postgres.database.azure.com",
+    "DATABASE_NAME": "postgres",
+    "DATABASE_USER": "postgres",
+    "DATABASE_PASSWORD": "1YL198x1ReJx",
+    "DATABASE_PORT": "5432",
+    "DATABASE_SSL_MODE": "require",
     "AzureWebJobsFeatureFlags": "EnableWorkerIndexing",
     "PYTHON_ISOLATE_WORKER_DEPENDENCIES": "1"
   }
