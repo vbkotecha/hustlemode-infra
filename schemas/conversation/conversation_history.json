@@ -1,8 +1,8 @@
 {
   "name": "conversation_history",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "lastUpdated": "2025-01-16",
-  "description": "WhatsApp conversation history with AI analysis and memory integration",
+  "description": "WhatsApp conversation history with AI analysis, personality tracking and relevance filtering",
   "fields": [
     {
       "name": "id",
@@ -36,6 +36,21 @@
       "type": "text",
       "description": "Message content text",
       "nullable": false
+    },
+    {
+      "name": "assistant_personality",
+      "type": "character varying(20)",
+      "description": "Personality used for this response (outgoing messages only)",
+      "nullable": true,
+      "constraints": ["goggins", "cheerleader", "comedian", "zen"]
+    },
+    {
+      "name": "message_relevance",
+      "type": "character varying(20)",
+      "description": "Relevance category for AI context filtering",
+      "nullable": true,
+      "default": "unknown",
+      "constraints": ["accountability_relevant", "goal_related", "small_talk", "off_topic", "system"]
     },
     {
       "name": "intent",
@@ -112,6 +127,21 @@
       "name": "idx_conversation_history_mem0_memory_id",
       "type": "btree",
       "columns": ["mem0_memory_id"]
+    },
+    {
+      "name": "idx_conversation_history_message_relevance",
+      "type": "btree",
+      "columns": ["message_relevance"]
+    },
+    {
+      "name": "idx_conversation_history_assistant_personality",
+      "type": "btree",
+      "columns": ["assistant_personality"]
+    },
+    {
+      "name": "idx_conversation_history_context_query",
+      "type": "btree",
+      "columns": ["user_id", "message_relevance", "created_at"]
     }
   ],
   "constraints": [
@@ -119,6 +149,16 @@
       "name": "conversation_history_message_type_check",
       "type": "CHECK",
       "definition": "message_type IN ('incoming', 'outgoing')"
+    },
+    {
+      "name": "conversation_history_assistant_personality_check",
+      "type": "CHECK",
+      "definition": "assistant_personality IN ('goggins', 'cheerleader', 'comedian', 'zen')"
+    },
+    {
+      "name": "conversation_history_message_relevance_check",
+      "type": "CHECK",
+      "definition": "message_relevance IN ('accountability_relevant', 'goal_related', 'small_talk', 'off_topic', 'system', 'unknown')"
     }
   ]
 } 

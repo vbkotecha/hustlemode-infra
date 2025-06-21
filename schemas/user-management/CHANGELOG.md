@@ -5,6 +5,27 @@ All notable changes to the user management database schemas will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2025-01-16
+
+### Added
+- **user_preferences.json** - Default personality preference support
+  - Added `default_personality` field for user's preferred assistant personality
+  - Supports 'goggins', 'cheerleader', 'comedian', 'zen' personality types
+  - Default value set to 'goggins' for consistency with existing behavior
+  - Check constraint ensures valid personality values
+  - Moves personality selection from session state to user preference (architectural improvement)
+
+### Changed
+- **Description update**: Updated table description to emphasize personality preferences
+- **Version bump**: Schema version updated to 1.1.0
+- **Architecture alignment**: Personality now treated as user preference rather than session state
+
+### Notes
+- This change aligns with the conversation persistence architecture where personality is a stable user preference
+- Existing users will automatically get 'goggins' as default personality
+- Applications should query user_preferences.default_personality instead of session-based personality tracking
+- Backward compatible - no breaking changes to existing functionality
+
 ## [1.0.0] - 2025-01-16
 
 ### Added

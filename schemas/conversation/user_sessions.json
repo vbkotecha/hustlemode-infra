@@ -1,8 +1,8 @@
 {
   "name": "user_sessions",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "lastUpdated": "2025-01-16",
-  "description": "Active user sessions for real-time conversation state and personality context",
+  "description": "Minimal operational user sessions for temporary state and fast phone lookup",
   "fields": [
     {
       "name": "id",
@@ -21,23 +21,29 @@
     {
       "name": "phone_number",
       "type": "character varying(20)",
-      "description": "User's phone number for quick lookup",
+      "description": "User's phone number for quick webhook lookup",
       "nullable": false
     },
     {
-      "name": "current_personality",
+      "name": "current_workflow",
       "type": "character varying(20)",
-      "description": "Active personality for this session",
-      "nullable": false,
-      "default": "goggins",
-      "constraints": ["goggins", "cheerleader", "comedian", "zen"]
+      "description": "Current operational workflow state",
+      "nullable": true,
+      "default": "chat",
+      "constraints": ["chat", "goal_setup", "check_in", "onboarding"]
     },
     {
-      "name": "session_context",
+      "name": "temporary_context",
       "type": "jsonb",
-      "description": "Current conversation context and state",
+      "description": "Temporary operational state (non-conversation data only)",
       "nullable": true,
       "default": "{}"
+    },
+    {
+      "name": "rate_limit_reset_at",
+      "type": "timestamp with time zone",
+      "description": "When rate limiting resets",
+      "nullable": true
     },
     {
       "name": "last_message_at",
@@ -51,7 +57,7 @@
       "type": "timestamp with time zone",
       "description": "When this session expires (for cleanup)",
       "nullable": false,
-      "default": "CURRENT_TIMESTAMP + INTERVAL '1 day'"
+      "default": "CURRENT_TIMESTAMP + INTERVAL '30 days'"
     },
     {
       "name": "created_at",
@@ -90,9 +96,9 @@
   ],
   "constraints": [
     {
-      "name": "user_sessions_current_personality_check",
+      "name": "user_sessions_current_workflow_check",
       "type": "CHECK",
-      "definition": "current_personality IN ('goggins', 'cheerleader', 'comedian', 'zen')"
+      "definition": "current_workflow IN ('chat', 'goal_setup', 'check_in', 'onboarding')"
     },
     {
       "name": "user_sessions_phone_number_unique",

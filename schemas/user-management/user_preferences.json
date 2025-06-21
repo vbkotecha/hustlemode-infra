@@ -1,8 +1,8 @@
 {
   "name": "user_preferences",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "lastUpdated": "2025-01-16",
-  "description": "User preferences for check-ins, Goggins intensity, and notification settings",
+  "description": "User preferences for check-ins, personality, and notification settings",
   "fields": [
     {
       "name": "id",
@@ -17,6 +17,14 @@
       "description": "Foreign key to users table",
       "nullable": true,
       "references": "users(id) ON DELETE CASCADE"
+    },
+    {
+      "name": "default_personality",
+      "type": "character varying(20)",
+      "description": "User's preferred assistant personality",
+      "nullable": false,
+      "default": "goggins",
+      "constraints": ["goggins", "cheerleader", "comedian", "zen"]
     },
     {
       "name": "check_in_frequency",
@@ -103,6 +111,11 @@
     }
   ],
   "constraints": [
+    {
+      "name": "user_preferences_default_personality_check",
+      "type": "CHECK",
+      "definition": "default_personality IN ('goggins', 'cheerleader', 'comedian', 'zen')"
+    },
     {
       "name": "user_preferences_check_in_frequency_check",
       "type": "CHECK",
