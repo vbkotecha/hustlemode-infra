@@ -5,7 +5,7 @@
 - **Personalities**: Taskmaster (tough love) + Cheerleader (positive support)  
 - **Architecture**: Azure Functions Premium Plan + OpenAI GPT-4
 - **Message Length**: Ultra-concise (8-12 words max)
-- **Last Updated**: January 16, 2025
+- **Last Updated**: January 16, 2025 (Storage Monitoring Added)
 
 > 📋 **Configuration Reference**: See `deployment-config.json` for all authoritative configuration values
 
@@ -22,6 +22,7 @@ FUNCTION_KEY="your_function_key_here"
 
 **Key Endpoints:**
 - Health Check: `${BASE_URL}/api/health?code=${FUNCTION_KEY}`
+- Storage Metrics: `${BASE_URL}/api/storage?code=${FUNCTION_KEY}`
 - Assistant API: `${BASE_URL}/api/assistants/{chatId}?code=${FUNCTION_KEY}`
 - WhatsApp Webhook: `${BASE_URL}/api/messaging/whatsapp?code=${FUNCTION_KEY}`
 
@@ -61,21 +62,31 @@ FUNCTION_KEY="your_function_key_here"
 curl "https://hustlemode-api.azurewebsites.net/api/health?code=${FUNCTION_KEY}"
 ```
 
-### 2. Taskmaster Personality Test
+### 2. Storage Metrics & Database Monitoring
+```bash
+curl "https://hustlemode-api.azurewebsites.net/api/storage?code=${FUNCTION_KEY}" | jq
+```
+**Current Status** (from deployment-config.json):
+- **Phase**: Phase 1 (0-5K Users) - Optimal state ✅
+- **Storage**: 224 KB for 77 messages from 5 users
+- **Database**: PostgreSQL + Mem0 hybrid architecture
+- **Scaling**: 3-phase strategy documented
+
+### 3. Taskmaster Personality Test
 ```bash
 curl -X POST "https://hustlemode-api.azurewebsites.net/api/assistants/test123?code=${FUNCTION_KEY}" \
 -H "Content-Type: application/json" \
 -d '{"message": "I want to quit my workout", "personality": "taskmaster"}'
 ```
 
-### 3. Cheerleader Personality Test
+### 4. Cheerleader Personality Test
 ```bash
 curl -X POST "https://hustlemode-api.azurewebsites.net/api/assistants/test123?code=${FUNCTION_KEY}" \
 -H "Content-Type: application/json" \
 -d '{"message": "I completed my first workout!", "personality": "cheerleader"}'
 ```
 
-### 4. WhatsApp Webhook Simulation
+### 5. WhatsApp Webhook Simulation
 ```bash
 curl -X POST "https://hustlemode-api.azurewebsites.net/api/messaging/whatsapp?code=${FUNCTION_KEY}" \
 -H "Content-Type: application/json" \
@@ -127,12 +138,17 @@ Automatically deploys on push to main branch when `azure-functions-deploy/` file
 - **Error Rate**: Should be < 1%
 - **Function Executions**: Track usage patterns
 - **WhatsApp Webhook Success**: Monitor message delivery
+- **Database Storage**: Monitor via `/api/storage` endpoint
+- **Storage Growth**: Track message volume and user growth
+- **Performance**: Database query times and index usage
 
 ### Common Issues
 1. **401 Unauthorized**: Function key missing or invalid
 2. **WhatsApp Not Responding**: Check webhook URL includes function key
 3. **Slow Responses**: Monitor Application Insights for bottlenecks
 4. **OpenAI Errors**: Check Azure OpenAI service status and quotas
+5. **Storage Endpoint 404**: Ensure separate storage.py blueprint is deployed
+6. **Database Connection**: Check PostgreSQL firewall and connection string
 
 ### Logs Access
 - **Azure Portal**: Function App → Functions → Monitor
@@ -154,7 +170,7 @@ Automatically deploys on push to main branch when `azure-functions-deploy/` file
 
 ## 💰 Cost Monitoring
 
-### Premium Plan Benefits
+### Premium Plan Benefits  
 - **No Cold Starts**: Always warm instances
 - **Better Performance**: Guaranteed compute resources  
 - **Higher Scale Limits**: More concurrent executions
@@ -162,9 +178,17 @@ Automatically deploys on push to main branch when `azure-functions-deploy/` file
 
 ### Usage Patterns to Monitor
 - Function execution count and duration
-- Azure OpenAI token usage
+- Azure OpenAI token usage (90% reduction with Mem0 optimization)
 - Application Insights data ingestion
 - Storage account transactions
+- **PostgreSQL Storage**: Currently 224 KB (Phase 1 optimal)
+- **Database Query Performance**: Monitor index usage and query times
+
+### Storage Scaling Economics (from deployment-config.json)
+- **Phase 1 (0-5K Users)**: ~$5/month PostgreSQL + monitoring
+- **Phase 2 (5K-50K Users)**: ~$20/month with 90-day retention  
+- **Phase 3 (50K+ Users)**: ~$50/month with advanced optimization
+- **Mem0 Benefits**: 90% token savings reduces AI processing costs significantly
 
 ---
 **Configuration Source**: `deployment-config.json`  

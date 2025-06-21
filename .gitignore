@@ -80,3 +80,5 @@ temp/
 .Trashes
 ehthumbs.db
 Thumbs.db
+*.pyc
+__pycache__/
