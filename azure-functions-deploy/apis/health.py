@@ -21,4 +21,6 @@ def health_check(req: func.HttpRequest) -> func.HttpResponse:
         json.dumps(health_status, indent=2),
         status_code=200,
         mimetype="application/json"
-    ) 
+    )
+
+ 

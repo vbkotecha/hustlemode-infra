@@ -1,37 +1,37 @@
-# HustleMode.ai 2-Personality MVP System
+# HustleMode.ai Conversation Persistence System - Personality Management
 from . import goggins, cheerleader
 
 def get_personality_prompts():
-    """Get all personality prompts for the 2-personality MVP system."""
+    """Get all personality prompts aligned with database schema."""
     return {
-        "taskmaster": goggins.PROMPT,
+        "goggins": goggins.PROMPT,
         "cheerleader": cheerleader.PROMPT,
     }
 
 def get_personality_fallbacks():
     """Get fallback messages for each personality."""
     return {
-        "taskmaster": goggins.FALLBACK,
+        "goggins": goggins.FALLBACK,
         "cheerleader": cheerleader.FALLBACK,
     }
 
 def get_personality_keywords():
     """Get keywords for personality detection."""
     return {
-        "taskmaster": goggins.KEYWORDS,
+        "goggins": goggins.KEYWORDS,
         "cheerleader": cheerleader.KEYWORDS,
     }
 
 def get_personality(name: str):
     """Get personality module by name."""
     personalities = {
-        "taskmaster": goggins,
+        "goggins": goggins,
         "cheerleader": cheerleader,
     }
     return personalities.get(name)
 
-# Available personalities for the MVP
-AVAILABLE_PERSONALITIES = ["taskmaster", "cheerleader"]
+# Available personalities (aligned with database schema constraints)
+AVAILABLE_PERSONALITIES = ["goggins", "cheerleader"]
 
 # Export the main functions
 __all__ = [
