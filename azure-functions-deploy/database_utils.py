@@ -618,7 +618,7 @@ def sync_conversation_to_mem0(user_id: str, message_content: str, message_type: 
     """Sync conversation data to Mem0 for behavioral pattern analysis"""
     try:
         # Import Mem0 service when needed
-        from ai.mem0_service import Mem0Service
+        from mem0_service import Mem0Service
         
         mem0_service = Mem0Service()
         
@@ -682,7 +682,7 @@ def get_mem0_enhanced_context(user_id: str, current_message: str) -> dict:
         }
         
         # Get behavioral insights from Mem0
-        from ai.mem0_service import Mem0Service
+        from mem0_service import Mem0Service
         mem0_service = Mem0Service()
         
         mem0_context = mem0_service.get_user_context(

@@ -248,6 +248,48 @@ Provide analysis in JSON format:
             })
         return formatted
     
+    def get_completion_with_tools(self, messages: List[Dict], tools: List[Dict], max_tokens: int = 150) -> object:
+        """Get completion with function calling tools."""
+        
+        try:
+            response = self.client.chat.completions.create(
+                model=self.deployment_name,
+                messages=messages,
+                tools=tools,
+                tool_choice="auto",  # Let AI decide when to use tools
+                max_tokens=max_tokens,
+                temperature=0.8
+            )
+            
+            return response.choices[0].message
+            
+        except Exception as e:
+            print(f"🚨 Azure OpenAI Function Calling Error: {str(e)}")
+            # Return a simple response object if function calling fails
+            class SimpleResponse:
+                def __init__(self, content):
+                    self.content = content
+                    self.tool_calls = None
+            
+            return SimpleResponse("System busy. Try again! 🔄")
+    
+    def get_completion(self, messages: List[Dict], max_tokens: int = 150) -> str:
+        """Get simple completion without tools."""
+        
+        try:
+            response = self.client.chat.completions.create(
+                model=self.deployment_name,
+                messages=messages,
+                max_tokens=max_tokens,
+                temperature=0.8
+            )
+            
+            return response.choices[0].message.content
+            
+        except Exception as e:
+            print(f"🚨 Azure OpenAI Error: {str(e)}")
+            return "System busy. Stay hard! 💪"
+
     def _get_fallback_response(self, intent: str) -> str:
         """Provide fallback responses when Azure OpenAI fails."""
         fallback_responses = {
