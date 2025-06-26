@@ -14,6 +14,36 @@ AVAILABLE_TOOLS = [
     {
         "type": "function",
         "function": {
+            "name": "get_user_goals",
+            "description": "Get user's current goals when they ask about their goals or want to see what they're working on",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "status": {"type": "string", "enum": ["active", "completed", "all"], "description": "Goal status to retrieve"}
+                },
+                "required": []
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "onboard_user",
+            "description": "Collect user's name and basic info when they introduce themselves or seem new",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string", "description": "User's name"},
+                    "fitness_level": {"type": "string", "enum": ["beginner", "intermediate", "advanced"], "description": "Current fitness level"},
+                    "main_focus": {"type": "string", "description": "What they want to focus on"}
+                },
+                "required": ["name"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "create_goal",
             "description": "Create a new goal for the user when they express wanting to achieve something",
             "parameters": {
@@ -119,39 +149,104 @@ def universal_chat(req: func.HttpRequest) -> func.HttpResponse:
             # Build context summary from passed data
             context_summary = f"Goals: {goal_summary}; Recent: {hybrid_summary}" if hybrid_summary else "User with history"
         else:
-            # Fallback to Mem0 search for direct API calls
-            user_context = memory_service.search_memories(
-                query=f"conversation history name goals preferences for user {user_id}",
+            # Fallback to Mem0 search for direct API calls - use multiple specific searches
+            context_summary = "New user"
+            
+            # Search for user profile/name info with better queries
+            name_memories = memory_service.search_memories(
+                query=f"name is",  # Simpler, more direct
                 user_id=user_id,
-                limit=15
+                limit=5
             )
             
-            # Extract relevant context from Mem0 memories
-            context_summary = "New user"
-            if user_context:
-                # Extract key information from memories
-                recent_conversations = []
-                user_info = []
-                goals = []
+            # Search for goals with exact terms used in storage
+            goal_memories = memory_service.search_memories(
+                query=f"goal",  # Simple keyword search
+                user_id=user_id,
+                limit=5
+            )
+            
+            # Search for recent conversations with better terms
+            conversation_memories = memory_service.search_memories(
+                query=f"User Coach",  # Matches stored format
+                user_id=user_id,
+                limit=5
+            )
+            
+            # Build context summary from specific searches
+            context_parts = []
+            user_name = None
+            
+            # Extract user name from profile memories - check multiple sources
+            for memory in name_memories:
+                memory_text = memory.get('memory', memory.get('text', ''))
+                metadata = memory.get('metadata', {})
                 
-                for memory in user_context[:10]:  # Use more context
-                    memory_text = memory.get('memory', memory.get('text', ''))
-                    if 'name' in memory_text.lower():
-                        user_info.append(memory_text)
-                    elif 'goal' in memory_text.lower():
-                        goals.append(memory_text)
-                    elif 'user:' in memory_text.lower() or 'coach:' in memory_text.lower():
-                        recent_conversations.append(memory_text)
+                # Check metadata first
+                if metadata.get('type') == 'user_profile' and metadata.get('name'):
+                    user_name = metadata['name']
+                    context_parts.append(f"User: {user_name}")
+                    break
+                # Check text patterns
+                elif 'name is' in memory_text.lower():
+                    # Extract name from text like "User's name is Sarah"
+                    try:
+                        name_part = memory_text.lower().split('name is')[1].split('.')[0].strip()
+                        if name_part and len(name_part) < 20:  # Reasonable name length
+                            user_name = name_part.title()
+                            context_parts.append(f"User: {user_name}")
+                            break
+                    except:
+                        pass
+            
+            # Extract active goals - be more flexible
+            active_goals = []
+            for memory in goal_memories:
+                memory_text = memory.get('memory', memory.get('text', ''))
+                metadata = memory.get('metadata', {})
                 
-                # Build context summary
-                context_parts = []
-                if user_info:
-                    context_parts.append(f"User info: {user_info[0]}")
-                if goals:
-                    context_parts.append(f"Goals: {'; '.join(goals[:2])}")
-                if recent_conversations:
-                    context_parts.append(f"Recent: {recent_conversations[0]}")
-                
+                # Check metadata for structured goals
+                if metadata.get('type') == 'goal':
+                    goal_data = metadata.get('data', {})
+                    if goal_data.get('status') == 'active':
+                        title = goal_data.get('title', 'Unknown goal')
+                        active_goals.append(title)
+                # Check text for goal mentions
+                elif 'goal' in memory_text.lower() and any(word in memory_text.lower() for word in ['new', 'target', 'daily', 'weekly']):
+                    # Extract goal from text like "New fitness goal: Run daily"
+                    try:
+                        if ':' in memory_text:
+                            goal_part = memory_text.split(':')[1].split('.')[0].strip()
+                            if goal_part and len(goal_part) < 100:
+                                active_goals.append(goal_part)
+                    except:
+                        pass
+                        
+                if len(active_goals) >= 2:  # Limit to 2 goals for context
+                    break
+            
+            if active_goals:
+                context_parts.append(f"Goals: {'; '.join(active_goals)}")
+            
+            # Add recent conversation context
+            if conversation_memories:
+                latest = conversation_memories[0].get('memory', '')
+                if latest:
+                    # Extract just the user part or keep it short
+                    if 'User:' in latest:
+                        try:
+                            user_part = latest.split('User:')[1].split('Coach:')[0].strip()
+                            if user_part and len(user_part) < 50:
+                                context_parts.append(f"Recent: {user_part}")
+                        except:
+                            pass
+                    else:
+                        context_parts.append(f"Recent: {latest[:30]}...")
+            
+            # Determine if this looks like a new user needing onboarding
+            if not user_name and not active_goals:
+                context_summary = "New user - suggest onboarding"
+            else:
                 context_summary = '; '.join(context_parts) if context_parts else "User with some history"
         
         # Get personality prompts
@@ -165,22 +260,26 @@ def universal_chat(req: func.HttpRequest) -> func.HttpResponse:
 
 User Context: {context_summary}
 
-You have access to tools for:
-- Creating goals when users want to achieve something  
-- Conducting check-ins when they share mood/progress
-- Setting reminders when they ask to be reminded
-- Analyzing progress when they ask about performance
+Available Tools:
+- get_user_goals: When they ask "what are my goals?" or want to see their progress
+- onboard_user: When they introduce themselves or you don't know their name
+- create_goal: When they want to start something new
+- daily_checkin: When they share mood/energy/progress updates
+- schedule_reminder: When they ask to be reminded about something
+- progress_analysis: When they ask about patterns or performance
 
-ALWAYS:
-1. Use tools when user intent matches tool purpose
-2. Respond in your personality (8-12 words max)
-3. Be encouraging but direct
-4. Reference their context when relevant
+CRITICAL RULES:
+1. If context shows "New user" or no name → Use onboard_user tool first
+2. If they ask about goals and you see goals in context → Use get_user_goals tool
+3. Always use tools when user intent matches tool purpose
+4. Respond in your personality (8-12 words max) 
+5. Reference their name and specific goals when available
 
 Examples:
-- User: "I want to get fit" → Use create_goal tool + "Gym 3x weekly? Let's lock it! 🎯"
-- User: "Feeling tired today" → Use daily_checkin tool + "Energy 1-10? We'll push through! 💪"
-- User: "Just saying hi" → No tools needed + "Ready to crush goals! What's up? 🚀"
+- User: "Hi" + No name in context → Use onboard_user + "What's your name? Let's get started! 💪"
+- User: "What are my goals?" → Use get_user_goals + "Found X goals. Keep pushing! 🎯"
+- User: "I want to run daily" → Use create_goal + "Daily run goal locked! Let's go! 🏃"
+- User: "Feeling good today" → Use daily_checkin + "Energy high? Perfect! What's next? 🔥"
 """
 
         # Get AI response with function calling
@@ -285,7 +384,11 @@ def execute_tool(tool_call, user_id, memory_service):
     arguments = json.loads(tool_call.function.arguments)
     
     try:
-        if function_name == "create_goal":
+        if function_name == "get_user_goals":
+            return get_user_goals_tool(user_id, arguments, memory_service)
+        elif function_name == "onboard_user":
+            return onboard_user_tool(user_id, arguments, memory_service)
+        elif function_name == "create_goal":
             return create_goal_tool(user_id, arguments, memory_service)
         elif function_name == "daily_checkin":
             return daily_checkin_tool(user_id, arguments, memory_service)
@@ -299,6 +402,82 @@ def execute_tool(tool_call, user_id, memory_service):
     except Exception as e:
         logging.error(f"❌ Error executing tool {function_name}: {str(e)}")
         return {"function_name": function_name, "status": "error", "error": str(e)}
+
+def get_user_goals_tool(user_id, arguments, memory_service):
+    """Tool: Get user's current goals with improved search."""
+    
+    status = arguments.get('status', 'active')
+    
+    # Use simple, direct search that matches stored text
+    memories = memory_service.search_memories(
+        query="goal",  # Simple keyword that matches storage
+        user_id=user_id,
+        limit=15
+    )
+    
+    # Extract goals from both metadata and text
+    goals = []
+    for memory in memories:
+        memory_text = memory.get('memory', memory.get('text', ''))
+        metadata = memory.get('metadata', {})
+        
+        # Check structured metadata first
+        if metadata.get('type') == 'goal':
+            goal_data = metadata.get('data', {})
+            if goal_data and (status == 'all' or goal_data.get('status') == status):
+                goals.append({
+                    "title": goal_data.get('title', 'Unknown Goal'),
+                    "category": goal_data.get('category', 'general'),
+                    "status": goal_data.get('status', 'active'),
+                    "source": "metadata"
+                })
+        
+        # Extract from text patterns like "New fitness goal: Run daily"
+        elif 'goal' in memory_text.lower() and ':' in memory_text:
+            try:
+                goal_part = memory_text.split(':')[1].split('.')[0].strip()
+                if goal_part and len(goal_part) < 100:
+                    goals.append({
+                        "title": goal_part,
+                        "status": "active",
+                        "source": "text"
+                    })
+            except:
+                pass
+    
+    return {
+        "function_name": "get_user_goals", 
+        "status": "retrieved", 
+        "count": len(goals),
+        "goals": goals[:5]  # Limit for readability
+    }
+
+def onboard_user_tool(user_id, arguments, memory_service):
+    """Tool: Onboard new user by capturing their info."""
+    
+    name = arguments['name']
+    fitness_level = arguments.get('fitness_level', 'beginner')
+    main_focus = arguments.get('main_focus', 'general fitness')
+    
+    # Store user info in Mem0
+    memory_service.add_memory(
+        message=f"User's name is {name}. Fitness level: {fitness_level}. Main focus: {main_focus}.",
+        user_id=user_id,
+        metadata={
+            "type": "user_profile",
+            "name": name,
+            "fitness_level": fitness_level,
+            "main_focus": main_focus,
+            "onboarded_at": datetime.utcnow().isoformat()
+        }
+    )
+    
+    return {
+        "function_name": "onboard_user", 
+        "status": "onboarded", 
+        "name": name,
+        "fitness_level": fitness_level
+    }
 
 def create_goal_tool(user_id, arguments, memory_service):
     """Tool: Create a new goal."""

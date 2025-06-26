@@ -1186,3 +1186,52 @@ WHATSAPP_PHONE_NUMBER=15556583575
 **Result**: Transformed from generic, robotic responses to intelligent, goal-aware accountability coaching with persistent memory and contextual understanding.
 
 ### Previous Entries 
+
+## [1.4.0] - 2025-06-26
+
+### 🔧 Fixed Bot "Acting Weird" Issues
+- **Added Missing Goal Retrieval Tool**: Universal Chat API now has `get_user_goals` tool to handle "What are my goals?" queries
+- **Added Onboarding System**: New `onboard_user` tool captures user name and basic info for new users
+- **Fixed Mem0 Search Queries**: Replaced ineffective queries like `"type:goal status:active"` with simple keyword searches
+- **Enhanced Context Extraction**: Better parsing of stored text patterns and metadata for goal/name detection
+- **Improved Tool System**: AI now properly detects when to use onboarding vs goal retrieval vs goal creation
+- **Fixed Context Continuity**: Bot now remembers goals created in previous conversations using optimized Mem0 queries
+
+### 🎯 Tool System Enhancements
+- **get_user_goals**: Retrieves active goals from Mem0 with fallback to text search
+- **onboard_user**: Captures name, fitness level, and focus areas for new users  
+- **Enhanced create_goal**: Improved metadata storage in Mem0 for better retrieval
+- **Smarter AI Prompts**: Context-aware system prompts guide tool selection based on user state
+
+### 🔍 Mem0 Search Optimization
+- **Before**: `"name is profile onboarded"` → No results (too generic)
+- **After**: `"name is"` → Finds user profile data effectively
+- **Before**: `"type:goal status:active"` → Invalid syntax for Mem0 Cloud
+- **After**: `"goal"` → Simple keyword search matching stored text
+- **Before**: `"User: Coach: conversation"` → Complex pattern matching
+- **After**: `"User Coach"` → Direct pattern matching stored format
+- **Text Extraction**: Enhanced parsing of goal titles from patterns like "New fitness goal: Run daily"
+
+### 🔍 Storage Architecture Clarification
+- **Goals**: Stored in Mem0 for semantic search and AI context (not PostgreSQL)
+- **User Data**: Phone number and preferences in PostgreSQL for fast lookup
+- **Conversations**: Recent context in PostgreSQL, behavioral insights in Mem0
+- **Dynamic Data**: All coaching context (goals, check-ins, progress) in Mem0 for AI intelligence
+
+### 🚀 User Experience Improvements
+- **Context Awareness**: Bot now knows user names and references specific goals
+- **Onboarding Flow**: Automatic detection of new users with guided introduction
+- **Goal Continuity**: Consistent goal tracking across conversations and sessions
+- **Intelligent Responses**: AI selects appropriate tools based on conversation context
+
+### 🐛 Root Cause Analysis
+The "acting weird" behavior was caused by ineffective Mem0 search queries:
+1. **Metadata Query Syntax**: `"type:goal"` format doesn't work with Mem0 Cloud API
+2. **Over-Complex Queries**: Multi-word queries like `"name is profile onboarded"` were too specific
+3. **Mismatch with Storage**: Search terms didn't match how data was actually stored in Mem0
+4. **Missing Tools**: No way to retrieve goals when users asked "What are my goals?"
+5. **No Onboarding**: New users got generic responses instead of name capture
+
+**Solution**: Simplified search queries, added missing tools, enhanced text extraction patterns.
+
+--- 
