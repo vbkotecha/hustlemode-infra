@@ -95,16 +95,64 @@ def whatsapp_webhook(req: func.HttpRequest) -> func.HttpResponse:
                     
                     logging.info(f"🔄 Personality switched to {new_personality} for {phone_number} (saved: {pref_saved})")
                 else:
-                    # Get AI response with enhanced hybrid context
-                    ai_response, azure_request_id = get_ai_response(
-                        message=message,
-                        personality=current_personality,
-                        conversation_context=conversation_history,
-                        user_preferences=user_preferences,
-                        goal_summary=goal_summary,
-                        behavioral_insights=behavioral_insights,
-                        hybrid_summary=hybrid_summary
-                    )
+                    # Process message through Universal Chat API (with tool selection)
+                    try:
+                        from .chat import universal_chat
+                        from azure.functions import HttpRequest
+                        
+                        # Create internal request for universal chat with enhanced context
+                        chat_request_data = {
+                            "user_id": user_id,
+                            "message": message,
+                            "personality": current_personality,
+                            "platform": "whatsapp",
+                            "context": {
+                                "conversation_history": conversation_history[-5:],  # Last 5 messages
+                                "goal_summary": goal_summary,
+                                "hybrid_summary": hybrid_summary,
+                                "behavioral_insights": behavioral_insights
+                            }
+                        }
+                        
+                        # Create mock request object for internal call
+                        class MockRequest:
+                            def __init__(self, data):
+                                self.data = data
+                            def get_json(self):
+                                return self.data
+                        
+                        mock_req = MockRequest(chat_request_data)
+                        chat_response = universal_chat(mock_req)
+                        
+                        if chat_response.status_code == 200:
+                            response_data = json.loads(chat_response.get_body())
+                            ai_response = response_data.get('response', 'Ready to help you crush goals! 🚀')
+                            tools_used = response_data.get('tools_used', 0)
+                            azure_request_id = f"whatsapp-{phone_number[-4:]}"  # Simple ID for tracking
+                            logging.info(f"🤖 WhatsApp message processed with {tools_used} tools")
+                        else:
+                            # Fallback to original method if universal chat fails
+                            ai_response, azure_request_id = get_ai_response(
+                                message=message,
+                                personality=current_personality,
+                                conversation_context=conversation_history,
+                                user_preferences=user_preferences,
+                                goal_summary=goal_summary,
+                                behavioral_insights=behavioral_insights,
+                                hybrid_summary=hybrid_summary
+                            )
+                    except Exception as e:
+                        logging.warning(f"🔄 Universal chat failed, using fallback: {str(e)}")
+                        # Fallback to original AI response method
+                        ai_response, azure_request_id = get_ai_response(
+                            message=message,
+                            personality=current_personality,
+                            conversation_context=conversation_history,
+                            user_preferences=user_preferences,
+                            goal_summary=goal_summary,
+                            behavioral_insights=behavioral_insights,
+                            hybrid_summary=hybrid_summary
+                        )
                     
                     logging.info(f"🤖 Generated response using {context_source} context")
                     
