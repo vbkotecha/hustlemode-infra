@@ -1,6 +1,6 @@
 {
   "name": "user_preferences",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "lastUpdated": "2025-01-16",
   "description": "User preferences for check-ins, personality, and notification settings",
   "fields": [
@@ -84,6 +84,28 @@
       "default": true
     },
     {
+      "name": "preferred_messaging_platform",
+      "type": "character varying(20)",
+      "description": "User's preferred messaging platform for notifications and responses",
+      "nullable": true,
+      "default": "whatsapp",
+      "constraints": ["whatsapp", "imessage", "messenger", "telegram", "sms"]
+    },
+    {
+      "name": "messaging_platform_config",
+      "type": "jsonb",
+      "description": "Platform-specific configuration and capabilities",
+      "nullable": true,
+      "default": "{\"notifications_enabled\": true, \"rich_media_supported\": true}"
+    },
+    {
+      "name": "fallback_messaging_platforms",
+      "type": "jsonb",
+      "description": "Ordered list of fallback platforms if primary is unavailable",
+      "nullable": true,
+      "default": "[\"whatsapp\", \"sms\"]"
+    },
+    {
       "name": "created_at",
       "type": "timestamp with time zone",
       "description": "Preferences creation timestamp",
@@ -125,6 +147,11 @@
       "name": "user_preferences_goggins_intensity_check",
       "type": "CHECK",
       "definition": "goggins_intensity IN ('low', 'medium', 'high', 'brutal')"
+    },
+    {
+      "name": "user_preferences_messaging_platform_check",
+      "type": "CHECK",
+      "definition": "preferred_messaging_platform IN ('whatsapp', 'imessage', 'messenger', 'telegram', 'sms')"
     }
   ],
   "triggers": [

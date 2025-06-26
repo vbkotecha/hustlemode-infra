@@ -1,91 +1,70 @@
-# HustleMode.ai Database Schemas
+# Database Schemas - AI-First Architecture
 
-This directory contains the complete database schema definitions for the HustleMode.ai WhatsApp bot application, exported from production and organized according to the schema management guidelines.
+This directory contains PostgreSQL schema definitions for **static user data** in the HustleMode.ai AI-first coaching system.
 
-## 📁 Directory Structure
+## 🎯 **Architecture Overview**
 
-```
-schemas/
-├── user-management/          # User authentication and preferences
-│   ├── users.json           # Main user table
-│   ├── user_preferences.json # User preferences and settings
-│   └── CHANGELOG.md
-├── goal-tracking/           # Goal management and progress
-│   ├── goals.json          # Core goals table
-│   ├── goal_progress.json  # Progress tracking entries
-│   └── CHANGELOG.md
-├── check-ins/              # Accountability check-ins
-│   ├── check_ins.json      # Scheduled check-ins
-│   ├── check_in_responses.json # User responses to check-ins
-│   └── CHANGELOG.md
-├── conversation/           # WhatsApp conversations
-│   ├── conversation_history.json # Message history with AI analysis
-│   └── CHANGELOG.md
-└── README.md              # This file
-```
+**PostgreSQL**: Static user data (identification, preferences, platform settings)  
+**Mem0**: Dynamic AI context (goals, conversations, check-ins, behavioral patterns)
 
-## 🗃️ Schema Overview
+## ✅ **Active Schemas**
 
 ### User Management
-- **users**: Core user authentication and profile data
-- **user_preferences**: Check-in preferences, Goggins intensity, and settings
+- `user-management/users.json` - Core user identification and static profile data
+- `user-management/user_preferences.json` - Static preferences including personality and messaging platform settings
 
-### Goal Tracking  
-- **goals**: User goals with categories, priorities, and success criteria
-- **goal_progress**: Time-series progress tracking with multiple data sources
+## 📁 **Archived Schemas**
 
-### Check-ins
-- **check_ins**: Scheduled accountability check-ins
-- **check_in_responses**: Detailed user responses with AI analysis
+Moved to `archive/` folder as they're now handled by Mem0 + AI tools:
+- `archive/goal-tracking/` - Goals now stored dynamically in Mem0 with AI context
+- `archive/conversation/` - Conversations now in Mem0 with semantic search
+- `archive/check-ins/` - Check-ins now handled by AI tools with Mem0 storage
 
-### Conversation
-- **conversation_history**: WhatsApp message logging with intent detection and Mem0 integration
-
-## 🔄 Schema Version
-
-**Current Version**: 1.0.0  
-**Last Updated**: 2025-01-16  
-**Exported From**: hustlemode-ai-postgres.postgres.database.azure.com
-
-## 🏗️ Database Features
-
-- **UUID Primary Keys**: All tables use UUID for scalability
-- **JSONB Support**: Flexible storage for preferences, analysis, and metadata
-- **Comprehensive Indexing**: Optimized for common query patterns
-- **Foreign Key Constraints**: CASCADE DELETE for data integrity
-- **Check Constraints**: Data validation at database level
-- **Triggers**: Automatic timestamp updates where needed
-
-## 📊 Table Relationships
+## 🔄 **Data Flow**
 
 ```
-users (1) → (∞) user_preferences
-users (1) → (∞) goals
-users (1) → (∞) conversation_history
-goals (1) → (∞) goal_progress
-goals (1) → (∞) check_ins
-check_ins (1) → (∞) check_in_responses
+1. Phone Number → User ID lookup (PostgreSQL)
+2. Get static preferences (PostgreSQL) 
+3. Pass user_id to Mem0 for dynamic context
+4. AI processes message + selects tools
+5. Store results in Mem0
+6. Update last_active in PostgreSQL
 ```
 
-## 🚀 Production Status
+## 📊 **Simplified Database**
 
-- **Database Server**: hustlemode-ai-postgres.postgres.database.azure.com
-- **Database Name**: postgres (default database)
-- **Environment**: Production
-- **Connection**: Azure AD authentication required
+**Before**: 6+ tables for everything  
+**After**: 2 tables for static data, Mem0 for intelligence
 
-## 📖 Usage
+### Benefits
+- **Faster Performance**: Focused PostgreSQL queries
+- **AI Intelligence**: Mem0 provides semantic understanding  
+- **Easy Scaling**: Static data in PostgreSQL, dynamic data in Mem0
+- **Tool Extensibility**: New AI capabilities don't require schema changes
 
-Each schema directory contains:
-1. **JSON Schema Files**: Complete table definitions following the schema management format
-2. **CHANGELOG.md**: Version history and change documentation
+## 🚀 **Schema Usage**
 
-To deploy these schemas to a new environment, use the JSON definitions to generate the appropriate CREATE TABLE statements for your target database system.
+### Code Example
+```python
+# PostgreSQL: Static user lookup
+user = get_user_by_phone(phone_number)
+preferences = get_user_preferences(user['id'])
 
-## 🔍 Schema Management
+# Mem0: Dynamic AI context
+memory_service = MemoryService()
+context = memory_service.search_memories(user_id=user['id'])
 
-This schema collection follows the established schema management guidelines:
-- Semantic versioning for all changes
-- Comprehensive documentation in CHANGELOG files
-- JSON format for cross-platform compatibility
-- Modular organization by functional area 
+# AI Tools: Handle goals, check-ins, reminders automatically
+response = universal_chat({
+    "user_id": user['id'],
+    "message": message,
+    "personality": preferences['default_personality']
+})
+```
+
+## 📋 **Versioning**
+
+All active schemas include version numbers and change logs. Archived schemas are preserved for reference but no longer actively maintained.
+
+---
+**Focus**: Minimal PostgreSQL schema supporting AI-first architecture with Mem0 handling all dynamic coaching intelligence. 
