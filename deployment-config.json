@@ -1,6 +1,6 @@
 {
   "meta": {
-    "description": "HustleMode.ai Production Configuration - Authoritative Source",
+    "description": "HustleMode.ai Production Configuration - AI Coach with Multi-Platform Messaging & AI-Native Memory",
     "last_updated": "2025-01-16",
     "version": "2.1-storage-monitoring"
   },
@@ -76,6 +76,11 @@
       "AZURE_OPENAI_DEPLOYMENT_NAME",
       "DATABASE_URL"
     ],
+    "mem0_integration": {
+      "type": "mem0_cloud",
+      "api_key_required": "MEM0_API_KEY",
+      "note": "Mem0 Cloud service for AI memory management - no local infrastructure needed"
+    },
     "whatsapp_token_type": "system_user_token",
     "whatsapp_token_expires": "never",
     "database": {

@@ -5,6 +5,7 @@
     "FUNCTIONS_WORKER_RUNTIME": "python",
     "AZURE_OPENAI_ENDPOINT": "https://hustlemode-ai.openai.azure.com/",
     "AZURE_OPENAI_API_KEY": "PLACEHOLDER_AZURE_OPENAI_KEY",
+    "AZURE_OPENAI_API_VERSION": "2024-02-01",
     "CHAT_MODEL_DEPLOYMENT_NAME": "gpt-4o",
     "AZURE_OPENAI_CHAT_DEPLOYMENT_NAME": "gpt-4o",
     "WHATSAPP_TOKEN": "PLACEHOLDER_WHATSAPP_TOKEN",
@@ -17,6 +18,7 @@
     "DATABASE_PORT": "5432",
     "DATABASE_SSL_MODE": "require",
     "AzureWebJobsFeatureFlags": "EnableWorkerIndexing",
-    "PYTHON_ISOLATE_WORKER_DEPENDENCIES": "1"
+    "PYTHON_ISOLATE_WORKER_DEPENDENCIES": "1",
+    "MEM0_API_KEY": "m0-zmmMxmL5EY81asxDyvyi11KLq5iYHSKpDtm0irix"
   }
 } 
