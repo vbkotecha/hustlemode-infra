@@ -12,6 +12,8 @@ apis/
 ├── completion.py        # Simple completion endpoint (ask)
 ├── whatsapp.py         # WhatsApp webhook and messaging endpoints
 ├── user_management.py  # User conversations and preferences
+├── goals.py            # Goal management with Mem0 storage
+├── checkins.py         # Daily/weekly check-ins with AI coaching
 └── README.md           # This documentation
 ```
 
@@ -40,6 +42,88 @@ WhatsApp Business API integration:
 User data and preferences:
 - `GET /api/users/{phone}/conversations` - Get user conversation history
 - `PUT /api/users/{phone}/preferences` - Set user preferences
+
+### Goals (`goals.py`)
+**AI-Native Goal Management** - Stores all data in Mem0:
+- `POST /api/goals` - Create new goal for user
+- `GET /api/users/{user_id}/goals` - Get user's goals (active/completed/paused)
+- `POST /api/goals/{goal_id}/progress` - Update goal progress
+
+### Check-ins (`checkins.py`)
+**AI-Powered Daily/Weekly Check-ins** - Mem0 storage with personality coaching:
+- `POST /api/checkins` - Create structured check-in (mood, energy, progress)
+- `GET /api/users/{user_id}/checkins` - Get user's check-in history
+- `POST /api/checkins/ai` - AI-powered check-in with ultra-concise coaching (8-12 words)
+- `GET /api/users/{user_id}/checkin-schedule` - AI-suggested optimal check-in times
+
+## 🎯 Goals & Check-ins Integration
+
+### Architecture: AI-Native with Mem0
+```
+📱 User Input → 🔄 Azure Functions → 🧠 Mem0 Storage → 🤖 AI Context
+```
+
+**Data Flow**:
+1. **PostgreSQL**: Static user data (user_id, phone, preferences)
+2. **Mem0**: Dynamic data (goals, check-ins, progress, AI context)
+3. **AI**: Ultra-concise responses (8-12 words) with full context
+
+### Example Usage Flow
+
+#### 1. Create Goal
+```bash
+POST /api/goals
+{
+  "user_id": "user-uuid-123",
+  "title": "Morning Gym Routine",
+  "category": "fitness",
+  "time_frame": "daily",
+  "target_value": "3x per week",
+  "description": "Consistency building"
+}
+```
+
+#### 2. Daily Check-in with AI
+```bash
+POST /api/checkins/ai
+{
+  "user_id": "user-uuid-123",
+  "message": "Went to gym this morning, feeling good!",
+  "personality": "taskmaster"
+}
+
+Response: {
+  "response": "Boom! Consistency pays off. Tomorrow too! 💪"
+}
+```
+
+#### 3. Progress Update
+```bash
+POST /api/goals/{goal_id}/progress
+{
+  "user_id": "user-uuid-123",
+  "progress_value": 75,
+  "notes": "Completed 3 sessions this week"
+}
+```
+
+## 🚀 WhatsApp Integration Example
+
+The check-ins system integrates seamlessly with WhatsApp:
+
+```python
+# User sends: "Daily check-in"
+# WhatsApp webhook triggers:
+POST /api/checkins/ai
+{
+  "user_id": "user-uuid-123",
+  "message": "Daily check-in",
+  "personality": "cheerleader"
+}
+
+# AI responds: "How's your energy today? Scale 1-10! ⚡"
+# Response sent back via WhatsApp
+```
 
 ## Adding New API Groups
 
@@ -77,6 +161,8 @@ To add a new API group:
        completion_bp,
        whatsapp_bp,
        user_management_bp,
+       goals_bp,
+       checkins_bp,
        analytics_bp  # Add your new blueprint
    ]
    ```
@@ -128,6 +214,7 @@ def your_endpoint(req: func.HttpRequest) -> func.HttpResponse:
 - **Team Development**: Multiple developers can work on different APIs
 - **Code Organization**: Clear structure and logical grouping
 - **Blueprint Pattern**: Leverages Azure Functions blueprint architecture
+- **AI-Native Design**: Mem0 provides intelligent context for all user interactions
 
 ## Azure Functions Blueprints
 
@@ -154,4 +241,4 @@ for blueprint in BLUEPRINTS:
     app.register_functions(blueprint)
 ```
 
-This approach provides a clean, maintainable, and scalable structure for the Azure Functions API. 
+This approach provides a clean, maintainable, and scalable structure for the Azure Functions API with full AI-native goal and check-in capabilities. 

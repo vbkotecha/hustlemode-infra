@@ -6,6 +6,9 @@ from .assistant import assistant_bp
 from .completion import completion_bp
 from .whatsapp import whatsapp_bp
 from .user_management import user_management_bp
+from .goals import goals_bp
+from .checkins import checkins_bp
+from .chat import chat_bp
 
 # Export all blueprints for easy registration
 BLUEPRINTS = [
@@ -14,7 +17,10 @@ BLUEPRINTS = [
     assistant_bp,
     completion_bp,
     whatsapp_bp,
-    user_management_bp
+    user_management_bp,
+    goals_bp,
+    checkins_bp,
+    chat_bp
 ]
 
 # Export individual blueprints for direct access if needed
@@ -25,5 +31,8 @@ __all__ = [
     "completion_bp",
     "whatsapp_bp",
     "user_management_bp",
+    "goals_bp",
+    "checkins_bp",
+    "chat_bp",
     "BLUEPRINTS"
 ] 
