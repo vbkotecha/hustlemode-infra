@@ -1,0 +1,6 @@
+🔐 Getting Azure AD token for PostgreSQL...
+✅ Token acquired successfully
+🚀 Connecting to PostgreSQL...
+id,user_id,title,description,category,target_value,target_unit,current_value,target_date,priority,status,success_criteria,obstacles,why_important,accountability_level,created_at,updated_at,completed_at
+7fdfafed-a073-4194-9bfc-e10bba17df19,f53d3e44-fe2a-4a5f-82a5-02464d354026,Lose 20 pounds,Get back in shape and improve my health,fitness,180.00,lbs,0.00,2024-06-01,medium,active,,,I want to feel confident and healthy again,high,2025-06-09 05:47:55.049699+00,2025-06-09 05:47:55.049699+00,
+f464ad43-ca16-43d2-81df-146bf22887d4,052143e9-2573-455c-bac2-9e3d71c990f2,Lose 25.0 pounds,Weight loss goal extracted from: I want to lose 25 pounds by summer...,fitness,25.00,pounds,0.00,,medium,active,,,Health and fitness improvement,high,2025-06-21 01:44:31.60246+00,2025-06-21 01:44:31.60246+00,
