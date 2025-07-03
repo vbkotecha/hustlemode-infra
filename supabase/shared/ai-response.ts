@@ -1,7 +1,9 @@
 // AI Response Generation Service - Main coordinator
 import { MemoryService } from './memory.ts';
-import { generateGroqResponse } from './ai-groq.ts';
-import { getFallbackResponse } from './ai-fallbacks.ts';
+import { GroqService } from './groq.ts';
+import { getFallbackResponse } from './groq-fallbacks.ts';
+
+const groqService = new GroqService();
 
 export async function generateAIResponse(
   message: string, 
@@ -23,7 +25,8 @@ export async function generateAIResponse(
     const prompt = buildPrompt(message, conversationContext, personality);
 
     // Generate AI response using Groq
-    const aiResponse = await generateGroqResponse(prompt);
+    const messages = [{ role: 'user' as const, content: prompt, timestamp: new Date().toISOString() }];
+    const aiResponse = await groqService.getChatCompletion(messages, personality);
     
     if (!aiResponse) {
       return getFallbackResponse(personality);

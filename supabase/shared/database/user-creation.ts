@@ -1,5 +1,6 @@
 // User creation and retrieval operations
-import type { User, DatabaseError } from '../types.ts';
+import type { User } from '../types.ts';
+import { DatabaseError } from '../types.ts';
 import { getSupabaseClient } from './client.ts';
 import { createDefaultPreferences } from './user-preferences.ts';
 
@@ -27,7 +28,8 @@ export async function getOrCreateUserByPhone(phoneNumber: string): Promise<User>
 
   } catch (error) {
     console.error(`❌ Database error for user ${phoneNumber}:`, error);
-    throw new DatabaseError(`Database operation failed: ${error.message}`);
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    throw new DatabaseError(`Database operation failed: ${message}`);
   }
 }
 

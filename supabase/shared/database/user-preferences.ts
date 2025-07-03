@@ -1,5 +1,6 @@
 // User preferences operations
-import type { UserPreferences, DatabaseError } from '../types.ts';
+import type { UserPreferences } from '../types.ts';
+import { DatabaseError } from '../types.ts';
 import { getSupabaseClient } from './client.ts';
 
 export async function getUserPreferences(userId: string): Promise<UserPreferences | null> {

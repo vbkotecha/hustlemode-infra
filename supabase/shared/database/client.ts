@@ -1,5 +1,5 @@
 // Supabase client management - Extracted from database.ts
-import { createClient, SupabaseClient } from 'supabase';
+import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { getConfig } from '../config.ts';
 
 let supabase: SupabaseClient | null = null;

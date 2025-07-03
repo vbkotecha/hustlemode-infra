@@ -123,10 +123,18 @@ export interface ApiResponse<T = any> {
   timestamp: string;
 }
 
-export interface DatabaseError extends Error {
+export class DatabaseError extends Error {
   code?: string;
   severity?: string;
   detail?: string;
+  
+  constructor(message: string, code?: string, severity?: string, detail?: string) {
+    super(message);
+    this.name = 'DatabaseError';
+    this.code = code;
+    this.severity = severity;
+    this.detail = detail;
+  }
 }
 
 export interface ValidationError extends Error {
