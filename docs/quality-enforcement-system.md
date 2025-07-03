@@ -243,4 +243,68 @@ Every principle we used to clean up the codebase is now **permanently enforced b
 - Future-proof architecture ✅
 - Production ready ✅
 
-**The system enforces excellence, not just guidelines.** 
+**The system enforces excellence, not just guidelines.**
+
+## Order of Execution
+
+### 🎯 Proper Development Workflow
+
+**ALWAYS follow this order when making changes:**
+
+1. **Setup** (one-time)
+   ```bash
+   ./scripts/setup-quality-enforcement.sh
+   ```
+
+2. **Before Making Changes**
+   ```bash
+   ./scripts/code-quality-check.sh
+   ```
+
+3. **Make Your Changes**
+   - Edit code following size limits
+   - Follow modular architecture
+
+4. **Quality Check Before Commit**
+   ```bash
+   ./scripts/code-quality-check.sh
+   ```
+
+5. **Only Commit if Quality Check PASSES**
+   ```bash
+   git add .
+   git commit -m "your message"
+   # Pre-commit hook runs automatically
+   ```
+
+6. **Deploy Only After Quality Check**
+   ```bash
+   ./scripts/deploy-supabase.sh
+   # Includes automatic quality checks
+   ```
+
+### 🚫 What NOT to Do
+
+- ❌ Never commit when quality check shows ERRORS
+- ❌ Never bypass pre-commit hooks unless emergency
+- ❌ Never create files > size limits
+- ❌ Never deploy without quality checks
+
+### ⚠️ Understanding Results
+
+- **✅ PASSED**: Ready to commit/deploy
+- **✅ PASSED (with warnings)**: OK to commit, but address warnings soon
+- **❌ FAILED**: Must fix violations before commit
+- **❌ FAILED (strict mode)**: Must fix all warnings in strict mode
+
+### 🔧 Quality Modes
+
+- **Normal Mode**: `./scripts/code-quality-check.sh`
+  - Blocks only on ERRORS
+  - Allows commit with warnings
+  
+- **Strict Mode**: `./scripts/code-quality-check.sh --strict`
+  - Blocks on ERRORS and WARNINGS
+  - Used for production deployments
+
+## System Components 

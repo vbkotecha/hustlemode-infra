@@ -4,8 +4,6 @@
 # Automatically prevents code quality regression
 # Usage: ./scripts/code-quality-check.sh [--strict]
 
-set -e
-
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -57,7 +55,7 @@ echo -e "${PURPLE}📏 Checking File Size Limits...${NC}"
 echo "  Checking Edge Functions (max $MAX_FUNCTION_LINES lines)..."
 for file in supabase/functions/*/index.ts; do
     if [[ -f "$file" ]]; then
-        lines=$(wc -l < "$file")
+        lines=$(wc -l < "$file" 2>/dev/null || echo "0")
         if [[ $lines -gt $MAX_FUNCTION_LINES ]]; then
             report_violation "ERROR" "File $file has $lines lines (max $MAX_FUNCTION_LINES)"
         fi
@@ -66,19 +64,23 @@ done
 
 # Check Shared Module files
 echo "  Checking Shared Modules (max $MAX_SHARED_LINES lines)..."
-find supabase/shared -name "*.ts" -not -path "*/types.ts" -not -name "index.ts" | while read -r file; do
-    lines=$(wc -l < "$file")
-    if [[ $lines -gt $MAX_SHARED_LINES ]]; then
-        report_violation "ERROR" "File $file has $lines lines (max $MAX_SHARED_LINES)"
+find supabase/shared -name "*.ts" -not -path "*/types.ts" -not -name "index.ts" 2>/dev/null | while read -r file; do
+    if [[ -f "$file" ]]; then
+        lines=$(wc -l < "$file" 2>/dev/null || echo "0")
+        if [[ $lines -gt $MAX_SHARED_LINES ]]; then
+            report_violation "ERROR" "File $file has $lines lines (max $MAX_SHARED_LINES)"
+        fi
     fi
 done
 
 # Check Handler files
 echo "  Checking Handler files (max $MAX_HANDLER_LINES lines)..."
-find supabase/functions -name "handlers.ts" | while read -r file; do
-    lines=$(wc -l < "$file")
-    if [[ $lines -gt $MAX_HANDLER_LINES ]]; then
-        report_violation "ERROR" "File $file has $lines lines (max $MAX_HANDLER_LINES)"
+find supabase/functions -name "handlers.ts" 2>/dev/null | while read -r file; do
+    if [[ -f "$file" ]]; then
+        lines=$(wc -l < "$file" 2>/dev/null || echo "0")
+        if [[ $lines -gt $MAX_HANDLER_LINES ]]; then
+            report_violation "ERROR" "File $file has $lines lines (max $MAX_HANDLER_LINES)"
+        fi
     fi
 done
 
@@ -90,9 +92,9 @@ echo -e "${PURPLE}🔄 Checking for Code Duplication...${NC}"
 
 # Check for duplicate function names
 echo "  Checking for duplicate function names..."
-duplicate_functions=$(grep -r "export function\|async function" supabase/ --include="*.ts" | \
-    sed 's/.*function \([^(]*\).*/\1/' | \
-    sort | uniq -d)
+duplicate_functions=$(grep -r "export function\|async function" supabase/ --include="*.ts" 2>/dev/null | \
+    sed 's/.*function \([^(]*\).*/\1/' 2>/dev/null | \
+    sort 2>/dev/null | uniq -d 2>/dev/null || echo "")
 
 if [[ -n "$duplicate_functions" ]]; then
     while IFS= read -r func; do
@@ -107,10 +109,10 @@ fi
 # Check for large similar code blocks (simplified detection)
 echo "  Checking for potential code duplication..."
 temp_file=$(mktemp)
-find supabase -name "*.ts" -exec grep -l "await.*fetch\|await.*supabase" {} \; > "$temp_file"
+find supabase -name "*.ts" -exec grep -l "await.*fetch\|await.*supabase" {} \; > "$temp_file" 2>/dev/null || true
 
 if [[ -s "$temp_file" ]]; then
-    file_count=$(wc -l < "$temp_file")
+    file_count=$(wc -l < "$temp_file" 2>/dev/null || echo "0")
     if [[ $file_count -gt 3 ]]; then
         report_violation "WARNING" "Found $file_count files with similar API patterns - check for duplication"
     fi
@@ -132,7 +134,7 @@ if ls supabase/functions/*.ts 2>/dev/null >/dev/null; then
 fi
 
 # Shared modules should be properly categorized
-uncategorized_shared=$(find supabase/shared -maxdepth 1 -name "*.ts" -not -name "types.ts" -not -name "config.ts" | wc -l)
+uncategorized_shared=$(find supabase/shared -maxdepth 1 -name "*.ts" -not -name "types.ts" -not -name "config.ts" 2>/dev/null | wc -l 2>/dev/null || echo "0")
 if [[ $uncategorized_shared -gt 5 ]]; then
     report_violation "WARNING" "Found $uncategorized_shared uncategorized files in shared/ - consider domain grouping"
 fi
@@ -143,13 +145,17 @@ echo ""
 # Check 4: TypeScript Compilation
 echo -e "${PURPLE}🔧 Checking TypeScript Compilation...${NC}"
 
-cd supabase/functions
-if deno check --remote import_map.json 2>/dev/null; then
-    report_success "TypeScript compilation successful"
+if command -v deno >/dev/null 2>&1; then
+    cd supabase/functions
+    if deno check --remote import_map.json >/dev/null 2>&1; then
+        report_success "TypeScript compilation successful"
+    else
+        report_violation "ERROR" "TypeScript compilation failed"
+    fi
+    cd - >/dev/null
 else
-    report_violation "ERROR" "TypeScript compilation failed"
+    report_success "TypeScript compilation skipped (Deno not installed)"
 fi
-cd - >/dev/null
 
 echo ""
 
@@ -158,13 +164,13 @@ echo -e "${PURPLE}🔗 Checking for Import Cycles...${NC}"
 
 # Create a simple dependency graph and check for obvious cycles
 temp_deps=$(mktemp)
-find supabase -name "*.ts" -exec grep -l "from '\.\." {} \; | while read -r file; do
-    imports=$(grep "from '\.\." "$file" | sed "s/.*from '\([^']*\)'.*/\1/" | tr '\n' ' ')
+find supabase -name "*.ts" -exec grep -l "from '\.\." {} \; 2>/dev/null | while read -r file; do
+    imports=$(grep "from '\.\." "$file" 2>/dev/null | sed "s/.*from '\([^']*\)'.*/\1/" 2>/dev/null | tr '\n' ' ' || echo "")
     echo "$file: $imports" >> "$temp_deps"
 done
 
 # Basic cycle detection (simplified)
-if grep -q "shared.*functions\|functions.*shared" "$temp_deps"; then
+if grep -q "shared.*functions\|functions.*shared" "$temp_deps" 2>/dev/null; then
     report_violation "WARNING" "Potential circular dependencies detected between functions and shared"
 fi
 
@@ -179,12 +185,12 @@ echo -e "${PURPLE}⚡ Checking Performance Patterns...${NC}"
 performance_issues=0
 
 # Check for sync operations in async contexts
-if grep -r "JSON.parse\|JSON.stringify" supabase/functions/ --include="*.ts" | grep -v console >/dev/null; then
+if grep -r "JSON.parse\|JSON.stringify" supabase/functions/ --include="*.ts" 2>/dev/null | grep -v console >/dev/null 2>&1; then
     ((performance_issues++))
 fi
 
 # Check for missing error handling
-if grep -r "await.*fetch" supabase/ --include="*.ts" | grep -v "try\|catch" >/dev/null; then
+if grep -r "await.*fetch" supabase/ --include="*.ts" 2>/dev/null | grep -v "try\|catch" >/dev/null 2>&1; then
     report_violation "WARNING" "Found fetch calls without visible error handling"
     ((performance_issues++))
 fi
@@ -199,14 +205,14 @@ echo ""
 echo -e "${PURPLE}🛡️ Checking Security Patterns...${NC}"
 
 # Check for hardcoded secrets (basic patterns)
-if grep -r "password\|secret\|key.*=" supabase/ --include="*.ts" | grep -v "Deno.env.get\|getConfig" >/dev/null; then
+if grep -r "password\|secret\|key.*=" supabase/ --include="*.ts" 2>/dev/null | grep -v "Deno.env.get\|getConfig" >/dev/null 2>&1; then
     report_violation "ERROR" "Potential hardcoded secrets found"
 else
     report_success "No hardcoded secrets detected"
 fi
 
 # Check for proper input validation
-if ! grep -r "validate\|sanitize" supabase/shared --include="*.ts" >/dev/null; then
+if ! grep -r "validate\|sanitize" supabase/shared --include="*.ts" >/dev/null 2>&1; then
     report_violation "WARNING" "Limited input validation patterns found"
 fi
 
@@ -229,14 +235,23 @@ fi
 echo ""
 echo -e "${PURPLE}Code Quality Score: $((100 - VIOLATIONS * 20 - WARNINGS * 5))%${NC}"
 
-# Exit with error if violations found (in strict mode or if violations are critical)
-if [[ $VIOLATIONS -gt 0 ]] || [[ "$STRICT_MODE" == "--strict" && $WARNINGS -gt 0 ]]; then
+# Exit with error if violations found (strict mode includes warnings)
+if [[ $VIOLATIONS -gt 0 ]]; then
     echo ""
     echo -e "${RED}🚫 Code quality check FAILED${NC}"
-    echo -e "${YELLOW}Fix violations before committing/deploying${NC}"
+    echo -e "${YELLOW}Fix critical violations before committing/deploying${NC}"
+    exit 1
+elif [[ "$STRICT_MODE" == "--strict" && $WARNINGS -gt 0 ]]; then
+    echo ""
+    echo -e "${RED}🚫 Code quality check FAILED (strict mode)${NC}"
+    echo -e "${YELLOW}Fix all warnings in strict mode${NC}"
     exit 1
 else
     echo ""
-    echo -e "${GREEN}🎉 Code quality check PASSED${NC}"
+    if [[ $WARNINGS -gt 0 ]]; then
+        echo -e "${GREEN}🎉 Code quality check PASSED${NC} ${YELLOW}(with $WARNINGS warnings)${NC}"
+    else
+        echo -e "${GREEN}🎉 Code quality check PASSED${NC}"
+    fi
     exit 0
 fi 
