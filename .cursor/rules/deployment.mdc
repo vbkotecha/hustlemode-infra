@@ -1,94 +1,105 @@
 ---
-description: 
-globs: scripts/**/*,deployment-config.json,.github/workflows/**/*
-alwaysApply: false
----
----
 description: "Azure Functions deployment configuration rules with exact resource names and commands for HustleMode.ai"
 globs: "scripts/**/*,deployment-config.json,.github/workflows/**/*,DEPLOYMENT.md"
 alwaysApply: false
 ---
 
-# HustleMode.ai Deployment Rules
+# HustleMode.ai Supabase Deployment Rules
 
 ## ⚠️ CRITICAL: Documentation Synchronization
 
 **MANDATORY**: Any changes to deployment configuration MUST update both:
-- `DEPLOYMENT.md` - Complete deployment guide with examples
+- `README.md` - Complete deployment guide with examples
 - `deployment-config.json` - Authoritative configuration values
 
 **These files must ALWAYS stay synchronized** to prevent deployment issues and configuration drift.
 
-## 🎯 Azure Configuration (Authoritative Values)
+## 🎯 Supabase Configuration (Authoritative Values)
 
-### Resource Configuration
-- **Function App Name**: `hustlemode-api`
-- **Resource Group**: `hustlemode.ai`
-- **Location**: `eastus`
-- **Runtime**: `PYTHON:3.11`
-- **Hosting Plan**: `Consumption Plan`
-- **Service Type**: `Azure Functions v2`
+### Project Configuration
+- **Platform**: `Supabase Edge Functions`
+- **Runtime**: `Deno/TypeScript`
+- **Project Type**: `Edge Functions + PostgreSQL`
+- **Region**: `us-east-1` (default)
+- **Database**: `Supabase PostgreSQL with RLS`
 
 ### URLs (Production)
-- **Function App**: `https://hustlemode-api.azurewebsites.net/`
-- **WhatsApp Webhook**: `https://hustlemode-api.azurewebsites.net/api/messaging/whatsapp`
-- **Health Check**: `https://hustlemode-api.azurewebsites.net/api/health`
-- **Kudu SCM**: `https://hustlemode-api.scm.azurewebsites.net/`
+- **Base URL**: `https://your-project-ref.supabase.co/functions/v1`
+- **Health Check**: `https://your-project-ref.supabase.co/functions/v1/health`
+- **Chat API**: `https://your-project-ref.supabase.co/functions/v1/chat`
+- **WhatsApp Webhook**: `https://your-project-ref.supabase.co/functions/v1/whatsapp`
+- **Dashboard**: `https://supabase.com/dashboard/project/your-project-ref`
 
-### GitHub Configuration
-- **Repository**: `https://github.com/vbkotecha/hustlemode-infra`
-- **Secret**: `AZUREAPPSERVICE_PUBLISHPROFILE_FFEB2282094642A1A8B5E3AFAE67C0DC`
+### Environment Configuration
+- **Memory Provider**: `postgresql` (default) or `mem0`
+- **AI Provider**: `Groq (Llama 3.1 70B)`
+- **Database**: `Supabase PostgreSQL`
+- **Authentication**: `Service Role Key`
 
-## 🚀 Current Pipeline Architecture
+## 🚀 Current Deployment Architecture
 
-### 2-Stage Deployment Pipeline
-1. **Anti-Bloat Check** (runs on all pushes/PRs)
-   - Repository hygiene verification
-   - Quality gate before deployment
-
-2. **Deploy** (main branch only)
-   - Python package installation to `.python_packages/lib/site-packages/`
-   - Direct ZIP deployment via Azure API
-   - Health and webhook endpoint verification
-
-### Pipeline Requirements
-- **NEVER use artifact upload/download** - deploy directly
-- **ALWAYS install Python packages** to `.python_packages/lib/site-packages/`
-- **ALWAYS verify endpoints** after deployment
-- **NEVER use virtual environments** in GitHub Actions
-
-## 🐍 Python Packaging Requirements
-
-### Mandatory Package Structure
+### Single-Command Deployment
 ```bash
-# Correct installation command
-cd azure-functions-deploy
-mkdir -p .python_packages/lib/site-packages
-pip install -r requirements.txt --target .python_packages/lib/site-packages
+# Deploy all functions
+supabase functions deploy
+
+# Deploy specific function
+supabase functions deploy health
+supabase functions deploy chat
+supabase functions deploy whatsapp
 ```
 
-### Package Validation Rules
-- ✅ Deployment ZIP must contain `.python_packages/lib/site-packages/` with all dependencies
-- ✅ Use `zip -r deploy.zip .` to include hidden directories
-- ❌ Never use virtual environments for Azure Functions deployment
-- ❌ Never use `zip -r deploy.zip ./*` (misses .python_packages)
+### Deployment Requirements
+- **Supabase CLI** installed and authenticated
+- **Project linked** via `supabase link --project-ref your-project-ref`
+- **Database schema** deployed via `supabase db reset --linked`
+- **Environment variables** configured in Supabase Dashboard
+- **TypeScript compilation** automatic (Deno runtime)
+
+## 🔧 TypeScript/Deno Requirements
+
+### Project Structure Validation
+```
+supabase-edge-functions/
+├── functions/
+│   ├── health/index.ts
+│   ├── chat/index.ts
+│   └── whatsapp/index.ts
+├── shared/
+│   ├── config.ts
+│   ├── database.ts
+│   ├── groq.ts
+│   ├── memory.ts
+│   ├── whatsapp.ts
+│   └── utils.ts
+├── deno.json
+└── import_map.json
+```
+
+### Deployment Validation Rules
+- ✅ All functions must use TypeScript
+- ✅ Import maps defined in `import_map.json`
+- ✅ Shared utilities in `shared/` directory
+- ✅ Database schema matches PostgreSQL structure
+- ❌ Never use Node.js specific imports
+- ❌ Never deploy without type checking
 
 ## 🚨 MANDATORY Documentation Sync Requirements
 
 ### 🔄 Change Propagation Rules (ALWAYS REQUIRED)
 
 #### Any deployment-config.json changes → MUST UPDATE:
-- ✅ **DEPLOYMENT.md**: All URLs, configuration values, and examples
-- ✅ **GitHub workflow**: App names and endpoints
-- ✅ **PRODUCTION_LINKS.md**: Live URLs and testing commands
-- ✅ **This cursor rule**: If resource names change
+- ✅ **README.md**: All URLs, configuration values, and examples
+- ✅ **Database schema**: Table structure and functions
+- ✅ **Environment variables**: .env template and production config
+- ✅ **This cursor rule**: If project configuration changes
 
-#### Any .github/workflows/azure-functions-deploy.yml changes → MUST UPDATE:
-- ✅ **DEPLOYMENT.md**: Method 3 (GitHub Actions) section
-- ✅ **deployment-config.json**: Deployment methods array
-- ✅ **Pipeline documentation**: Stage descriptions
+#### Any database/supabase-schema.sql changes → MUST UPDATE:
+- ✅ **README.md**: Database schema section
+- ✅ **deployment-config.json**: Database configuration
+- ✅ **Memory service**: PostgreSQL provider implementation
 
-#### Any DEPLOYMENT.md changes → MUST UPDATE:
+#### Any README.md changes → MUST UPDATE:
 - ✅ **Last modified date**: Current date
 - ✅ **deployment-config.json**: Verify all values match
 - ✅ **Test all URLs**: Ensure curl commands work with current endpoints
@@ -96,71 +107,165 @@ pip install -r requirements.txt --target .python_packages/lib/site-packages
 ### 📋 Documentation Synchronization Checklist
 
 Before committing ANY deployment changes:
-- [ ] **DEPLOYMENT.md** reflects all current configuration values
+- [ ] **README.md** reflects all current configuration values
 - [ ] **deployment-config.json** contains authoritative source of truth
 - [ ] **All URLs are identical** across all files (no placeholders)
-- [ ] **Function keys are current** in all examples
+- [ ] **Environment variables are current** in all examples
 - [ ] **Dates are updated** to reflect modification time
 - [ ] **All curl commands tested** and working
+- [ ] **Memory provider configuration** is consistent
 
 ### Documentation Standards (STRICT REQUIREMENTS)
-- **DEPLOYMENT.md**: Must reflect current 2-stage pipeline architecture
-- **deployment-config.json**: Must match Azure Portal configuration exactly
+- **README.md**: Must reflect current Supabase Edge Functions architecture
+- **deployment-config.json**: Must match Supabase Dashboard configuration exactly
 - **All URLs**: Must be consistent across all files (zero tolerance for drift)
-- **Dates**: Must be current (June 11, 2025)
-- **Function Keys**: Must be real and working (no placeholder values)
+- **Dates**: Must be current (December 2024)
+- **API Keys**: Must be properly templated (no real keys in repo)
 
 ## 🔧 Deployment Methods
 
-### Method 1: Azure Functions Core Tools (Recommended)
+### Method 1: Supabase CLI (Recommended)
 ```bash
-cd azure-functions-deploy
-func azure functionapp publish hustlemode-api --python --build remote
+# Link to project
+supabase link --project-ref your-project-ref
+
+# Deploy database schema
+supabase db reset --linked
+
+# Deploy all functions
+supabase functions deploy
+
+# Deploy with environment file
+supabase functions deploy --env-file .env
 ```
 
-### Method 2: GitHub Actions (Automated)
-- 2-stage pipeline: Anti-Bloat Check → Deploy
-- Direct ZIP deployment with endpoint verification
-- Runs on push to main branch
-
-### Method 3: Clean Script
+### Method 2: Individual Function Deployment
 ```bash
-./scripts/deploy-clean.sh --auto
+# Deploy specific functions
+supabase functions deploy health
+supabase functions deploy chat
+supabase functions deploy whatsapp
 ```
+
+### Method 3: Automated Script
+```bash
+./scripts/deploy-supabase.sh
+```
+
+## 🗄️ Database Deployment Requirements
+
+### Schema Deployment (MANDATORY)
+```bash
+# Deploy schema first
+supabase db reset --linked
+
+# Verify tables created
+supabase db ls
+```
+
+### Required Tables
+- ✅ `users` - Core user data with phone number lookup
+- ✅ `user_preferences` - AI personality and settings
+- ✅ `conversation_memory` - Chat context (replaces Mem0)
+
+### Security Requirements
+- ✅ Row Level Security (RLS) enabled on all tables
+- ✅ Service role key for Edge Functions
+- ✅ Proper foreign key constraints
+- ✅ Indexes for performance optimization
+
+## 🧠 Memory Service Configuration
+
+### PostgreSQL Provider (Default)
+```bash
+MEMORY_PROVIDER=postgresql
+# Uses native Supabase PostgreSQL with full-text search
+```
+
+### Mem0 Provider (Optional)
+```bash
+MEMORY_PROVIDER=mem0
+MEM0_API_KEY=m0-your-api-key
+# Requires additional Mem0 Cloud subscription
+```
+
+### Switching Providers
+- ✅ Change environment variable only
+- ✅ No code changes required
+- ✅ Automatic detection and routing
+- ✅ Graceful fallback on errors
 
 ## 🚫 Prohibited Patterns
 
 ### Never Do These:
-- ❌ Use different app names between files (always `hustlemode-api`)
-- ❌ Create 3-stage pipelines with artifact upload/download
-- ❌ Install Python packages to system or virtual environment
-- ❌ Use placeholder values in documentation
-- ❌ Deploy without endpoint verification
-- ❌ Miss .python_packages directory in ZIP
+- ❌ Use Azure Functions deployment commands
+- ❌ Reference old Azure URLs or configurations
+- ❌ Deploy without database schema first
+- ❌ Use Node.js imports in Deno functions
+- ❌ Store real API keys in version control
+- ❌ Deploy without type checking
 
 ### Always Do These:
-- ✅ Use exact resource names across all files
-- ✅ Install packages to `.python_packages/lib/site-packages/`
-- ✅ Deploy directly without artifact complexity
-- ✅ Verify health and webhook endpoints post-deployment
-- ✅ Keep documentation synchronized and current
+- ✅ Use `supabase functions deploy` for deployment
+- ✅ Deploy database schema before functions
+- ✅ Use TypeScript throughout codebase
+- ✅ Test endpoints after deployment
+- ✅ Keep memory provider abstraction
+- ✅ Validate environment variables
 
 ## 🎯 Quality Assurance
 
 ### 🚨 BEFORE ANY DEPLOYMENT CHANGE - MANDATORY CHECKLIST:
-1. **Documentation Sync**: Verify DEPLOYMENT.md and deployment-config.json are consistent
-2. **URL Testing**: Test ALL documented URLs and endpoints work with current function keys
-3. **Pipeline Match**: Ensure GitHub workflow matches documentation exactly
-4. **Python Packaging**: Validate packaging follows `.python_packages/lib/site-packages/` requirements
-5. **Date Updates**: Update last modified dates in DEPLOYMENT.md
-6. **Cross-Reference**: Check PRODUCTION_LINKS.md matches updated configuration
-7. **Function Keys**: Verify all curl examples use real, working function keys
+1. **Documentation Sync**: Verify README.md and deployment-config.json are consistent
+2. **URL Testing**: Test ALL documented URLs and endpoints work
+3. **Database Schema**: Ensure database schema is deployed and up-to-date
+4. **TypeScript Compilation**: Validate all functions compile without errors
+5. **Environment Variables**: Verify all required variables are configured
+6. **Memory Provider**: Test memory service functionality
+7. **Function Keys**: Ensure service role key is properly configured
 
 ### 🚫 DEPLOYMENT BLOCKERS:
-- ❌ **Inconsistent URLs** between DEPLOYMENT.md and deployment-config.json
-- ❌ **Placeholder values** (like "your_function_key_here") in documentation
-- ❌ **Outdated function keys** in curl examples
-- ❌ **Missing documentation updates** after configuration changes
+- ❌ **Inconsistent URLs** between README.md and deployment-config.json
+- ❌ **Missing database schema** deployment
+- ❌ **TypeScript compilation errors** in any function
+- ❌ **Missing environment variables** required for functionality
+- ❌ **Outdated documentation** after configuration changes
+
+## 🔄 Migration Notes
+
+### Migrated FROM Azure:
+- ❌ Azure Functions (Python runtime)
+- ❌ Azure OpenAI Service
+- ❌ Azure PostgreSQL
+- ❌ Function key authentication
+- ❌ Complex GitHub Actions pipeline
+
+### Migrated TO Supabase:
+- ✅ Supabase Edge Functions (Deno/TypeScript)
+- ✅ Groq API (Llama 3.1 70B)
+- ✅ Supabase PostgreSQL
+- ✅ Service role authentication
+- ✅ Simple CLI deployment
+
+## 📊 Performance Targets
+
+### Deployment Metrics
+- **Function Deployment**: <30 seconds
+- **Database Schema**: <10 seconds
+- **Cold Start**: <100ms
+- **Response Time**: 200-500ms
+- **Memory Operations**: <50ms
+
+### Cost Optimization
+- **Database**: Included with Supabase plan
+- **Edge Functions**: Pay-per-invocation
+- **Memory Service**: $0 (PostgreSQL) or $20-50/month (Mem0)
+- **AI Inference**: $10-30/month (Groq pay-per-token)
+
+---
+**Purpose**: Single source of truth for Supabase deployment requirements
+**Scope**: Configuration, documentation, deployment, and memory service architecture
+**⚠️ CRITICAL**: README.md and deployment-config.json MUST stay synchronized at all times
 
 ---
 **Purpose**: Single source of truth for all deployment requirements
