@@ -65,7 +65,7 @@ async function processMessage(message: any, supabase: any) {
     console.log(`💬 Processing message from ${phoneNumber}: "${messageText}"`);
     // Use shared user service
     const { getUserOrCreate } = await import('../../shared/users.ts');
-    const user = await getUserOrCreate(phoneNumber, supabase);
+    const user = await getUserOrCreate(phoneNumber);
     
     if (!user) {
       console.error('❌ Failed to get or create user');

@@ -45,7 +45,8 @@ export async function processChatRequest(request: ChatRequest): Promise<ChatResp
     console.log(`👤 Resolved user ID: ${resolvedUserId}`);
 
     // Generate AI response using shared service
-    const aiResponse = await generateAIResponse(message, resolvedUserId, personality);
+    const validPersonality = (personality === 'taskmaster' || personality === 'cheerleader') ? personality : 'taskmaster';
+    const aiResponse = await generateAIResponse(message, resolvedUserId, validPersonality);
     
     if (!aiResponse) {
       throw new Error('Failed to generate AI response');
@@ -54,7 +55,7 @@ export async function processChatRequest(request: ChatRequest): Promise<ChatResp
     console.log(`🤖 AI Response (${personality}): ${aiResponse}`);
 
     // Update user's last activity
-    await updateUserLastActive(resolvedUserId, supabase);
+    await updateUserLastActive(resolvedUserId);
 
     const responseTime = Date.now() - startTime;
     console.log(`⚡ Chat completed in ${responseTime}ms`);
@@ -91,7 +92,7 @@ async function resolveUserId(user_id?: string, phone_number?: string, supabase?:
   }
   
   if (phone_number) {
-    const user = await getUserOrCreate(phone_number, supabase);
+    const user = await getUserOrCreate(phone_number);
     if (!user) {
       throw new Error('User not found');
     }
