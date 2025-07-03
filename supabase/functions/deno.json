@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "lib": ["deno.window"],
+    "strict": true
+  },
+  "importMap": "./import_map.json",
+  "tasks": {
+    "start": "supabase functions serve",
+    "deploy": "supabase functions deploy --no-verify-jwt",
+    "deploy-prod": "supabase functions deploy --project-ref ${SUPABASE_PROJECT_REF}",
+    "test": "deno test --allow-all"
+  },
+  "lint": {
+    "rules": {
+      "tags": ["recommended"]
+    }
+  },
+  "fmt": {
+    "useTabs": false,
+    "lineWidth": 100,
+    "indentWidth": 2
+  }
+} 
