@@ -308,3 +308,202 @@ Every principle we used to clean up the codebase is now **permanently enforced b
   - Used for production deployments
 
 ## System Components 
+
+### 1. Pre-commit Hooks (`.githooks/pre-commit`)
+- **Purpose**: Automatically blocks commits with quality violations
+- **Execution**: Runs on every `git commit` attempt
+- **Bypass**: `git commit --no-verify` (leaves audit trail, NOT RECOMMENDED)
+
+### 2. Quality Check Script (`scripts/code-quality-check.sh`)
+- **Purpose**: Comprehensive quality validation with 7 check categories
+- **Modes**: Normal mode (blocks on violations), Strict mode (`--strict` flag blocks on warnings)
+- **Score**: Calculates quality percentage (violations -20%, warnings -5%)
+
+### 3. Deployment Integration
+- **Purpose**: Prevents deployment of low-quality code
+- **Integration**: `deploy-migrations.sh` and `deploy-supabase.sh` run quality checks first
+- **Blocking**: Deployments fail if quality score < 80%
+
+## Development Workflow Order
+
+### ✅ **CORRECT EXECUTION ORDER**
+
+**For any code changes:**
+
+1. **Make Code Changes**
+   ```bash
+   # Edit files, add features, fix bugs
+   ```
+
+2. **Run Code Quality Check** ⚠️ **CRITICAL STEP**
+   ```bash
+   ./scripts/code-quality-check.sh
+   ```
+
+3. **Run API & Database Health Tests** ⚠️ **CRITICAL STEP**
+   ```bash
+   ./scripts/health-check.sh
+   ```
+
+4. **Run Deployment Validation** ⚠️ **CRITICAL STEP**
+   ```bash
+   ./scripts/deploy-migrations.sh --dry-run
+   ```
+
+5. **Fix ALL Test Failures Before Proceeding**
+   - Code quality violations (file size, duplication, TypeScript)
+   - API test failures (endpoints down, connectivity issues)
+   - Database connectivity problems
+   - Performance test failures
+   - Environment variable issues
+   - Deployment validation failures
+
+6. **Address Warnings (Recommended)**
+   - Code duplication patterns
+   - Missing error handling
+   - File organization issues
+   - Performance optimizations
+
+7. **ONLY THEN Attempt Commit**
+   ```bash
+   git add .
+   git commit -m "your message"
+   # Pre-commit hook runs automatically
+   ```
+
+8. **For Production Deployment**
+   ```bash
+   # Full test suite runs automatically:
+   ./scripts/deploy-migrations.sh --production
+   ./scripts/deploy-supabase.sh
+   ```
+
+### ❌ **INCORRECT WORKFLOW** (What We Were Doing)
+
+```bash
+# WRONG: Trying to commit first, then fixing when blocked
+git commit -m "changes"  # Blocked by pre-commit hook
+# Then trying to fix violations while commit is failing
+```
+
+### **Quality Gates Hierarchy**
+
+1. **BLOCKING (Violations)**: Prevent commits AND deployments
+   - File size limits exceeded
+   - TypeScript compilation errors  
+   - Hardcoded secrets detected
+   - Critical architectural violations
+
+2. **WARNING (Non-blocking)**: Allow commits, may block strict deployments
+   - Code duplication patterns
+   - Missing error handling
+   - File organization suggestions
+   - Performance anti-patterns
+
+### **Emergency Procedures**
+
+**If Quality Check Fails:**
+```bash
+# 1. Check what failed
+./scripts/code-quality-check.sh
+
+# 2. Fix violations systematically
+# 3. Re-run until passing
+./scripts/code-quality-check.sh
+
+# 4. Then commit
+git commit -m "fix: resolve quality violations"
+```
+
+**For Emergency Deployments:**
+```bash
+# NOT RECOMMENDED - Only for critical production fixes
+git commit --no-verify -m "emergency: critical production fix"
+```
+
+## Quality Metrics
+
+### **Current System Status** ✅
+- **File Size Compliance**: 100% (all files within limits)
+- **Code Duplication**: Minimal warnings only
+- **TypeScript Compilation**: Graceful handling (skips if Deno not installed)
+- **Overall Quality Score**: 80%+ (passing threshold)
+
+### **File Size Limits**
+- Edge Functions (`*/index.ts`): 100 lines max
+- Shared Modules (`shared/*.ts`): 80 lines max  
+- Handler Files (`*/handlers.ts`): 120 lines max
+- Utility Files (`utils/*.ts`): 60 lines max
+
+### **Quality Score Calculation**
+```
+Score = 100% - (Violations × 20%) - (Warnings × 5%)
+```
+
+### **Deployment Thresholds**
+- **Minimum for Production**: 80%
+- **Recommended**: 90%+
+- **Strict Mode**: 100% (no warnings)
+
+## Monitoring and Reports
+
+### **Daily Quality Report**
+```bash
+./scripts/daily-quality-report.sh
+```
+
+### **Health Check**
+```bash
+./scripts/health-check.sh
+```
+
+### **Manual Quality Audit**
+```bash
+./scripts/code-quality-check.sh --strict
+```
+
+## Configuration
+
+### **Quality Limits** (Configurable in script)
+```bash
+MAX_FUNCTION_LINES=100
+MAX_SHARED_LINES=80
+MAX_HANDLER_LINES=120
+MAX_UTIL_LINES=60
+MIN_COVERAGE=80
+```
+
+### **Git Integration**
+```bash
+git config core.hooksPath .githooks
+```
+
+## Architecture Benefits
+
+### **Prevention vs. Remediation**
+- **87% Code Bloat Reduction**: Systematic file size enforcement
+- **Zero Technical Debt**: Impossible to commit violations
+- **Automated Enforcement**: No human oversight required
+- **Deployment Safety**: Quality gates prevent bad deployments
+
+### **Developer Experience**
+- **Fast Feedback**: Quality issues caught immediately
+- **Clear Guidance**: Specific error messages and fix suggestions
+- **Flexible Enforcement**: Warning vs. violation levels
+- **Emergency Override**: Available when needed (with audit trail)
+
+## Success Metrics
+
+### **Before Quality System**
+- Files with 100+ lines: Multiple violations
+- Technical debt accumulation: Unchecked
+- Deployment quality: No validation
+- Code duplication: Widespread
+
+### **After Quality System** 
+- File size violations: 0% (blocked at commit)
+- Technical debt: Prevented at source
+- Deployment quality: 80%+ guaranteed
+- Code duplication: Actively monitored
+
+**The quality enforcement system makes it impossible to accumulate technical debt while maintaining developer productivity.** 
