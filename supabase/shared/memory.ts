@@ -21,11 +21,7 @@ class PostgreSQLMemoryService implements IMemoryService {
         .order('created_at', { ascending: false })
         .limit(limit);
       if (error) return [];
-      return (data || []).map(row => ({
-        memory: row.content,
-        score: 0.8,
-        metadata: row.metadata || {}
-      }));
+      return (data || []).map(row => ({ memory: row.content, score: 0.8, metadata: row.metadata || {} }));
     } catch (error) {
       console.error('❌ Memory search error:', error);
       return [];
@@ -34,13 +30,10 @@ class PostgreSQLMemoryService implements IMemoryService {
 
   async addMemory(content: string, userId: string, metadata?: Record<string, any>): Promise<boolean> {
     try {
-      const { error } = await this.db
-        .from('conversation_memory')
-        .insert({
-          user_id: userId,
-          content,
-          metadata: { timestamp: new Date().toISOString(), platform: 'whatsapp', ...metadata },
-        });
+      const { error } = await this.db.from('conversation_memory').insert({
+        user_id: userId, content,
+        metadata: { timestamp: new Date().toISOString(), platform: 'whatsapp', ...metadata },
+      });
       return !error;
     } catch (error) {
       console.error('❌ Memory storage error:', error);
@@ -57,11 +50,7 @@ class PostgreSQLMemoryService implements IMemoryService {
         .order('created_at', { ascending: false })
         .limit(limit);
       if (error) return [];
-      return (data || []).map(row => ({
-        memory: row.content,
-        score: 1.0,
-        metadata: row.metadata || {}
-      }));
+      return (data || []).map(row => ({ memory: row.content, score: 1.0, metadata: row.metadata || {} }));
     } catch (error) {
       return [];
     }
@@ -77,3 +66,6 @@ class PostgreSQLMemoryService implements IMemoryService {
     }
   }
 }
+
+// Export a singleton instance for convenience
+export const MemoryService = new PostgreSQLMemoryService();
