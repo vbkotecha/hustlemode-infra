@@ -1,4 +1,4 @@
-import { createSuccessResponse, createErrorResponse } from '../../shared/utils.ts';
+import { createSuccessResponse, createErrorResponse } from '../../shared/utils/index.ts';
 
 // Health Check Edge Function - Public endpoint for monitoring
 // GET /functions/v1/health

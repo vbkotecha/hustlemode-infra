@@ -1,5 +1,3 @@
-/// <reference types="https://deno.land/x/deno@v1.36.4/lib/deno.d.ts" />
-
 import { processChatRequest } from './handlers.ts';
 
 // Universal Chat Edge Function - REFACTORED
