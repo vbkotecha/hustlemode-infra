@@ -1,0 +1,83 @@
+graph TB
+    %% User Interaction Layer
+    User["User (WhatsApp)"] --> WA["WhatsApp Business API"]
+    WA --> WHook["WhatsApp Webhook<br/>/functions/v1/whatsapp"]
+    
+    %% API Gateway Layer
+    WHook --> API["API Layer<br/>(Supabase Edge Functions)"]
+    Chat["/functions/v1/chat<br/>(Universal Chat API)"] --> API
+    Health["/functions/v1/health<br/>(Health Check)"] --> API
+    
+    %% Business Logic Layer
+    API --> Domain["Domain Layer"]
+    
+    subgraph Domain["Domain Layer (Business Logic)"]
+        UserDomain["User Domain<br/>• User Entity<br/>• UserRepository<br/>• UserService"]
+        MemDomain["Memory Domain<br/>• Memory Entity<br/>• IMemoryService<br/>• Memory Providers"]
+        AIDomain["AI Domain<br/>• Personality Factory<br/>• TaskmasterPersonality<br/>• CheerleaderPersonality"]
+        MsgDomain["Messaging Domain<br/>• WhatsAppService<br/>• Message Validators<br/>• Message Types"]
+    end
+    
+    %% Shared Services Layer
+    Domain --> Shared["Shared Services"]
+    
+    subgraph Shared["Shared Services"]
+        Config["Config Management<br/>• Environment Variables<br/>• Type-safe Configuration"]
+        Utils["Utilities<br/>• Phone Validation<br/>• Input Sanitization<br/>• Logging"]
+        Types["Shared Types<br/>• Common Interfaces<br/>• Domain Models"]
+    end
+    
+    %% Infrastructure Layer
+    Shared --> Infra["Infrastructure Layer"]
+    
+    subgraph Infra["Infrastructure Layer"]
+        GroqClient["Groq Client<br/>• AI Model Integration<br/>• Response Generation<br/>• Error Handling"]
+        SupaClient["Supabase Client<br/>• Database Connection<br/>• Authentication<br/>• RLS Policies"]
+        WAClient["WhatsApp Client<br/>• Message Sending<br/>• Webhook Verification<br/>• Rate Limiting"]
+    end
+    
+    %% Data Storage Layer
+    Infra --> Storage["Data Storage"]
+    
+    subgraph Storage["Data Storage (PostgreSQL)"]
+        Users["users table<br/>• id (UUID)<br/>• phone_number<br/>• preferences"]
+        UserPrefs["user_preferences table<br/>• default_personality<br/>• ai_settings"]
+        Memory["conversation_memory table<br/>• user_id<br/>• content<br/>• metadata"]
+    end
+    
+    %% Memory Service Abstraction
+    MemDomain --> MemAbstract["Memory Service Abstraction"]
+    
+    subgraph MemAbstract["Memory Service Providers"]
+        PGProvider["PostgreSQL Provider<br/>• Full-text Search<br/>• GIN Indexes<br/>• <50ms queries"]
+        Mem0Provider["Mem0 Provider<br/>• Vector Search<br/>• Cloud Managed<br/>• (Optional)"]
+    end
+    
+    PGProvider --> Storage
+    Mem0Provider --> Mem0Cloud["Mem0 Cloud API<br/>• Vector Database<br/>• AI Memory Features"]
+    
+    %% External Services
+    GroqClient --> GroqAPI["Groq API<br/>• Llama 3.1 70B<br/>• <200ms inference"]
+    WAClient --> WhatsAppAPI["WhatsApp Business API<br/>• Message Delivery<br/>• Webhook Events"]
+    SupaClient --> SupaServices["Supabase Services<br/>• PostgreSQL Database<br/>• Edge Functions Runtime<br/>• Authentication"]
+    
+    %% Data Flow Annotations
+    WHook -.->|"1. Extract phone number"| UserDomain
+    UserDomain -.->|"2. Lookup user_id"| Storage
+    Storage -.->|"3. Load preferences"| AIDomain
+    AIDomain -.->|"4. Load conversation memory"| MemDomain
+    MemDomain -.->|"5. Generate AI prompt"| GroqClient
+    GroqClient -.->|"6. Return 8-12 word response"| AIDomain
+    AIDomain -.->|"7. Save interaction"| MemDomain
+    MsgDomain -.->|"8. Send WhatsApp message"| WAClient
+    
+    %% Performance Targets
+    classDef performance fill:#e1f5fe,stroke:#01579b,stroke-width:2px
+    classDef storage fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    classDef external fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    classDef domain fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px
+    
+    class WHook,Chat,Health performance
+    class Storage,Users,UserPrefs,Memory storage
+    class GroqAPI,WhatsAppAPI,SupaServices,Mem0Cloud external
+    class UserDomain,MemDomain,AIDomain,MsgDomain domain 

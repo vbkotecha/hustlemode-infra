@@ -1,0 +1,23 @@
+// Supabase client management - Extracted from database.ts
+import { createClient, SupabaseClient } from 'supabase';
+import { getConfig } from '../config.ts';
+
+let supabase: SupabaseClient | null = null;
+
+// Initialize Supabase client with service role key for Edge Functions
+export function getSupabaseClient(): SupabaseClient {
+  if (!supabase) {
+    const config = getConfig();
+    supabase = createClient(
+      config.SUPABASE_URL,
+      config.SUPABASE_SERVICE_ROLE_KEY,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+        },
+      }
+    );
+  }
+  return supabase;
+} 

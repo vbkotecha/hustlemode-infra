@@ -1,0 +1,320 @@
+# HustleMode.ai Supabase Deployment & Testing Rules
+
+## 🎯 Overview
+Standardized workflow for deploying, testing, and debugging HustleMode.ai Supabase Edge Functions to prevent common issues we encountered during migration.
+
+## 🚀 Deployment Standards
+
+### Pre-Deployment Checklist
+```bash
+# 1. Validate Environment
+supabase --version                    # Ensure CLI installed
+deno --version                       # Ensure Deno runtime available
+supabase projects list              # Verify authentication
+
+# 2. Link Project
+supabase link --project-ref yzfclhnkxpgyxeklrvur
+
+# 3. Validate Code
+cd supabase/functions
+deno check health/index.ts chat/index.ts whatsapp/index.ts
+
+# 4. Database Schema Sync
+supabase db reset --linked --yes    # Apply latest schema
+```
+
+### Required Environment Variables
+**CRITICAL**: Always verify these secrets are set before deployment:
+
+```bash
+# Production Secrets (Set via Supabase Dashboard or CLI)
+GROQ_API_KEY                         # Groq API access
+GROQ_MODEL=meta-llama/llama-4-maverick-17b-128e-instruct
+WHATSAPP_TOKEN                       # WhatsApp Business API token  
+WHATSAPP_PHONE_NUMBER_ID=682917338218717
+WHATSAPP_VERIFY_TOKEN=fa22d4e7-cba4-48cf-9b36-af6190bf9c67
+MEMORY_PROVIDER=postgresql
+ENVIRONMENT=production
+```
+
+### Deployment Commands
+```bash
+# Standard deployment (no JWT verification for webhooks)
+supabase functions deploy --no-verify-jwt
+
+# Individual function deployment
+supabase functions deploy health --no-verify-jwt
+supabase functions deploy chat --no-verify-jwt  
+supabase functions deploy whatsapp --no-verify-jwt
+
+# With explicit project reference
+supabase functions deploy --project-ref yzfclhnkxpgyxeklrvur --no-verify-jwt
+```
+
+## 🔍 Testing Protocols
+
+### 1. Health Check Testing
+```bash
+# Basic health endpoint
+curl -X GET "https://yzfclhnkxpgyxeklrvur.supabase.co/functions/v1/health"
+
+# Expected response:
+{
+  "success": true,
+  "message": "HustleMode.ai API is healthy",
+  "timestamp": "2024-12-19T...",
+  "database": { "status": "connected", "stats": {...} },
+  "memory": { "status": "healthy", "provider": "postgresql" },
+  "ai": { "status": "ready", "model": "meta-llama/llama-4-maverick-17b-128e-instruct" }
+}
+```
+
+### 2. Chat API Testing
+```bash
+# Test chat endpoint with personality
+curl -X POST "https://yzfclhnkxpgyxeklrvur.supabase.co/functions/v1/chat" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phone_number": "+17817470041",
+    "message": "I need motivation",
+    "personality": "taskmaster"
+  }'
+
+# Expected response:
+{
+  "success": true,
+  "response": "Motivation is for amateurs. Discipline is what gets results.",
+  "personality": "taskmaster"
+}
+```
+
+### 3. WhatsApp Webhook Testing
+```bash
+# Verify webhook (simulates Meta verification)
+curl -X GET "https://yzfclhnkxpgyxeklrvur.supabase.co/functions/v1/whatsapp?hub.mode=subscribe&hub.challenge=test123&hub.verify_token=fa22d4e7-cba4-48cf-9b36-af6190bf9c67"
+
+# Expected response: "test123" (echo of challenge)
+
+# Test webhook message processing
+curl -X POST "https://yzfclhnkxpgyxeklrvur.supabase.co/functions/v1/whatsapp" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "entry": [{
+      "changes": [{
+        "value": {
+          "messages": [{
+            "from": "+17817470041",
+            "text": { "body": "test message" }
+          }],
+          "metadata": {
+            "display_phone_number": "+17817470041",
+            "phone_number_id": "682917338218717"
+          }
+        }
+      }]
+    }]
+  }'
+```
+
+### 4. Database Connection Testing
+```bash
+# Test database connectivity
+supabase db remote-commit-info --project-ref yzfclhnkxpgyxeklrvur
+
+# Check active connections
+psql "postgresql://postgres:UTA_nxh7zcn2gmz_jkz@db.yzfclhnkxpgyxeklrvur.supabase.co:5432/postgres" \
+  -c "SELECT count(*) FROM pg_stat_activity;"
+```
+
+## 🐛 Common Issues & Debugging
+
+### Issue 1: Authentication Errors (401 Unauthorized)
+**Symptoms**: WhatsApp webhook returns 401, health endpoint fails
+**Root Cause**: Missing or incorrect function authentication
+**Solution**:
+```bash
+# Deploy with --no-verify-jwt flag (CRITICAL for webhooks)
+supabase functions deploy --no-verify-jwt
+
+# Verify webhook URL format (no auth tokens needed)
+# ✅ Correct: https://yzfclhnkxpgyxeklrvur.supabase.co/functions/v1/whatsapp
+# ❌ Wrong: https://yzfclhnkxpgyxeklrvur.supabase.co/functions/v1/whatsapp?auth=...
+```
+
+### Issue 2: AI Model Errors (400 Bad Request)
+**Symptoms**: "Model not found", Groq API errors
+**Root Cause**: Outdated or incorrect model name
+**Solution**:
+```bash
+# Verify current model exists
+curl -X GET "https://api.groq.com/openai/v1/models" \
+  -H "Authorization: Bearer $GROQ_API_KEY" | jq '.data[] | select(.id | contains("llama"))'
+
+# Update to working model
+supabase secrets set GROQ_MODEL=meta-llama/llama-4-maverick-17b-128e-instruct --project-ref yzfclhnkxpgyxeklrvur
+```
+
+### Issue 3: Database Constraint Violations (23514)
+**Symptoms**: Phone number format errors, user creation fails
+**Root Cause**: Phone numbers missing '+' prefix
+**Solution**:
+```typescript
+// Always ensure phone numbers have '+' prefix before database operations
+const formatPhoneNumber = (phone: string): string => {
+  return phone.startsWith('+') ? phone : `+${phone}`;
+};
+```
+
+### Issue 4: Import/Boot Failures
+**Symptoms**: Edge Function fails to start, import errors
+**Root Cause**: Circular dependencies, missing shared modules
+**Solution**:
+```bash
+# Check import structure
+deno info supabase/functions/*/index.ts
+
+# Validate shared dependencies
+deno check supabase/shared/*.ts
+```
+
+### Issue 5: Environment Variable Not Set
+**Symptoms**: "Environment variable undefined" errors
+**Root Cause**: Secrets not configured in Supabase
+**Solution**:
+```bash
+# List current secrets
+supabase secrets list --project-ref yzfclhnkxpgyxeklrvur
+
+# Set missing secrets
+supabase secrets set VARIABLE_NAME=value --project-ref yzfclhnkxpgyxeklrvur
+```
+
+## 📊 Monitoring & Health Checks
+
+### Real-time Function Logs
+```bash
+# Stream all function logs
+supabase functions logs --project-ref yzfclhnkxpgyxeklrvur
+
+# Filter specific function
+supabase functions logs whatsapp --project-ref yzfclhnkxpgyxeklrvur
+
+# Follow logs in real-time
+supabase functions logs --follow --project-ref yzfclhnkxpgyxeklrvur
+```
+
+### Health Dashboard URLs
+- **Supabase Dashboard**: https://supabase.com/dashboard/project/yzfclhnkxpgyxeklrvur
+- **Function Logs**: https://supabase.com/dashboard/project/yzfclhnkxpgyxeklrvur/functions/logs
+- **Database**: https://supabase.com/dashboard/project/yzfclhnkxpgyxeklrvur/editor
+- **API Keys**: https://supabase.com/dashboard/project/yzfclhnkxpgyxeklrvur/settings/api
+
+### Performance Metrics
+```bash
+# Expected performance benchmarks post-migration:
+# - Cold start: <100ms (vs 2-5s Azure Functions)
+# - Response time: 200-500ms (vs 800-1500ms)
+# - Memory search: <50ms (PostgreSQL full-text)
+# - AI inference: <200ms (Groq Llama 4 Maverick)
+```
+
+## 🔧 Quick Fix Commands
+
+### Reset Everything
+```bash
+# Complete environment reset
+supabase link --project-ref yzfclhnkxpgyxeklrvur
+supabase db reset --linked --yes
+supabase functions deploy --no-verify-jwt
+```
+
+### Verify All Systems
+```bash
+# Health check script
+./scripts/health-check.sh
+
+# Or manual verification
+curl -s https://yzfclhnkxpgyxeklrvur.supabase.co/functions/v1/health | jq
+```
+
+### Update Configuration
+```bash
+# Update WhatsApp token
+supabase secrets set WHATSAPP_TOKEN=new_token --project-ref yzfclhnkxpgyxeklrvur
+
+# Update AI model
+supabase secrets set GROQ_MODEL=meta-llama/llama-4-maverick-17b-128e-instruct --project-ref yzfclhnkxpgyxeklrvur
+
+# Force redeploy
+supabase functions deploy --no-verify-jwt
+```
+
+## 📋 Pre-Production Checklist
+
+### Environment Validation
+- [ ] All secrets configured in Supabase Dashboard
+- [ ] Database schema up to date (`supabase db reset --linked --yes`)
+- [ ] Functions pass TypeScript validation (`deno check`)
+- [ ] Health endpoint returns 200 with full status
+- [ ] Chat API responds with personality-appropriate messages
+- [ ] WhatsApp webhook verifies correctly
+- [ ] Database constraints allow phone number formats
+- [ ] AI model exists and responds within 200ms
+- [ ] Memory search returns relevant context
+- [ ] Error handling works for all failure scenarios
+
+### Post-Deployment Testing
+- [ ] All three endpoints (health, chat, whatsapp) return 200
+- [ ] WhatsApp webhook configured in Meta for Developers
+- [ ] Test messages sent to +17817470041 receive responses
+- [ ] Database queries complete successfully
+- [ ] Function logs show no errors
+- [ ] Performance metrics meet targets
+- [ ] Memory context retrieves 20-30 exchanges
+
+## 🚨 Emergency Procedures
+
+### Function Down
+```bash
+# 1. Check function status
+supabase functions logs --project-ref yzfclhnkxpgyxeklrvur
+
+# 2. Redeploy specific function
+supabase functions deploy whatsapp --no-verify-jwt
+
+# 3. Verify health
+curl https://yzfclhnkxpgyxeklrvur.supabase.co/functions/v1/health
+```
+
+### Database Issues
+```bash
+# 1. Check database status
+psql "postgresql://postgres:UTA_nxh7zcn2gmz_jkz@db.yzfclhnkxpgyxeklrvur.supabase.co:5432/postgres" -c "\l"
+
+# 2. Reset schema if needed
+supabase db reset --linked --yes
+
+# 3. Verify tables exist
+psql "..." -c "\dt"
+```
+
+### WhatsApp Webhook Down
+```bash
+# 1. Verify webhook URL in Meta for Developers
+# URL: https://yzfclhnkxpgyxeklrvur.supabase.co/functions/v1/whatsapp
+# Verify Token: fa22d4e7-cba4-48cf-9b36-af6190bf9c67
+
+# 2. Test webhook manually
+curl -X GET "https://yzfclhnkxpgyxeklrvur.supabase.co/functions/v1/whatsapp?hub.mode=subscribe&hub.challenge=test&hub.verify_token=fa22d4e7-cba4-48cf-9b36-af6190bf9c67"
+
+# 3. Check function logs
+supabase functions logs whatsapp --project-ref yzfclhnkxpgyxeklrvur
+```
+
+---
+
+**Remember**: Always use `--no-verify-jwt` for webhook deployments, verify all environment variables are set, and test the complete flow after any changes. The magic formula that solved our issues: Supabase Edge Functions + Groq Llama 4 Maverick + PostgreSQL memory + proper phone number formatting.
+description:
+globs:
+alwaysApply: false
+---

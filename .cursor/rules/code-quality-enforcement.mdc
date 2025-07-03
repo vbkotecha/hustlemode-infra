@@ -1,0 +1,219 @@
+# Code Quality Enforcement Rules - AUTOMATED PREVENTION
+
+## 🚫 CRITICAL: File Size Limits (STRICTLY ENFORCED)
+
+### Maximum File Size Limits
+- **Edge Functions**: 100 lines maximum per index.ts file
+- **Shared Modules**: 80 lines maximum per module file
+- **Handler Files**: 120 lines maximum
+- **Utility Files**: 60 lines maximum per module
+- **Type Files**: 200 lines maximum (types can be longer)
+
+### AUTOMATED ENFORCEMENT
+```bash
+# Before ANY commit - check file sizes automatically
+find supabase/functions -name "index.ts" -exec wc -l {} \; | awk '$1 > 100 {print "❌ VIOLATION: " $2 " has " $1 " lines (max 100)"}'
+find supabase/shared -name "*.ts" -not -path "*/types.ts" -exec wc -l {} \; | awk '$1 > 80 {print "❌ VIOLATION: " $2 " has " $1 " lines (max 80)"}'
+```
+
+### MANDATORY REFACTORING TRIGGERS
+- **Any file >100 lines**: IMMEDIATE refactoring required
+- **Any function >50 lines**: Extract to separate module
+- **Any class >80 lines**: Split into multiple classes
+- **Duplicate code >5 lines**: Create shared module
+
+## 🔄 DUPLICATION PREVENTION (ZERO TOLERANCE)
+
+### PROHIBITED PATTERNS
+- ❌ **Same function in 2+ files** - Must extract to shared module
+- ❌ **Copy-paste code blocks** - Must create reusable utility
+- ❌ **Duplicate API calls** - Must use shared service
+- ❌ **Repeated validation logic** - Must use shared validators
+- ❌ **Multiple DB queries for same data** - Must use shared data layer
+
+### DETECTION RULES
+```bash
+# Detect potential duplication
+grep -r "async function" supabase/ | cut -d: -f2 | sort | uniq -d
+grep -r "export function" supabase/ | cut -d: -f2 | sort | uniq -d
+```
+
+### ENFORCEMENT ACTIONS
+1. **Pre-commit Hook**: Automatically detect duplication
+2. **Code Review Blocker**: Cannot merge with duplication
+3. **Automated Refactoring**: Suggest shared module creation
+4. **Documentation Update**: Auto-update module dependency graph
+
+## 📁 MANDATORY FILE ORGANIZATION
+
+### Directory Structure (ENFORCED)
+```
+supabase/
+├── functions/
+│   ├── [function-name]/
+│   │   ├── index.ts          # ≤100 lines - routing only
+│   │   ├── handlers.ts       # ≤120 lines - business logic
+│   │   └── types.ts          # ≤50 lines - function-specific types
+├── shared/
+│   ├── [domain]/             # Domain-specific modules
+│   │   ├── index.ts          # ≤20 lines - exports only
+│   │   ├── [module].ts       # ≤80 lines - single responsibility
+│   │   └── types.ts          # ≤100 lines - domain types
+│   └── utils/                # Cross-cutting utilities
+│       ├── index.ts          # ≤20 lines - exports only
+│       └── [utility].ts      # ≤60 lines - single utility
+```
+
+### PROHIBITED STRUCTURES
+- ❌ **Files directly in functions/ root** (except deno.json, import_map.json)
+- ❌ **Giant shared files** without domain organization
+- ❌ **Utils dumping ground** - must be categorized
+- ❌ **Mixed concerns** in single files
+- ❌ **Circular dependencies** between modules
+
+## 🧪 TESTING REQUIREMENTS (MANDATORY)
+
+### Testing Rules
+- **Every shared module** MUST have unit tests
+- **Every handler** MUST have integration tests
+- **Every API endpoint** MUST have end-to-end tests
+- **Test coverage** MUST be >80% for shared modules
+
+### Test File Organization
+```
+tests/
+├── unit/
+│   ├── shared/
+│   │   ├── ai.test.ts        # Test shared/ai.ts
+│   │   ├── users.test.ts     # Test shared/users.ts
+│   │   └── utils/
+│   │       └── validation.test.ts
+├── integration/
+│   ├── functions/
+│   │   ├── chat.test.ts      # Test chat function
+│   │   └── whatsapp.test.ts  # Test whatsapp function
+└── e2e/
+    ├── chat-api.test.ts
+    └── whatsapp-webhook.test.ts
+```
+
+## 🚨 QUALITY GATES (AUTOMATED BLOCKERS)
+
+### Pre-Commit Checks (CANNOT BYPASS)
+1. **File Size Validation**: Block commits with oversized files
+2. **Duplication Detection**: Block commits with duplicate code
+3. **Import Cycle Detection**: Block circular dependencies
+4. **TypeScript Compilation**: Block commits with TS errors
+5. **Test Coverage**: Block commits that reduce coverage
+
+### Pre-Deploy Checks (CANNOT BYPASS)
+1. **All Tests Pass**: 100% pass rate required
+2. **Performance Benchmarks**: Response times within limits
+3. **Security Scan**: No security vulnerabilities
+4. **Dependency Audit**: No vulnerable dependencies
+5. **Documentation Updated**: README and docs current
+
+## 🔧 DEVELOPMENT WORKFLOW (ENFORCED)
+
+### MANDATORY Process for New Features
+1. **Design Review**: Architecture approval before coding
+2. **Module Planning**: Determine which shared modules to use/create
+3. **Test-First**: Write tests before implementation
+4. **Single Responsibility**: Each new file has one clear purpose
+5. **Integration Testing**: Verify with existing modules
+6. **Documentation**: Update module dependency graph
+
+### PROHIBITED Shortcuts
+- ❌ **Adding to existing large files** - Must create new focused modules
+- ❌ **Copy-paste fixes** - Must refactor to shared solution
+- ❌ **Quick hacks** - Must follow established patterns
+- ❌ **Skipping tests** - Tests are mandatory for all shared code
+- ❌ **Breaking interfaces** - Must maintain backward compatibility
+
+## 📊 MONITORING & ALERTS
+
+### Automated Quality Monitoring
+```bash
+#!/bin/bash
+# Daily code quality report
+echo "📊 DAILY CODE QUALITY REPORT"
+echo "=============================="
+
+# File size violations
+echo "📏 File Size Violations:"
+find supabase -name "*.ts" -exec wc -l {} \; | awk '$1 > 100 {violations++} END {print violations ? violations " files over limit" : "✅ All files within limits"}'
+
+# Duplication detection
+echo "🔄 Potential Duplications:"
+# Add duplication detection logic
+
+# Test coverage
+echo "🧪 Test Coverage:"
+# Add coverage report
+
+# Performance metrics
+echo "⚡ Performance Metrics:"
+# Add performance monitoring
+```
+
+### Alert Triggers
+- **File size violation**: Immediate Slack alert
+- **Duplication detected**: Block PR with explanation
+- **Test coverage drop**: Require explanation and remediation
+- **Performance regression**: Require optimization plan
+
+## 🛡️ AUTOMATED REMEDIATION
+
+### Self-Healing Actions
+1. **Auto-format**: Code automatically formatted on save
+2. **Import Organization**: Automatically organize and remove unused imports
+3. **Type Generation**: Auto-generate types from database schema
+4. **Documentation Sync**: Auto-update module dependency documentation
+
+### Suggested Refactoring
+- **File too large**: Suggest specific modules to extract
+- **Duplication detected**: Suggest shared module creation
+- **Complex function**: Suggest breakdown strategy
+- **Performance issue**: Suggest optimization approach
+
+## 📋 CODE REVIEW CHECKLIST (MANDATORY)
+
+### Reviewer Requirements
+- [ ] **File sizes within limits** (automated check)
+- [ ] **No code duplication** (automated check)
+- [ ] **Single responsibility principle** followed
+- [ ] **Proper error handling** implemented
+- [ ] **Tests added/updated** for changes
+- [ ] **Documentation updated** if needed
+- [ ] **Performance impact** considered
+- [ ] **Security implications** reviewed
+
+### BLOCKING Issues (Cannot Merge)
+- ❌ **File size violations**
+- ❌ **Code duplication**
+- ❌ **Missing tests for shared code**
+- ❌ **TypeScript errors**
+- ❌ **Security vulnerabilities**
+- ❌ **Performance regressions**
+
+## 🎯 SUCCESS METRICS
+
+### Daily Tracking
+- **Average file size**: Must stay <80 lines
+- **Duplication ratio**: Must stay at 0%
+- **Test coverage**: Must stay >80%
+- **Build time**: Must stay <30 seconds
+- **Function response time**: Must stay <500ms
+
+### Weekly Review
+- **Code quality score**: Composite metric
+- **Technical debt accumulation**: Lines of debt added
+- **Refactoring efficiency**: Time to clean up violations
+- **Developer satisfaction**: Team feedback on maintainability
+
+---
+**Core Principle**: Automated prevention is better than manual correction. These rules make it IMPOSSIBLE to create messy code.
+description:
+globs:
+alwaysApply: false
+---

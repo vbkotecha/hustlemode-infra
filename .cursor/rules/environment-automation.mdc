@@ -1,0 +1,234 @@
+# Environment Variable Management & Testing Automation
+
+## 🔐 Environment Variable Standards
+
+### Local Development Setup
+```bash
+# 1. Copy template
+cp .env.example .env
+
+# 2. Fill in actual values
+# Required variables for local development:
+SUPABASE_URL=https://yzfclhnkxpgyxeklrvur.supabase.co
+GROQ_API_KEY=your_groq_key_here
+WHATSAPP_TOKEN=EACPL4t2aeboBOyD1VB3Vn8IR3GZBFoU9uxBL8A0BBnOfO9M7uBLV6HAJfqMYraAyTnRyzPTsRRG1aZAZCXZB0RZAZCZBhcXulKAQzHK2gZB97uBnlfOGkZBPZCTMViFL2ZBjjt1GtrP1FZBpMAeBLHbi99SzG1hKYkilplioSBHO9nwm9RQmTM3LvxFsU9mn9MYOGQZDZD
+
+# 3. Load environment (for local testing)
+export $(cat .env | xargs)
+```
+
+### Production Environment Management
+```bash
+# Set secrets in Supabase (ALWAYS use project reference)
+supabase secrets set VARIABLE_NAME=value --project-ref yzfclhnkxpgyxeklrvur
+
+# List current secrets
+supabase secrets list --project-ref yzfclhnkxpgyxeklrvur
+
+# Required production secrets:
+supabase secrets set GROQ_API_KEY=your_key --project-ref yzfclhnkxpgyxeklrvur
+supabase secrets set GROQ_MODEL=meta-llama/llama-4-maverick-17b-128e-instruct --project-ref yzfclhnkxpgyxeklrvur
+supabase secrets set WHATSAPP_TOKEN=EACPL4t2aeboBOyD1VB3Vn8IR3GZBFoU9uxBL8A0BBnOfO9M7uBLV6HAJfqMYraAyTnRyzPTsRRG1aZAZCXZB0RZAZCZBhcXulKAQzHK2gZB97uBnlfOGkZBPZCTMViFL2ZBjjt1GtrP1FZBpMAeBLHbi99SzG1hKYkilplioSBHO9nwm9RQmTM3LvxFsU9mn9MYOGQZDZD --project-ref yzfclhnkxpgyxeklrvur
+supabase secrets set WHATSAPP_PHONE_NUMBER_ID=682917338218717 --project-ref yzfclhnkxpgyxeklrvur
+supabase secrets set WHATSAPP_VERIFY_TOKEN=fa22d4e7-cba4-48cf-9b36-af6190bf9c67 --project-ref yzfclhnkxpgyxeklrvur
+supabase secrets set MEMORY_PROVIDER=postgresql --project-ref yzfclhnkxpgyxeklrvur
+supabase secrets set ENVIRONMENT=production --project-ref yzfclhnkxpgyxeklrvur
+```
+
+## 🧪 Automated Testing Workflow
+
+### Pre-Deployment Testing
+```bash
+# 1. Code validation
+cd supabase/functions
+deno check health/index.ts chat/index.ts whatsapp/index.ts
+
+# 2. Environment validation
+supabase secrets list --project-ref yzfclhnkxpgyxeklrvur | grep -E "(GROQ_API_KEY|WHATSAPP_TOKEN|GROQ_MODEL)"
+
+# 3. Database schema sync
+supabase db reset --linked --yes
+
+# 4. Deploy functions
+supabase functions deploy --no-verify-jwt
+
+# 5. Run health check
+./scripts/health-check.sh
+```
+
+### Post-Deployment Verification
+```bash
+# Comprehensive endpoint testing
+curl -s https://yzfclhnkxpgyxeklrvur.supabase.co/functions/v1/health | jq
+curl -X POST https://yzfclhnkxpgyxeklrvur.supabase.co/functions/v1/chat \
+  -H "Content-Type: application/json" \
+  -d '{"phone_number":"+17817470041","message":"test","personality":"taskmaster"}' | jq
+
+# WhatsApp webhook verification
+curl "https://yzfclhnkxpgyxeklrvur.supabase.co/functions/v1/whatsapp?hub.mode=subscribe&hub.challenge=test123&hub.verify_token=fa22d4e7-cba4-48cf-9b36-af6190bf9c67"
+
+# Performance testing
+time curl -s https://yzfclhnkxpgyxeklrvur.supabase.co/functions/v1/health >/dev/null
+```
+
+## 🚨 Critical Environment Variable Rules
+
+### NEVER commit these to git:
+- `.env` files with actual secrets
+- API keys in plain text
+- Database passwords
+- WhatsApp tokens
+
+### ALWAYS verify before deployment:
+- All required secrets exist in Supabase
+- Environment variables match expected format
+- Test endpoints work with new configuration
+- Function logs show no "undefined" variable errors
+
+### Environment Variable Naming Convention:
+```bash
+# Service prefixes for clarity
+GROQ_API_KEY          # AI service
+GROQ_MODEL            # AI model name
+WHATSAPP_TOKEN        # WhatsApp Business API
+WHATSAPP_*            # All WhatsApp related config
+SUPABASE_*            # Supabase configuration
+MEMORY_PROVIDER       # Memory service type
+ENVIRONMENT           # Environment name (development/production)
+```
+
+## 🔄 Testing Automation Commands
+
+### Quick Health Check
+```bash
+# One-liner health verification
+curl -s https://yzfclhnkxpgyxeklrvur.supabase.co/functions/v1/health | jq '.success'
+```
+
+### Full System Test
+```bash
+# Run comprehensive health check script
+./scripts/health-check.sh
+
+# Check function logs for errors
+supabase functions logs --project-ref yzfclhnkxpgyxeklrvur | grep -i error
+
+# Test all personalities
+for personality in taskmaster cheerleader; do
+  curl -X POST https://yzfclhnkxpgyxeklrvur.supabase.co/functions/v1/chat \
+    -H "Content-Type: application/json" \
+    -d "{\"phone_number\":\"+17817470041\",\"message\":\"test $personality\",\"personality\":\"$personality\"}" | jq '.response'
+done
+```
+
+### Performance Monitoring
+```bash
+# Response time testing
+for i in {1..5}; do
+  time curl -s https://yzfclhnkxpgyxeklrvur.supabase.co/functions/v1/health >/dev/null
+done
+
+# Load testing (simple)
+for i in {1..10}; do
+  curl -s https://yzfclhnkxpgyxeklrvur.supabase.co/functions/v1/health &
+done
+wait
+```
+
+## 🐛 Debugging Environment Issues
+
+### Common Issues & Solutions
+
+#### Issue: "Environment variable undefined"
+```bash
+# Check if secret exists
+supabase secrets list --project-ref yzfclhnkxpgyxeklrvur | grep VARIABLE_NAME
+
+# Set missing secret
+supabase secrets set VARIABLE_NAME=value --project-ref yzfclhnkxpgyxeklrvur
+
+# Redeploy functions to pick up new secrets
+supabase functions deploy --no-verify-jwt
+```
+
+#### Issue: "Invalid API key" errors
+```bash
+# Test Groq API key directly
+curl -X GET "https://api.groq.com/openai/v1/models" \
+  -H "Authorization: Bearer $GROQ_API_KEY"
+
+# Update if invalid
+supabase secrets set GROQ_API_KEY=new_key --project-ref yzfclhnkxpgyxeklrvur
+```
+
+#### Issue: WhatsApp webhook not working
+```bash
+# Verify webhook manually
+curl "https://yzfclhnkxpgyxeklrvur.supabase.co/functions/v1/whatsapp?hub.mode=subscribe&hub.challenge=test&hub.verify_token=fa22d4e7-cba4-48cf-9b36-af6190bf9c67"
+
+# Check WhatsApp token
+supabase secrets list --project-ref yzfclhnkxpgyxeklrvur | grep WHATSAPP_TOKEN
+
+# Update token if needed
+supabase secrets set WHATSAPP_TOKEN=new_token --project-ref yzfclhnkxpgyxeklrvur
+```
+
+## 📋 Environment Checklist
+
+### Before Every Deployment:
+- [ ] All secrets exist in Supabase: `supabase secrets list --project-ref yzfclhnkxpgyxeklrvur`
+- [ ] Functions pass validation: `deno check supabase/functions/*/index.ts`
+- [ ] Database schema is current: `supabase db reset --linked --yes`
+- [ ] Health check passes: `./scripts/health-check.sh`
+- [ ] No undefined variables in logs: `supabase functions logs | grep undefined`
+
+### After Every Deployment:
+- [ ] All endpoints return 200
+- [ ] Health check reports all services healthy
+- [ ] Chat API returns appropriate responses
+- [ ] WhatsApp webhook verification works
+- [ ] Performance meets targets (<1s health, <2s chat)
+- [ ] Function logs show no errors
+
+## 🔧 Environment Variable Update Workflow
+
+### Updating WhatsApp Token:
+```bash
+# 1. Update in Supabase
+supabase secrets set WHATSAPP_TOKEN=new_token --project-ref yzfclhnkxpgyxeklrvur
+
+# 2. Update local template
+# Edit .env.example with new token
+
+# 3. Redeploy functions
+supabase functions deploy whatsapp --no-verify-jwt
+
+# 4. Test webhook
+curl "https://yzfclhnkxpgyxeklrvur.supabase.co/functions/v1/whatsapp?hub.mode=subscribe&hub.challenge=test&hub.verify_token=fa22d4e7-cba4-48cf-9b36-af6190bf9c67"
+
+# 5. Test message processing
+./scripts/health-check.sh
+```
+
+### Updating AI Model:
+```bash
+# 1. Verify new model exists
+curl -X GET "https://api.groq.com/openai/v1/models" \
+  -H "Authorization: Bearer $GROQ_API_KEY" | jq '.data[] | select(.id | contains("llama"))'
+
+# 2. Update in Supabase
+supabase secrets set GROQ_MODEL=new_model_name --project-ref yzfclhnkxpgyxeklrvur
+
+# 3. Test AI response
+curl -X POST https://yzfclhnkxpgyxeklrvur.supabase.co/functions/v1/chat \
+  -H "Content-Type: application/json" \
+  -d '{"phone_number":"+17817470041","message":"test","personality":"taskmaster"}'
+```
+
+---
+
+**Remember**: Environment variables are the #1 source of deployment issues. Always verify, test, and validate after any changes. Use the health check script religiously!
+description:
+globs:
+alwaysApply: false
+---

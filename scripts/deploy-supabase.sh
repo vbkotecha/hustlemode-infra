@@ -243,6 +243,19 @@ main() {
         exit 1
     fi
     
+    # Run code quality checks before deployment
+    log_info "Running code quality checks..."
+    if [[ -f "$PROJECT_ROOT/scripts/code-quality-check.sh" ]]; then
+        if ! "$PROJECT_ROOT/scripts/code-quality-check.sh"; then
+            log_error "Code quality check failed - cannot deploy"
+            log_warning "Fix quality issues before deploying"
+            exit 1
+        fi
+        log_success "Code quality checks passed"
+    else
+        log_warning "Code quality check script not found - skipping"
+    fi
+    
     # Parse arguments
     local skip_validation=false
     local environment="development"

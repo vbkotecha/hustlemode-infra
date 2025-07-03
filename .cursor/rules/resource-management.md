@@ -8,11 +8,17 @@ alwaysApply: true
 
 ## 🚫 CRITICAL: NO RESOURCE DELETION WITHOUT APPROVAL
 
-### Azure Resources
-- **NEVER** run `az functionapp delete` without explicit user approval
-- **NEVER** run `az storage account delete` without explicit user approval  
-- **NEVER** run `az group delete` without explicit user approval
-- **NEVER** run any `az * delete` commands without explicit user approval
+### Supabase Resources
+- **NEVER** run `supabase projects delete` without explicit user approval
+- **NEVER** run `supabase functions delete` without explicit user approval  
+- **NEVER** run `supabase db reset` in production without explicit user approval
+- **NEVER** run any destructive Supabase commands without explicit user approval
+
+### Database Operations
+- **NEVER** drop databases without explicit user approval
+- **NEVER** truncate tables without explicit user approval
+- **NEVER** delete data without explicit user approval
+- **NEVER** run `supabase db reset` without explicit user approval
 
 ### Local Files and Directories
 - **NEVER** run `rm -rf` on any directory without explicit user approval
@@ -20,10 +26,10 @@ alwaysApply: true
 - **NEVER** delete deployment scripts without explicit user approval
 - **ALWAYS** archive/backup files before any deletion
 
-### Database Operations
-- **NEVER** drop databases without explicit user approval
-- **NEVER** truncate tables without explicit user approval
-- **NEVER** delete collections without explicit user approval
+### Edge Functions & Code
+- **NEVER** delete function directories without explicit user approval
+- **NEVER** remove shared utilities without explicit user approval
+- **NEVER** delete TypeScript files without explicit user approval
 
 ## ✅ Required Process for Resource Changes
 
@@ -38,6 +44,7 @@ alwaysApply: true
 - Reading/listing resources
 - Archiving/backing up files
 - Building and deploying code
+- Running health checks
 
 ## 🔧 Alternative Approaches
 
@@ -60,18 +67,53 @@ If a deletion is absolutely necessary:
 3. **Get explicit user confirmation**
 4. **Provide rollback plan**
 
-## 🛡️ Protection Examples
+## 🛡️ Supabase-Specific Protection
 
+### Protected Supabase Operations
 ```bash
 # ❌ FORBIDDEN WITHOUT APPROVAL
-az functionapp delete --name myapp
-rm -rf important-directory/
-DROP DATABASE production;
+supabase projects delete
+supabase functions delete
+supabase db reset --linked (in production)
+supabase secrets unset
 
 # ✅ SAFE OPERATIONS
-az functionapp create --name myapp
-mkdir archive/
-cp -r important-directory/ archive/backup-$(date +%s)/
+supabase functions deploy
+supabase functions logs
+supabase secrets list
+supabase db status
 ```
 
-This rule applies to ALL operations involving deletion, removal, or destruction of ANY resources, files, or data. 
+### Database Protection
+```bash
+# ❌ FORBIDDEN WITHOUT APPROVAL
+DROP DATABASE production;
+DELETE FROM users;
+TRUNCATE TABLE conversation_memory;
+
+# ✅ SAFE OPERATIONS
+SELECT * FROM users;
+INSERT INTO users (...);
+UPDATE user_preferences SET ...;
+```
+
+## 🚨 Emergency Procedures
+
+### Function Recovery
+```bash
+# If function accidentally deleted:
+# 1. Check git history for function code
+# 2. Restore from backup
+# 3. Redeploy function
+supabase functions deploy function_name --no-verify-jwt
+```
+
+### Database Recovery
+```bash
+# If data accidentally deleted:
+# 1. Check if point-in-time recovery available
+# 2. Restore from most recent backup
+# 3. Contact Supabase support if needed
+```
+
+This rule applies to ALL operations involving deletion, removal, or destruction of ANY Supabase resources, Edge Functions, database data, or local files. 

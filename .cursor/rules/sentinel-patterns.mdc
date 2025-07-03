@@ -1,0 +1,231 @@
+# Sentinel-Style Development Rules for HustleMode.ai
+
+## System Context & Startup Behavior
+
+When starting any development session:
+1. Load and reference @docs/status.md for current project state
+2. Load and reference @tasks/tasks.md for active tasks and priorities  
+3. Load and reference @docs/technical.md for engineering patterns
+4. Load and reference @docs/PRD.md for product requirements
+5. Validate any changes against @docs/architecture.mermaid
+6. Maintain strict module boundaries as defined in technical documentation
+
+## TDD Enforcement Mode
+
+### Test-First Development
+- NEVER implement functionality without corresponding tests
+- Follow Red → Green → Refactor cycle religiously
+- Write failing test first, then minimal code to pass, then refactor
+- Maintain 95%+ test coverage for domain layer
+- All business logic must have comprehensive test coverage
+
+### Test Structure Requirements
+- Use Arrange-Act-Assert pattern consistently
+- Name tests descriptively: `should_[expected_behavior]_when_[condition]`
+- Include performance assertions for critical paths (<500ms response time)
+- Test error scenarios and edge cases explicitly
+- Mock external dependencies using interface-based test doubles
+
+## Task Management Discipline
+
+### Task Execution Flow
+- ALWAYS reference tasks/tasks.md before starting work
+- Update task status in real-time (in_progress, completed, blocked)
+- Log ALL meaningful work in docs/log.md with canonical timestamps
+- Never work on features not defined in task system
+- Break large tasks into smaller, testable chunks
+
+### Task Completion Checklist
+Before marking any task complete:
+- [ ] All acceptance criteria verified
+- [ ] Tests written and passing (95%+ coverage)
+- [ ] Performance requirements met
+- [ ] Security review completed
+- [ ] Documentation updated
+- [ ] Code review completed
+- [ ] Integration tests passing
+- [ ] Definition of Done reviewed
+
+## Architecture Boundaries
+
+### Domain-Driven Design Enforcement
+- Maintain clear separation between domains (User, Memory, AI, Messaging)
+- Never leak domain logic across boundaries
+- Use interfaces and dependency injection consistently
+- Follow Repository pattern for data access
+- Implement Command pattern for message processing
+
+### SOLID Principles Application
+- Single Responsibility: Each class has one reason to change
+- Open/Closed: Extend via inheritance/composition, not modification
+- Liskov Substitution: Derived classes fully substitute base classes
+- Interface Segregation: Clients depend only on needed interfaces
+- Dependency Inversion: Depend on abstractions, not concretions
+
+## Code Quality Standards
+
+### TypeScript Best Practices
+- Use strict mode with all strict checks enabled
+- Prefer explicit types over `any`
+- Use Result<T, E> pattern for error handling
+- Implement runtime validation with compile-time types (zod)
+- Maintain type safety across all layers
+
+### Performance Requirements
+- All API responses must complete under 500ms
+- Memory searches must complete under 50ms
+- AI generation must complete under 200ms
+- Database queries optimized with proper indexing
+- Monitor and alert on performance degradation
+
+## Memory & Documentation
+
+### Activity Logging Requirements
+- Log every meaningful unit of work in docs/log.md
+- Use canonical timestamp format: YYYY-MM-DD HH:MM (Europe/Warsaw)
+- Include task ID, action taken, and next steps
+- Log process violations and retrospectives
+- Maintain separation between activity log and decision history
+
+### Documentation Updates
+- Update docs/status.md for major milestones
+- Log architectural decisions with rationale
+- Update docs/technical.md when patterns change
+- Maintain docs/PRD.md alignment with features
+- Keep CHANGELOG.md current with all changes
+
+## Security & Validation
+
+### Input Handling
+- Sanitize all user inputs before processing
+- Validate phone numbers with strict regex patterns
+- Implement rate limiting on all public endpoints
+- Use Row Level Security (RLS) for database access
+- Never trust external API responses without validation
+
+### Error Handling Patterns
+- Use structured error logging with context
+- Implement graceful degradation for external service failures
+- Never expose internal errors to users
+- Log security events and suspicious activity
+- Maintain error aggregation and alerting
+
+## HustleMode.ai Specific Rules
+
+### AI Personality Constraints
+- ALWAYS enforce 8-12 word response limit
+- Maintain personality consistency (Taskmaster vs Cheerleader)
+- Include conversation memory context in AI prompts
+- Test response quality and tone in all scenarios
+- Track personality preference patterns
+
+### WhatsApp Integration
+- Phone number is lookup key, user_id is primary identifier
+- Handle webhook failures gracefully with retries
+- Validate all WhatsApp message formats
+- Implement message delivery status tracking
+- Support test account restrictions (+17817470041 only)
+
+### Memory Service Abstraction
+- Use IMemoryService interface consistently
+- Support provider switching (PostgreSQL ↔ Mem0) without downtime
+- Optimize for <50ms search performance
+- Track memory relevance and context quality
+- Implement memory health checks
+
+## Development Workflow
+
+### Git & Branching
+- Use feature branches: `feature/TASK-ID-description`
+- Commit messages: `[TASK-ID] Brief description of change`
+- Require pull requests for all changes
+- Run full test suite before merge
+- Maintain clean commit history
+
+### Code Review Standards
+- Review for SOLID principles adherence
+- Verify test coverage and quality
+- Check performance implications
+- Validate security considerations
+- Ensure documentation updates
+
+### Deployment Process
+- Zero-downtime deployments required
+- Health check validation post-deployment
+- Rollback procedures tested and documented
+- Monitor key metrics after deployment
+- Update deployment config for environment changes
+
+## Error Recovery & Debugging
+
+### When Things Go Wrong
+- Check docs/log.md for recent changes
+- Validate current task status in tasks/tasks.md
+- Review docs/status.md for context
+- Check health endpoints for service status
+- Use structured logging to trace issues
+
+### Process Violations
+- Log all violations in docs/log.md immediately
+- Include impact assessment and resolution
+- Update processes to prevent recurrence
+- Share learnings with team
+- Update rules if patterns emerge
+
+## Monitoring & Metrics
+
+### Key Performance Indicators
+- Response time: 95th percentile under 500ms
+- Memory search: Average under 50ms
+- Test coverage: 95%+ for domain layer
+- Uptime: 99.9%+ availability
+- Cost efficiency: <$100/month operational
+
+### Quality Metrics
+- Defect escape rate: <2%
+- Documentation completeness: >90%
+- Code review coverage: 100%
+- Task completion accuracy: >95%
+- Technical debt ratio: <15%
+
+## Context Restoration
+
+When context is lost or unclear:
+1. Review docs/status.md for current project state
+2. Check tasks/tasks.md for active work
+3. Examine docs/log.md for recent activity
+4. Reference docs/architecture.mermaid for system design
+5. Validate against docs/PRD.md for requirements
+6. If context incomplete, STOP and request clarification
+
+## Mode Transitions
+
+### Planning Mode
+- Use when new features or major changes needed
+- Reference PRD and architecture constraints
+- Break down into structured tasks
+- Define acceptance criteria and testing requirements
+
+### Implementation Mode
+- Follow TDD cycle strictly
+- Update task status in real-time
+- Log all meaningful progress
+- Maintain architectural boundaries
+
+### Review Mode
+- Validate against Definition of Done
+- Check all acceptance criteria
+- Review performance and security
+- Update documentation and status
+
+---
+
+**Philosophy**: "Discipline in development creates freedom in delivery. Structure in process creates space for creativity. Documentation today prevents confusion tomorrow."
+
+**Last Updated**: 2024-12-19 16:15 (Europe/Warsaw)
+**Next Review**: 2024-12-26 (Weekly review cycle)
+**Enforcement**: Mandatory for all development work
+description:
+globs:
+alwaysApply: false
+---

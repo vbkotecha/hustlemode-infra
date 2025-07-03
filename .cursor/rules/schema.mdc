@@ -1,82 +1,184 @@
 ---
-description: 
-globs: schemas/**/*
-alwaysApply: false
----
----
 description: "Data schema management guidelines for database schemas, API schemas, and version control"
 globs: "schemas/**/*"
 alwaysApply: false
 ---
 
-# Schema Management Guidelines
+# Schema Management Guidelines - Supabase Migration Approach
 
-## Directory Structure
-- Store all schemas in `/schemas` directory
-- Organize by service/component (e.g., `/schemas/azure-search/`)
-- Include CHANGELOG.md in each schema directory
+## ⚠️ CRITICAL: Single Source of Truth
+- **ONLY** `supabase/migrations/*.sql` files define database schema
+- **NEVER** create duplicate schema files in other directories
+- **NEVER** create JSON schema documentation that duplicates SQL schemas
+- All schema changes MUST go through Supabase migration system
 
-## Schema File Requirements
-1. Must include:
-   - Schema name
-   - Version
-   - Last updated date
-   - Description
-   - Field definitions with descriptions
-   - Any additional configuration (e.g., suggesters, scoring profiles)
+## 🗂️ Directory Structure
+```
+supabase/
+├── migrations/
+│   ├── 20241219_initial_schema.sql    ✅ Source of truth
+│   └── [future_migration].sql         ✅ Future changes
+└── shared/
+    └── database.ts                     ✅ TypeScript types only
+```
 
-2. JSON Schema Format:
-```json
-{
-  "name": "schema-name",
-  "version": "1.0.0",
-  "lastUpdated": "YYYY-MM-DD",
-  "description": "Schema description",
-  "fields": [
-    {
-      "name": "field-name",
-      "type": "field-type",
-      "description": "Field description"
-    }
-  ]
+## 🚫 PROHIBITED Patterns
+- ❌ **NO** `database/` directory with duplicate schemas
+- ❌ **NO** `schemas/` directory with JSON schema files
+- ❌ **NO** standalone `.sql` files outside migrations
+- ❌ **NO** multiple files defining the same table structure
+- ❌ **NO** version-controlled schema documentation that duplicates migrations
+
+## ✅ Schema Change Process (AUTOMATED)
+
+### 1. Create New Migration (Use Script)
+```bash
+# Use automated migration creator
+./scripts/create-migration.sh "description_of_change" [major|minor|patch|hotfix]
+
+# Examples:
+./scripts/create-migration.sh "add_user_settings" minor
+./scripts/create-migration.sh "fix_phone_constraint" hotfix
+```
+
+### 2. Edit Generated Migration File
+```sql
+-- File: supabase/migrations/YYYYMMDD_HHMMSS_v1.1.0_description.sql
+-- (Already includes version tracking and template)
+
+-- BEGIN MIGRATION CHANGES
+ALTER TABLE users ADD COLUMN new_field TEXT;
+-- END MIGRATION CHANGES
+```
+
+### 3. Deploy Migration (Use Script)
+```bash
+# Test locally first
+./scripts/deploy-migrations.sh --local
+
+# Deploy to production with safety checks
+./scripts/deploy-migrations.sh --production
+
+# Preview deployment without executing
+./scripts/deploy-migrations.sh --production --dry-run
+```
+
+## 📝 Documentation Standards
+
+### TypeScript Types ONLY
+- **Location**: `supabase/shared/types.ts`
+- **Purpose**: Type safety for Edge Functions
+- **Content**: Interface definitions derived from schema
+- **Regeneration**: `supabase gen types typescript`
+
+### Comments in SQL
+- Add comprehensive comments directly in migration files
+- Document table purposes, field meanings, constraints
+- Include examples in SQL comments where helpful
+
+Example:
+```sql
+-- Users Table: Core user identification via phone number
+CREATE TABLE users (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  phone_number TEXT UNIQUE NOT NULL, -- WhatsApp +1234567890 format
+  -- ... other fields
+);
+```
+
+## 🔄 Migration Best Practices
+
+### Naming Convention (AUTOMATED)
+- Format: `YYYYMMDD_HHMMSS_vX.Y.Z_descriptive_name.sql`
+- **ALWAYS** include semantic version in filename
+- Use underscores, not spaces or hyphens
+- Be specific: `add_user_preferences` not `update_schema`
+- **Scripts handle naming automatically** - don't create manually
+
+### Migration Content
+- **One logical change per migration**
+- **Always include rollback comments**
+- **Test on local instance first**
+- **Include data migration if needed**
+
+### Schema Validation
+```typescript
+// In shared/database.ts - derive from actual schema
+export interface User {
+  id: string;
+  phone_number: string;
+  // ... match actual columns exactly
 }
 ```
 
-## Changelog Requirements
-1. Must be in Markdown format
-2. Follow [Keep a Changelog](mdc:https:/keepachangelog.com) format
-3. Include for each version:
-   - Version number
-   - Date
-   - Added/Changed/Deprecated/Removed sections
-   - Schema details summary
+## 🛡️ Anti-Redundancy Rules
 
-## Change Management Process
-1. Create new schema version:
-   - Increment version number
-   - Update lastUpdated date
-   - Document changes in CHANGELOG.md
+### NEVER Create These:
+- ❌ Separate `database/` directory
+- ❌ JSON schema files describing SQL tables
+- ❌ Duplicate SQL files with same table definitions
+- ❌ Multiple CHANGELOGs for schema changes
+- ❌ README files describing schema structure
+- ❌ **Manual migration files** - ALWAYS use `./scripts/create-migration.sh`
+- ❌ **Unversioned migration files** - All migrations MUST have semantic version
+- ❌ **Direct `supabase migration new`** - Use automation scripts instead
 
-2. Schema Review:
-   - All schema changes must be reviewed
-   - Changes must be backward compatible
-   - Breaking changes require major version bump
+### Schema Information Sources:
+1. **Primary**: Migration files (`supabase/migrations/`)
+2. **Types**: Generated TypeScript (`supabase gen types`)
+3. **Live Schema**: Supabase Dashboard
+4. **Documentation**: SQL comments in migration files
 
-3. Documentation:
-   - Update README.md if needed
-   - Document migration steps if required
-   - Update any related code examples
+## 🚨 Emergency Schema Recovery
 
-## Automated Checks
-- Schema validation on commit
-- Changelog presence check
-- Version number format check
-- Required fields check
-- Date format validation
+### If Schema Drift Detected:
+1. **Check migration status**: `supabase migration list`
+2. **Compare with remote**: `supabase db diff`
+3. **Reset if necessary**: `supabase db reset --linked`
+4. **Never manually fix** - always use migrations
 
-## Best Practices
-1. Keep schemas modular and focused
-2. Use clear, descriptive field names
+### Schema Consistency Check:
+```bash
+# Generate types to verify schema matches
+supabase gen types typescript --local
+
+# Compare with production
+supabase db diff --linked
+```
+
+## 📊 Quality Assurance
+
+### Before Any Schema Change:
+- [ ] Change is in new migration file only
+- [ ] No duplicate schema definitions exist
+- [ ] Migration tested on local instance
+- [ ] TypeScript types updated if needed
+- [ ] SQL comments explain the change
+
+### Automated Checks:
+- Migration files are sequential and timestamped
+- No duplicate table definitions across files
+- All migrations apply cleanly
+- Generated types match schema
+
+## 🎯 Goals of This Approach
+
+### Benefits:
+- **Single Source of Truth**: Eliminates schema drift
+- **Version Control**: All changes tracked in git
+- **Deployment Safety**: Tested migration path
+- **Team Coordination**: Clear change history
+- **Type Safety**: Generated TypeScript interfaces
+
+### Prevents:
+- **Schema Conflicts**: Multiple files defining same structure
+- **Documentation Drift**: Outdated JSON schemas
+- **Deployment Issues**: Inconsistent schema states
+- **Debugging Confusion**: Unknown which file is authoritative
+
+---
+**Core Principle**: One migration system, one source of truth, zero tolerance for schema redundancy
+
 3. Document all fields and configurations
 4. Maintain backward compatibility
 5. Regular schema reviews

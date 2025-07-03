@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# HustleMode.ai Pre-Commit Hook
+# Automatically enforces code quality before commits
+# This hook CANNOT be bypassed without explicit override
+
+echo "🔍 Running pre-commit quality checks..."
+
+# Run code quality check
+if ! ./scripts/code-quality-check.sh; then
+    echo ""
+    echo "❌ COMMIT BLOCKED: Code quality check failed"
+    echo ""
+    echo "To fix violations:"
+    echo "1. Review the errors above"
+    echo "2. Refactor oversized files into smaller modules"
+    echo "3. Remove duplicate code using shared modules"
+    echo "4. Fix TypeScript compilation errors"
+    echo ""
+    echo "To bypass temporarily (NOT RECOMMENDED):"
+    echo "git commit --no-verify"
+    echo ""
+    exit 1
+fi
+
+echo ""
+echo "✅ Pre-commit quality checks passed"
+echo "🚀 Proceeding with commit..." 
