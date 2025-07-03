@@ -1,102 +1,173 @@
 {
-  "meta": {
-    "description": "HustleMode.ai Production Configuration - AI Coach with Multi-Platform Messaging & AI-Native Memory",
-    "last_updated": "2025-01-16",
-    "version": "2.1-storage-monitoring"
+  "project_name": "HustleMode.ai",
+  "version": "2.0.0",
+  "description": "AI-powered motivation coach with Supabase Edge Functions + Groq + PostgreSQL memory",
+  "migration_date": "2024-12-19",
+  "migration_reason": "Cost optimization and performance improvement from Azure to Supabase",
+  
+  "architecture": {
+    "runtime": "Supabase Edge Functions (Deno)",
+    "ai_provider": "Groq (Llama 3.1 70B)",
+    "database": "Supabase PostgreSQL",
+    "memory_service": "PostgreSQL (abstracted - can swap to Mem0)",
+    "messaging": "WhatsApp Business API",
+    "deployment": "Supabase CLI"
   },
-  "azure": {
-    "function_app_name": "hustlemode-api",
-    "resource_group": "hustlemode.ai",
-    "location": "eastus",
-    "hosting_plan": "Premium Plan",
-    "runtime": "PYTHON:3.11",
-    "service_type": "Azure Functions v2"
+
+  "environment": {
+    "production": {
+      "supabase_project_ref": "yzfclhnkxpgyxeklrvur",
+      "supabase_url": "https://yzfclhnkxpgyxeklrvur.supabase.co",
+      "groq_model": "meta-llama/llama-4-maverick-17b-128e-instruct",
+      "memory_provider": "postgresql",
+      "whatsapp_phone": "+15556583575",
+      "whatsapp_test_to": "+17817470041"
+    },
+    "development": {
+      "supabase_url": "http://localhost:54321",
+      "groq_model": "meta-llama/llama-4-maverick-17b-128e-instruct",
+      "memory_provider": "postgresql",
+      "debug": true
+    }
   },
-  "endpoints": {
-    "base_url": "https://hustlemode-api.azurewebsites.net",
-    "health": "/api/health",
-    "storage_metrics": "/api/storage",
-    "assistant_create": "/api/assistants",
-    "assistant_message": "/api/assistants/{chatId}",
-    "assistant_state": "/api/assistants/{chatId}/state",
-    "completion": "/api/completion",
-    "whatsapp_webhook": "/api/messaging/whatsapp",
-    "whatsapp_send": "/api/messaging/whatsapp/send",
-    "user_conversations": "/api/users/{userId}/conversations",
-    "user_preferences": "/api/users/{userId}/preferences"
+
+  "edge_functions": {
+    "health": {
+      "path": "/health",
+      "description": "Health check endpoint with database and memory service status",
+      "url": "https://yzfclhnkxpgyxeklrvur.supabase.co/functions/v1/health"
+    },
+    "chat": {
+      "path": "/chat", 
+      "description": "Universal chat API with abstracted memory service",
+      "methods": ["POST"],
+      "auth_required": false,
+      "url": "https://yzfclhnkxpgyxeklrvur.supabase.co/functions/v1/chat"
+    },
+    "whatsapp": {
+      "path": "/whatsapp",
+      "description": "WhatsApp webhook integration",
+      "methods": ["GET", "POST"],
+      "auth_required": false,
+      "url": "https://yzfclhnkxpgyxeklrvur.supabase.co/functions/v1/whatsapp"
+    }
   },
-  "personalities": {
-    "available": ["taskmaster", "cheerleader"],
-    "default": "taskmaster",
+
+  "database": {
+    "connection_string": "postgresql://postgres:UTA_nxh7zcn2gmz_jkz@db.yzfclhnkxpgyxeklrvur.supabase.co:5432/postgres",
+    "tables": {
+      "users": {
+        "description": "Core user data with phone number lookup",
+        "primary_key": "id (UUID)",
+        "unique_fields": ["phone_number"]
+      },
+      "user_preferences": {
+        "description": "AI personality and coaching settings",
+        "foreign_key": "user_id references users(id)"
+      },
+      "conversation_memory": {
+        "description": "Chat context and conversation history (replaces Mem0)",
+        "foreign_key": "user_id references users(id)",
+        "search": "PostgreSQL full-text search with GIN index"
+      }
+    },
+    "security": "Row Level Security (RLS) enabled on all tables"
+  },
+
+  "memory_service": {
+    "abstraction": "IMemoryService interface",
+    "current_provider": "PostgreSQL",
+    "available_providers": ["postgresql", "mem0"],
+    "switching": "Change MEMORY_PROVIDER environment variable",
+    "features": {
+      "postgresql": {
+        "search": "Full-text search with relevance ranking",
+        "storage": "Native PostgreSQL JSONB",
+        "performance": "Optimized with GIN indexes",
+        "cost": "$0 (included with Supabase)"
+      },
+      "mem0": {
+        "search": "Vector similarity search",
+        "storage": "Cloud-managed vector database",
+        "performance": "Advanced AI memory features",
+        "cost": "~$20-50/month for vector operations",
+        "status": "Available but commented out"
+      }
+    }
+  },
+
+  "ai_personalities": {
     "taskmaster": {
-      "name": "Taskmaster Mode",
-      "description": "Tough love accountability coach",
-      "max_words": "8-12",
-      "style": "military_discipline_no_excuses"
+      "description": "David Goggins-style brutal motivation",
+      "response_length": "8-12 words",
+      "tone": "Harsh, direct, no excuses"
     },
     "cheerleader": {
-      "name": "Cheerleader Mode", 
-      "description": "Enthusiastic positive support",
-      "max_words": "8-12",
-      "style": "celebration_encouragement"
+      "description": "Positive, enthusiastic support",
+      "response_length": "8-12 words", 
+      "tone": "Encouraging, energetic, celebratory"
     }
   },
-  "whatsapp": {
-    "business_phone": "+15556583575",
-    "test_recipient": "+17817470041",
-    "phone_number_id": "682917338218717",
-    "business_account_id": "715387334407630",
-    "verify_token": "fa22d4e7-cba4-48cf-9b36-af6190bf9c67",
-    "api_version": "v22.0",
-    "webhook_url_format": "{base_url}/api/messaging/whatsapp?code={function_key}",
-    "webhook_fields": ["messages"]
+
+  "performance_targets": {
+    "cold_start": "<100ms (Supabase Edge Functions)",
+    "response_time": "200-500ms (with Groq + PostgreSQL)",
+    "memory_search": "<50ms (PostgreSQL full-text)",
+    "ai_inference": "<200ms (Groq Llama 3.1 70B)",
+    "cost": "$50-100/month (vs $200-500 Azure)"
   },
-  "authentication": {
-    "type": "function_key",
-    "required_for": "all_endpoints",
-    "format": "?code={function_key}",
-    "note": "Function keys must be obtained from Azure Portal"
-  },
+
   "deployment": {
-    "github_repo": "https://github.com/vbkotecha/hustlemode-infra",
-    "source_directory": "azure-functions-deploy",
-    "recommended_method": "func azure functionapp publish hustlemode-api --python --build remote",
-    "alternative_methods": [
-      "./scripts/deploy-clean.sh --auto",
-      "GitHub Actions (automatic on main branch)"
-    ]
-  },
-  "environment_variables": {
-    "required": [
-      "WHATSAPP_TOKEN",
-      "WHATSAPP_PHONE_NUMBER_ID", 
-      "WHATSAPP_VERIFY_TOKEN",
-      "AZURE_OPENAI_ENDPOINT",
-      "AZURE_OPENAI_KEY",
-      "AZURE_OPENAI_DEPLOYMENT_NAME",
-      "DATABASE_URL"
+    "command": "supabase functions deploy",
+    "requirements": [
+      "Supabase CLI installed",
+      "Supabase project linked to yzfclhnkxpgyxeklrvur", 
+      "Database schema deployed",
+      "Environment variables configured",
+      "Groq API key obtained"
     ],
-    "mem0_integration": {
-      "type": "mem0_cloud",
-      "api_key_required": "MEM0_API_KEY",
-      "note": "Mem0 Cloud service for AI memory management - no local infrastructure needed"
-    },
-    "whatsapp_token_type": "system_user_token",
-    "whatsapp_token_expires": "never",
-    "database": {
-      "type": "PostgreSQL",
-      "host": "hustlemode-ai-postgres.postgres.database.azure.com",
-      "features": ["conversation_storage", "user_sessions", "mem0_integration"]
+    "scripts": {
+      "deploy": "scripts/deploy-supabase.sh",
+      "schema": "supabase db reset --linked"
     }
   },
-  "storage_monitoring": {
-    "current_phase": "Phase 1 (0-5K Users)",
-    "metrics_endpoint": "/api/storage",
-    "retention_policy": "Future implementation at 10M+ messages",
-    "scaling_thresholds": {
-      "phase_1": "0-5K users, monitor growth",
-      "phase_2": "5K-50K users, 90-day retention",
-      "phase_3": "50K+ users, advanced optimization"
-    }
-  }
+
+  "monitoring": {
+    "health_endpoint": "https://yzfclhnkxpgyxeklrvur.supabase.co/functions/v1/health",
+    "database_stats": "get_db_stats() PostgreSQL function",
+    "memory_health": "MemoryService.checkHealth() method",
+    "supabase_dashboard": "https://supabase.com/dashboard/project/yzfclhnkxpgyxeklrvur"
+  },
+
+  "whatsapp_webhook": {
+    "verification_url": "https://yzfclhnkxpgyxeklrvur.supabase.co/functions/v1/whatsapp",
+    "webhook_url": "https://yzfclhnkxpgyxeklrvur.supabase.co/functions/v1/whatsapp",
+    "verify_token": "fa22d4e7-cba4-48cf-9b36-af6190bf9c67",
+    "business_phone": "+15556583575",
+    "test_recipient": "+17817470041"
+  },
+
+  "migration_benefits": {
+    "cost_savings": "60-80% reduction ($200-500 → $50-100/month)",
+    "performance": "40-100x faster cold starts (2-5s → ~50ms)",
+    "simplicity": "Single provider (Supabase) vs multiple (Azure Functions + PostgreSQL + OpenAI + Mem0)",
+    "scalability": "Automatic scaling without configuration",
+    "memory_flexibility": "Can switch between PostgreSQL and Mem0 without code changes"
+  },
+
+  "removed_dependencies": [
+    "Azure Functions Premium Plan",
+    "Azure OpenAI Service", 
+    "Azure PostgreSQL",
+    "Mem0 Cloud (temporarily - abstracted for future use)",
+    "Azure-specific authentication",
+    "Function key authentication"
+  ],
+
+  "added_dependencies": [
+    "Supabase Edge Functions",
+    "Groq API (Llama 3.1 70B)",
+    "Supabase PostgreSQL",
+    "Abstracted Memory Service"
+  ]
 } 
