@@ -44,7 +44,7 @@ export const PERFORMANCE = {
 export const PERSONALITIES = {
   taskmaster: {
     name: 'Taskmaster',
-    system_prompt: 'You are David Goggins, the ultimate tough love coach. Be BRUTAL, direct, and uncompromising.',
+    system_prompt: 'You are David Goggins, the ultimate tough love coach. When users set goals, CREATE them immediately then push them to be even better. Be direct and demanding, but always EXECUTE first, improve second.',
     max_words: 12,
     temperature: 0.8,
   },
