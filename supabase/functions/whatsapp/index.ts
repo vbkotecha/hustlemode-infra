@@ -1,4 +1,4 @@
-// WhatsApp Webhook Edge Function - Full Functionality (No Auth Required)
+// WhatsApp Webhook Edge Function - Uses Same Logic as Chat Function
 // GET/POST /functions/v1/whatsapp
 
 Deno.serve(async (req: Request) => {
@@ -80,7 +80,7 @@ Deno.serve(async (req: Request) => {
   }
 });
 
-// Message processing function (inline to avoid imports causing auth issues)
+// Message processing using SAME logic as chat function
 async function processWhatsAppMessage(message: any) {
   try {
     const rawPhoneNumber = message.from;
@@ -92,13 +92,15 @@ async function processWhatsAppMessage(message: any) {
       return;
     }
     
-    console.log(`💬 Processing message from ${phoneNumber}: "${messageText}"`);
+    console.log(`💬 Processing WhatsApp message from ${phoneNumber}: "${messageText}"`);
     
-    // Import and process message using the enhanced tool system
-    const { processMessage } = await import('./message-processor.ts');
-    
-    // Create Supabase client for message processing
+    // Use same imports as chat function
     const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
+    const { AIToolService } = await import('../../shared/ai-tools.ts');
+    const { WhatsAppAdapter } = await import('../../shared/platforms/whatsapp-adapter.ts');
+    const { getUserOrCreate, updateUserLastActive } = await import('../../shared/users.ts');
+    
+    // Create Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     
@@ -108,7 +110,55 @@ async function processWhatsAppMessage(message: any) {
     }
     
     const supabase = createClient(supabaseUrl, supabaseKey);
-    await processMessage(message, supabase);
+    
+    // Get or create user
+    const user = await getUserOrCreate(phoneNumber);
+    if (!user) {
+      console.error('❌ Failed to get or create user');
+      return;
+    }
+    
+    console.log(`👤 User resolved: ${user.id}`);
+    
+    // Use enhanced AI tool system (same as chat function)
+    console.log('🔧 Using tool-aware AI system for WhatsApp');
+    const aiToolService = new AIToolService();
+    
+    // Get conversation context from memory
+    const { MemoryService } = await import('../../shared/memory.ts');
+    const recentMemories = await MemoryService.getMemories(user.id, 5);
+    const conversationContext = recentMemories
+      .slice(0, 3)
+      .reverse()
+      .map(memory => memory.memory)
+      .join('\n');
+    
+    // Generate tool-aware response
+    const { response, toolsUsed, processingTime } = await aiToolService.generateToolAwareResponse(
+      messageText,
+      user.id,
+      'whatsapp',
+      'taskmaster',
+      conversationContext
+    );
+    
+    // Format response for WhatsApp platform
+    const platformResponse = WhatsAppAdapter.formatToolResults(toolsUsed, response, 'taskmaster');
+    
+    console.log(`🤖 Enhanced AI Response (taskmaster): ${platformResponse.text}`);
+    console.log(`🔧 Tools used: ${toolsUsed.length}, Processing: ${processingTime.toFixed(1)}ms`);
+    
+    // Send WhatsApp response
+    const { WhatsAppService } = await import('../../shared/whatsapp.ts');
+    const whatsappService = new WhatsAppService();
+    const success = await whatsappService.sendMessage(phoneNumber, platformResponse.text);
+    
+    if (success) {
+      console.log(`✅ Response sent to WhatsApp ${phoneNumber}`);
+      await updateUserLastActive(user.id);
+    } else {
+      console.error(`❌ Failed to send response to WhatsApp ${phoneNumber}`);
+    }
     
   } catch (error) {
     console.error('❌ Error processing WhatsApp message:', error);
