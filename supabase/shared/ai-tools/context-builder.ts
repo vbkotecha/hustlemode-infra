@@ -5,14 +5,23 @@ import type { ToolResult, ConversationMessage, Personality } from '../tools/type
 
 export class ContextBuilder {
   static buildToolContext(toolResults: ToolResult[]): string {
-    if (toolResults.length === 0) return '';
+    console.log('🔧 ContextBuilder.buildToolContext called with:', JSON.stringify(toolResults, null, 2));
+    
+    if (toolResults.length === 0) {
+      console.log('⚠️ No tool results to process');
+      return '';
+    }
     
     const contextParts = toolResults.map(result => {
+      console.log(`🔧 Processing tool result: ${result.tool_name}, success: ${result.success}`);
+      
       if (!result.success) return `Tool ${result.tool_name} failed: ${result.error}`;
       
       switch (result.tool_name) {
         case 'manage_goal':
-          return this.formatGoalContext(result);
+          const goalContext = this.formatGoalContext(result);
+          console.log('🎯 Goal context formatted:', goalContext);
+          return goalContext;
         case 'get_progress':
           return this.formatProgressContext(result);
         default:
@@ -20,7 +29,9 @@ export class ContextBuilder {
       }
     });
     
-    return `Context from tools: ${contextParts.join('. ')}.`;
+    const finalContext = `Context from tools: ${contextParts.join('. ')}.`;
+    console.log('🔧 Final tool context:', finalContext);
+    return finalContext;
   }
 
   static buildMessages(
@@ -29,11 +40,19 @@ export class ContextBuilder {
     toolContext: string = '',
     personality: Personality
   ): ConversationMessage[] {
+    console.log('📝 Building AI messages with:');
+    console.log('  - User message:', message);
+    console.log('  - Conversation context:', conversationContext);
+    console.log('  - Tool context:', toolContext);
+    console.log('  - Personality:', personality);
+    
     const contextualMessage = [
       conversationContext,
       toolContext,
       `User message: "${message}"`
     ].filter(Boolean).join('\n\n');
+    
+    console.log('📝 Final contextual message sent to AI:', contextualMessage);
     
     return [{
       role: 'user',
@@ -44,12 +63,20 @@ export class ContextBuilder {
 
   private static formatGoalContext(result: ToolResult): string {
     const data = result.data;
+    console.log('🎯 Formatting goal context with data:', JSON.stringify(data, null, 2));
+    
     if (data?.goals) {
-      return `User has ${data.goals.length} active goals: ${data.goals.map((g: any) => g.title).join(', ')}`;
+      const goalTitles = data.goals.map((g: any) => g.title).join(', ');
+      const context = `User has ${data.goals.length} active goals: ${goalTitles}`;
+      console.log('🎯 Goal list context:', context);
+      return context;
     }
     if (data?.goal) {
-      return `Goal "${data.goal.title}" ${data.message?.toLowerCase() || 'processed'}`;
+      const context = `Goal "${data.goal.title}" ${data.message?.toLowerCase() || 'processed'}`;
+      console.log('🎯 Single goal context:', context);
+      return context;
     }
+    console.log('⚠️ No goal data found, using fallback');
     return 'Goal operation completed';
   }
 

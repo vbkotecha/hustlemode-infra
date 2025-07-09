@@ -3,23 +3,40 @@
 
 export class WhatsAppFormatters {
   static formatGoalResponse(data: any, personality: 'taskmaster' | 'cheerleader'): string {
+    console.log('🎯 WhatsApp formatGoalResponse called with data:', JSON.stringify(data, null, 2));
+    
     if (data?.goals) {
       const count = data.goals.length;
+      console.log(`📋 Formatting ${count} goals for WhatsApp`);
+      
       if (count === 0) {
         return personality === 'taskmaster' ? 'No goals yet. Set one NOW! 🎯' : 'Time to set your first goal! 🌟';
       }
-      return personality === 'taskmaster'
-        ? `${count} goals active. Get to work! 💪`
-        : `${count} amazing goals! You\'ve got this! 🎉`;
+      
+      // Show actual goal titles
+      const goalTitles = data.goals.map((g: any) => g.title || 'Untitled goal').slice(0, 2); // Max 2 for space
+      const titlesList = goalTitles.join(', ');
+      
+      if (personality === 'taskmaster') {
+        return count === 1 
+          ? `Goal: ${titlesList}. Now execute! 💪`
+          : `${count} goals: ${titlesList}. Execute all! 🔥`;
+      } else {
+        return count === 1
+          ? `Goal: ${titlesList}. You've got this! ✨`
+          : `${count} goals: ${titlesList}. Amazing! 🎉`;
+      }
     }
 
     if (data?.goal && data?.message) {
       const action = data.message.includes('created') ? 'created' : 'updated';
+      const goalTitle = data.goal.title || 'Goal';
       return personality === 'taskmaster'
-        ? `Goal ${action}. No excuses now! 🔥`
-        : `Goal ${action}! Ready to crush it! ✨`;
+        ? `${goalTitle} ${action}. No excuses! 🔥`
+        : `${goalTitle} ${action}! Ready to crush it! ✨`;
     }
 
+    console.log('⚠️ Using fallback goal response - no proper data structure');
     return personality === 'taskmaster' ? 'Goal handled. Stay focused! 💯' : 'Goal updated! Keep going strong! 🚀';
   }
 
@@ -52,6 +69,7 @@ export class WhatsAppFormatters {
   }
 
   static getFallbackResponse(personality: 'taskmaster' | 'cheerleader'): string {
+    console.log('⚠️ Using fallback response - this should not happen if tools are working');
     return personality === 'taskmaster' 
       ? 'Action taken. Keep pushing forward! 💪'
       : 'Done! You\'re making great progress! ✨';
@@ -62,6 +80,8 @@ export class WhatsAppFormatters {
     data: any,
     personality: 'taskmaster' | 'cheerleader'
   ): string | null {
+    console.log(`🔧 generateToolResponse: ${toolName} with data:`, JSON.stringify(data, null, 2));
+    
     switch (toolName) {
       case 'manage_goal':
         return this.formatGoalResponse(data, personality);
@@ -70,6 +90,7 @@ export class WhatsAppFormatters {
       case 'update_preferences':
         return this.formatPreferenceResponse(data, personality);
       default:
+        console.log(`⚠️ Unknown tool name: ${toolName}`);
         return null;
     }
   }
