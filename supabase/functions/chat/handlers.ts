@@ -1,6 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { getConfig } from '../../shared/config.ts';
-import { generateAIResponse } from '../../shared/ai.ts';
+import { AIToolService } from '../../shared/ai-tools.ts';
+import { WhatsAppAdapter } from '../../shared/platforms/whatsapp-adapter.ts';
 import { getUserOrCreate, updateUserLastActive } from '../../shared/users.ts';
 
 export interface ChatRequest {
@@ -18,6 +19,8 @@ export interface ChatResponse {
     user_id: string;
     processing_time_ms: number;
     memory_provider: string;
+    tools_used?: number;
+    tool_names?: string[];
   };
   error?: string;
   processing_time_ms?: number;
@@ -44,15 +47,35 @@ export async function processChatRequest(request: ChatRequest): Promise<ChatResp
     const resolvedUserId = await resolveUserId(user_id, phone_number, supabase);
     console.log(`👤 Resolved user ID: ${resolvedUserId}`);
 
-    // Generate AI response using shared service
+    // Use enhanced AI tool system for all messages
     const validPersonality = (personality === 'taskmaster' || personality === 'cheerleader') ? personality : 'taskmaster';
-    const aiResponse = await generateAIResponse(message, resolvedUserId, validPersonality);
     
-    if (!aiResponse) {
-      throw new Error('Failed to generate AI response');
-    }
-
-    console.log(`🤖 AI Response (${personality}): ${aiResponse}`);
+    console.log('🔧 Using tool-aware AI system for chat');
+    const aiToolService = new AIToolService();
+    
+    // Get conversation context from memory
+    const { MemoryService } = await import('../../shared/memory.ts');
+    const recentMemories = await MemoryService.getMemories(resolvedUserId, 5);
+    const conversationContext = recentMemories
+      .slice(0, 3)
+      .reverse()
+      .map(memory => memory.memory)
+      .join('\n');
+    
+    // Generate tool-aware response
+    const { response, toolsUsed, processingTime } = await aiToolService.generateToolAwareResponse(
+      message,
+      resolvedUserId,
+      'api', // platform for chat API
+      validPersonality,
+      conversationContext
+    );
+    
+    // Format response (no platform-specific formatting for API)
+    const finalResponse = response;
+    
+    console.log(`🤖 Enhanced AI Response (${validPersonality}): ${finalResponse}`);
+    console.log(`🔧 Tools used: ${toolsUsed.length}, Processing: ${processingTime.toFixed(1)}ms`);
 
     // Update user's last activity
     await updateUserLastActive(resolvedUserId);
@@ -63,11 +86,13 @@ export async function processChatRequest(request: ChatRequest): Promise<ChatResp
     return {
       success: true,
       data: {
-        response: aiResponse,
-        personality,
+        response: finalResponse,
+        personality: validPersonality,
         user_id: resolvedUserId,
         processing_time_ms: responseTime,
-        memory_provider: Deno.env.get('MEMORY_PROVIDER') || 'postgresql'
+        memory_provider: Deno.env.get('MEMORY_PROVIDER') || 'postgresql',
+        tools_used: toolsUsed.length,
+        tool_names: toolsUsed.map(t => t.tool_name)
       },
       timestamp: new Date().toISOString()
     };
