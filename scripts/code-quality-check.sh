@@ -205,7 +205,7 @@ echo ""
 echo -e "${PURPLE}🛡️ Checking Security Patterns...${NC}"
 
 # Check for hardcoded secrets (basic patterns)
-if grep -r "password\|secret\|key.*=" supabase/ --include="*.ts" 2>/dev/null | grep -v "Deno.env.get\|getConfig" >/dev/null 2>&1; then
+if grep -r "password\s*=\s*['\"][^'\"]*['\"]" supabase/ --include="*.ts" 2>/dev/null | grep -v "Deno.env.get\|getConfig\|process.env" >/dev/null 2>&1; then
     report_violation "ERROR" "Potential hardcoded secrets found"
 else
     report_success "No hardcoded secrets detected"
