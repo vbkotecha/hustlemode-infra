@@ -20,16 +20,20 @@ export class GroqService {
       const personalityConfig = PERSONALITIES[personality];
       const requestBody = this.buildRequestBody(messages, personalityConfig, maxTokens);
       console.log(`🤖 Groq request: ${messages.length} messages, ${personality} personality`);
+      console.log(`🔧 System prompt: ${personalityConfig.system_prompt.substring(0, 100)}...`);
+      
       const response = await this.makeRequest('/chat/completions', requestBody);
       
       if (!response.choices?.[0]?.message?.content) {
+        console.error('❌ No response content from Groq');
         throw new Error('No response content from Groq');
       }
 
       const content = response.choices[0].message.content.trim();
       const wordCount = content.split(' ').length;
       
-      if (wordCount > 15) {
+      // Increase word limit for accountability coach responses
+      if (wordCount > 25) {
         console.warn(`⚠️ Response too long (${wordCount} words), using fallback`);
         return this.getFallbackResponse(personality);
       }
@@ -71,9 +75,9 @@ export class GroqService {
   }
 
   private getFallbackResponse(personality: Personality): string {
+    // Updated fallback responses for accountability coach
     const responses = {
-      taskmaster: 'Stop talking. Start doing. Now! 💪',
-      cheerleader: "You're amazing! Keep pushing forward! ✨",
+      taskmaster: 'System error. But accountability never stops. Check your goals and TAKE ACTION!',
     };
     return responses[personality] || responses.taskmaster;
   }
