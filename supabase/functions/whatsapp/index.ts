@@ -138,7 +138,7 @@ async function processWhatsAppMessage(message: any) {
       messageText,
       user.id,
       'whatsapp',
-      'taskmaster',
+      'taskmaster', // Only personality available now
       conversationContext
     );
     

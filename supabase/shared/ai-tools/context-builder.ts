@@ -65,8 +65,26 @@ export class ContextBuilder {
     const data = result.data;
     console.log('🎯 Formatting goal context with data:', JSON.stringify(data, null, 2));
     
-    if (data?.goals) {
-      const goalTitles = data.goals.map((g: any) => g.title).join(', ');
+    // DEBUG MODE: Return debug info if available
+    if (data?.debug_info) {
+      return `DEBUG: User ${data.debug_info.user_id} - UserCheck: ${JSON.stringify(data.debug_info.user_check?.data || data.debug_info.user_check?.error)} - Goals: ${JSON.stringify(data.debug_info.all_goals?.data)} - RPC: ${JSON.stringify(data.debug_info.rpc_result?.data)}`;
+    }
+    
+    if (data?.goals !== undefined) {
+      console.log('✅ Found goals array with length:', data.goals.length);
+      console.log('📋 Goals data:', JSON.stringify(data.goals, null, 2));
+      
+      if (data.goals.length === 0) {
+        console.log('📋 Goals array is empty - returning explicit message');
+        return 'No active goals found. User should create some goals first';
+      }
+      
+      // Handle RPC function results which use goal_id instead of id and different structure
+      const goalTitles = data.goals.map((g: any) => {
+        // RPC function returns goal_id, title, goal_type etc
+        return g.title || g.goal_title || 'Untitled Goal';
+      }).join(', ');
+      
       const context = `User has ${data.goals.length} active goals: ${goalTitles}`;
       console.log('🎯 Goal list context:', context);
       return context;
@@ -77,7 +95,8 @@ export class ContextBuilder {
       return context;
     }
     console.log('⚠️ No goal data found, using fallback');
-    return 'Goal operation completed';
+    console.log('⚠️ Full result data:', JSON.stringify(result, null, 2));
+    return 'Goal operation completed but no data returned';
   }
 
   private static formatProgressContext(result: ToolResult): string {

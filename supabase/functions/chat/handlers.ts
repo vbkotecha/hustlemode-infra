@@ -1,61 +1,51 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { getConfig } from '../../shared/config.ts';
 import { AIToolService } from '../../shared/ai-tools.ts';
-import { WhatsAppAdapter } from '../../shared/platforms/whatsapp-adapter.ts';
 import { getUserOrCreate, updateUserLastActive } from '../../shared/users.ts';
+import { getConfig } from '../../shared/config.ts';
 
-export interface ChatRequest {
-  message: string;
-  user_id?: string;
-  phone_number?: string;
-  personality?: string;
-}
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
-export interface ChatResponse {
-  success: boolean;
-  data?: {
-    response: string;
-    personality: string;
-    user_id: string;
-    processing_time_ms: number;
-    memory_provider: string;
-    tools_used?: number;
-    tool_names?: string[];
-  };
-  error?: string;
-  processing_time_ms?: number;
-  timestamp: string;
-}
-
-export async function processChatRequest(request: ChatRequest): Promise<ChatResponse> {
-  const startTime = Date.now();
+export async function handleChatRequest(request: Request): Promise<Response> {
+  console.log('🚀 Chat request received');
   
   try {
-    const config = getConfig();
-    const supabase = createClient(config.SUPABASE_URL, config.SUPABASE_SERVICE_ROLE_KEY);
-
-    const { message, user_id, phone_number, personality = 'taskmaster' } = request;
-
-    // Validate required fields
-    if (!message || (!user_id && !phone_number)) {
-      throw new Error('Missing required fields: message and (user_id or phone_number)');
-    }
-
-    console.log(`💬 Processing chat for user: ${user_id || phone_number}`);
-
-    // Resolve user_id from phone_number if needed
-    const resolvedUserId = await resolveUserId(user_id, phone_number, supabase);
-    console.log(`👤 Resolved user ID: ${resolvedUserId}`);
-
-    // Use enhanced AI tool system for all messages
-    const validPersonality = (personality === 'taskmaster' || personality === 'cheerleader') ? personality : 'taskmaster';
+    const { message, phone_number, personality } = await request.json();
+    console.log(`📱 Processing: "${message}" from ${phone_number}`);
     
+    if (!message || !phone_number) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Missing required fields: message and phone_number'
+      }), { 
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+    
+    // Get or create user (same as WhatsApp function)
+    const user = await getUserOrCreate(phone_number);
+    if (!user) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Failed to get or create user'
+      }), { 
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+    
+    console.log(`👤 User resolved: ${user.id}`);
+    
+    // Use enhanced AI tool system (same as WhatsApp function)
     console.log('🔧 Using tool-aware AI system for chat');
     const aiToolService = new AIToolService();
     
     // Get conversation context from memory
     const { MemoryService } = await import('../../shared/memory.ts');
-    const recentMemories = await MemoryService.getMemories(resolvedUserId, 5);
+    const recentMemories = await MemoryService.getMemories(user.id, 5);
     const conversationContext = recentMemories
       .slice(0, 3)
       .reverse()
@@ -63,66 +53,43 @@ export async function processChatRequest(request: ChatRequest): Promise<ChatResp
       .join('\n');
     
     // Generate tool-aware response
+    const validPersonality = (personality === 'taskmaster' || personality === 'cheerleader') ? personality : 'taskmaster';
     const { response, toolsUsed, processingTime } = await aiToolService.generateToolAwareResponse(
       message,
-      resolvedUserId,
-      'api', // platform for chat API
+      user.id,
+      'api',
       validPersonality,
       conversationContext
     );
     
-    // Format response (no platform-specific formatting for API)
-    const finalResponse = response;
-    
-    console.log(`🤖 Enhanced AI Response (${validPersonality}): ${finalResponse}`);
+    console.log(`🤖 Enhanced AI Response (${validPersonality}): ${response}`);
     console.log(`🔧 Tools used: ${toolsUsed.length}, Processing: ${processingTime.toFixed(1)}ms`);
-
+    
     // Update user's last activity
-    await updateUserLastActive(resolvedUserId);
+    await updateUserLastActive(user.id);
 
-    const responseTime = Date.now() - startTime;
-    console.log(`⚡ Chat completed in ${responseTime}ms`);
-
-    return {
+    return new Response(JSON.stringify({
       success: true,
       data: {
-        response: finalResponse,
+        response: response,
         personality: validPersonality,
-        user_id: resolvedUserId,
-        processing_time_ms: responseTime,
+        user_id: user.id,
+        processing_time_ms: processingTime,
         memory_provider: Deno.env.get('MEMORY_PROVIDER') || 'postgresql',
         tools_used: toolsUsed.length,
         tool_names: toolsUsed.map(t => t.tool_name)
       },
       timestamp: new Date().toISOString()
-    };
+    }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
   } catch (error) {
-    console.error('❌ Chat processing error:', error);
-    
-    const responseTime = Date.now() - startTime;
-    
-    return {
+    console.error('❌ Chat request failed:', error);
+    return new Response(JSON.stringify({
       success: false,
-      error: error.message || 'Internal server error',
-      processing_time_ms: responseTime,
-      timestamp: new Date().toISOString()
-    };
+      error: 'Internal server error'
+    }), { 
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
   }
-}
-
-async function resolveUserId(user_id?: string, phone_number?: string, supabase?: any): Promise<string> {
-  if (user_id) {
-    return user_id;
-  }
-  
-  if (phone_number) {
-    const user = await getUserOrCreate(phone_number);
-    if (!user) {
-      throw new Error('User not found');
-    }
-    return user.id;
-  }
-  
-  throw new Error('No user identification provided');
 } 

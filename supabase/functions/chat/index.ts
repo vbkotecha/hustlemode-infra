@@ -1,71 +1,128 @@
-import { processChatRequest } from './handlers.ts';
-
-// Universal Chat Edge Function - REFACTORED
+// Chat API Edge Function - Enhanced with Tool System
 // POST /functions/v1/chat
-Deno.serve(async (req: Request) => {
-  // CORS headers for all responses
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  };
 
+Deno.serve(async (req: Request) => {
+  console.log(`🚀 Chat API called: ${req.method} ${req.url}`);
+  
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 200, headers: corsHeaders });
+    return new Response(null, { 
+      status: 200, 
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      }
+    });
   }
 
   try {
-    // Parse and process request
-    const requestData = await req.json();
-    const result = await processChatRequest(requestData);
+    if (req.method !== 'POST') {
+      return new Response('Method not allowed', { status: 405 });
+    }
 
-    // Handle validation errors
-    if (!result.success && result.error?.includes('Missing required fields')) {
-      return new Response(JSON.stringify(result), {
+    const body = await req.json();
+    const { message, phone_number, personality } = body;
+    
+    console.log(`📱 Processing chat: "${message}" from ${phone_number}`);
+    
+    if (!message || !phone_number) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Missing required fields: message and phone_number'
+      }), { 
         status: 400,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders }
+        headers: { 'Content-Type': 'application/json' }
       });
     }
 
-    // Handle user not found errors
-    if (!result.success && result.error?.includes('User not found')) {
-      return new Response(JSON.stringify(result), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders }
-      });
+    // Use same logic as WhatsApp function
+    const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
+    const { AIToolService } = await import('../../shared/ai-tools.ts');
+    const { getUserOrCreate, updateUserLastActive } = await import('../../shared/users.ts');
+    
+    // Create Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    if (!supabaseUrl || !supabaseKey) {
+      console.error('❌ Missing Supabase configuration');
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Server configuration error'
+      }), { status: 500 });
     }
-
-    // Return successful response
-    if (result.success) {
-      return new Response(JSON.stringify(result), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders }
-      });
+    
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    // Get or create user
+    const user = await getUserOrCreate(phone_number);
+    if (!user) {
+      console.error('❌ Failed to get or create user');
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Failed to get or create user'
+      }), { status: 500 });
     }
+    
+    console.log(`👤 User resolved: ${user.id}`);
+    
+    // Use enhanced AI tool system (same as WhatsApp function)
+    console.log('🔧 Using tool-aware AI system for chat');
+    const aiToolService = new AIToolService();
+    
+    // Get conversation context from memory
+    const { MemoryService } = await import('../../shared/memory.ts');
+    const recentMemories = await MemoryService.getMemories(user.id, 5);
+    const conversationContext = recentMemories
+      .slice(0, 3)
+      .reverse()
+      .map(memory => memory.memory)
+      .join('\n');
+    
+    // Generate tool-aware response
+    const validPersonality = 'taskmaster'; // Only personality available now
+    const { response, toolsUsed, processingTime } = await aiToolService.generateToolAwareResponse(
+      message,
+      user.id,
+      'api',
+      validPersonality,
+      conversationContext
+    );
+    
+    console.log(`🤖 Enhanced AI Response (${validPersonality}): ${response}`);
+    console.log(`🔧 Tools used: ${toolsUsed.length}, Processing: ${processingTime.toFixed(1)}ms`);
+    
+    // Update user's last activity
+    await updateUserLastActive(user.id);
 
-    // Handle other errors
-    return new Response(JSON.stringify(result), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json', ...corsHeaders }
+    return new Response(JSON.stringify({
+      success: true,
+      data: {
+        response: response,
+        personality: validPersonality,
+        user_id: user.id,
+        processing_time_ms: processingTime,
+        memory_provider: Deno.env.get('MEMORY_PROVIDER') || 'postgresql',
+        tools_used: toolsUsed.length,
+        tool_names: toolsUsed.map(t => t.tool_name)
+      },
+      timestamp: new Date().toISOString()
+    }), { 
+      headers: { 
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      } 
     });
 
   } catch (error) {
     console.error('❌ Chat API error:', error);
-    
     return new Response(JSON.stringify({
       success: false,
-      error: 'Invalid request format',
-      timestamp: new Date().toISOString()
-    }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json', ...corsHeaders }
+      error: 'Internal server error'
+    }), { 
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
     });
   }
-});
-
-// REFACTORING IMPACT:
-// Before: 112 lines with embedded business logic
-// After: 62 lines - clean routing and response handling
-// Business logic moved to handlers.ts (102 lines)
-// 45% reduction in main function size! 
+}); 

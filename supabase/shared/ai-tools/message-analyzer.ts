@@ -43,8 +43,17 @@ export class MessageAnalyzer {
   private static createGoalToolExecution(message: string, userId: string, platform: Platform): ToolExecution {
     const lower = message.toLowerCase();
     
-    if (lower.includes('my goals') || lower.includes('list goals')) {
-      return { tool_name: 'manage_goal', parameters: { action: 'list' }, user_id: userId, platform };
+    if (lower.includes('my goals') || lower.includes('list goals') || lower.includes('debug my goals')) {
+      const isDebug = lower.includes('debug');
+      return { 
+        tool_name: 'manage_goal', 
+        parameters: { 
+          action: 'list',
+          debug: isDebug 
+        }, 
+        user_id: userId, 
+        platform 
+      };
     }
     
     if (lower.includes('set goal') || lower.includes('add goal')) {
