@@ -61,9 +61,189 @@ export class ContextBuilder {
     }];
   }
 
+  static buildContextualMessage(
+    userMessage: string,
+    accountabilityContext: any,
+    personality: 'taskmaster' | 'cheerleader'
+  ): any[] {
+    const systemPrompt = this.buildSystemPrompt(accountabilityContext, personality);
+    
+    return [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userMessage, timestamp: new Date().toISOString() }
+    ];
+  }
+
+  private static buildSystemPrompt(context: any, personality: 'taskmaster' | 'cheerleader'): string {
+    const goalContext = this.formatGoalContext(context);
+    const personalityTraits = this.getPersonalityTraits(personality);
+    
+    return `${personalityTraits}
+
+USER STATUS:
+${goalContext}
+
+RESPONSE RULES:
+- Keep responses under 15 words
+- ${personality === 'taskmaster' ? 'Be brutal but motivating' : 'Be encouraging and supportive'}
+- For casual conversation (greetings, small talk), respond naturally without forcing goal references
+- For goal-related conversations, reference USER STATUS and actual goal data
+- If conflicts detected, acknowledge them and suggest action
+- If amendments suggested, highlight key improvements
+
+CONVERSATION CONTEXT:
+- Respond naturally to greetings and casual conversation
+- Only reference goals when the conversation is about goals or accountability
+- Build rapport first, then guide toward goal accountability when appropriate
+
+CONFLICT AWARENESS:
+- If USER STATUS shows goal conflicts, address them directly
+- Suggest prioritization or amendments when conflicts exist
+- Encourage goal optimization over goal abandonment`;
+  }
+
+  private static getPersonalityTraits(personality: 'taskmaster' | 'cheerleader'): string {
+    if (personality === 'taskmaster') {
+      return `You are a brutal accountability coach. No excuses, no sympathy, pure motivation.
+CRITICAL: Always use goal data from USER STATUS, never make up information.`;
+    } else {
+      return `You are a supportive cheerleader coach. Encouraging, positive, but still focused on results.
+CRITICAL: Always use goal data from USER STATUS, never make up information.`;
+    }
+  }
+
+  private static formatGoalContext(context: any): string {
+    console.log('🎯 Formatting context:', JSON.stringify(context, null, 2));
+    
+    // Handle goals with potential conflicts (new conversational approach)
+    if (context.has_potential_conflicts && context.conversational_message) {
+      const action = context.goal_created ? 'created' : context.goal_updated ? 'updated' : 'processed';
+      return `Goal ${action} with note: ${context.conversational_message}`;
+    }
+    
+    // Handle goal deletion with helpful info
+    if (context.deleted_goal) {
+      const goalTitle = context.deleted_goal.title || 'Goal';
+      const timeFreed = context.time_freed || 0;
+      return timeFreed > 0 
+        ? `"${goalTitle}" deleted successfully. Freed up ${timeFreed} hours daily for other activities.`
+        : `"${goalTitle}" deleted successfully. More focus available for remaining goals.`;
+    }
+    
+    // Handle conflict analysis results
+    if (context.conflict_pairs !== undefined) {
+      return this.formatConflictAnalysisContext(context);
+    }
+    
+    // Handle amendment suggestions
+    if (context.amendments && context.amendments.length > 0) {
+      return this.formatAmendmentContext(context);
+    }
+    
+    // Handle goal conflicts in creation/update (legacy approach)
+    if (context.conflicts && context.conflicts.length > 0 && !context.has_potential_conflicts) {
+      return this.formatGoalConflictContext(context);
+    }
+    
+    // Standard goal context
+    if (context.goals !== undefined) {
+      console.log('✅ Found goals array with length:', context.goals.length);
+      
+      if (context.goals.length === 0) {
+        return 'No active goals found. User should create some goals first';
+      }
+      
+      const goalTitles = context.goals.map((g: any) => g.title || g.goal_title || 'Untitled Goal').join(', ');
+      return `User has ${context.goals.length} active goals: ${goalTitles}`;
+    }
+    
+    if (context.goal) {
+      const goalAction = context.goal_created ? 'created' : context.goal_updated ? 'updated' : 'processed';
+      return `Goal "${context.goal.title}" ${goalAction} successfully`;
+    }
+    
+    return 'No goal data available';
+  }
+
+  private static formatConflictAnalysisContext(context: any): string {
+    const { total_goals, conflict_pairs, summary, recommendations } = context;
+    
+    if (conflict_pairs === 0) {
+      return `${total_goals} goals analyzed - NO CONFLICTS detected. Goals are well-aligned.`;
+    }
+    
+    const conflictTypes = [];
+    if (summary.time_conflicts > 0) conflictTypes.push(`${summary.time_conflicts} time conflicts`);
+    if (summary.resource_conflicts > 0) conflictTypes.push(`${summary.resource_conflicts} resource conflicts`);
+    if (summary.capacity_conflicts > 0) conflictTypes.push(`${summary.capacity_conflicts} capacity conflicts`);
+    if (summary.priority_conflicts > 0) conflictTypes.push(`${summary.priority_conflicts} priority conflicts`);
+    
+    const conflictSummary = conflictTypes.join(', ');
+    const topRecommendation = recommendations && recommendations.length > 0 ? recommendations[0] : 'Review and prioritize goals';
+    
+    return `${total_goals} goals with ${conflict_pairs} CONFLICTS: ${conflictSummary}. Key recommendation: ${topRecommendation}`;
+  }
+
+  private static formatAmendmentContext(context: any): string {
+    const { goals_analyzed, goals_with_conflicts, amendments } = context;
+    
+    if (goals_with_conflicts === 0) {
+      return `${goals_analyzed} goals analyzed - NO AMENDMENTS needed. Goals are optimized.`;
+    }
+    
+    const totalSuggestions = amendments.reduce((sum: number, amendment: any) => sum + amendment.suggestions.length, 0);
+    const improvementTypes = amendments.flatMap((a: any) => a.suggestions.map((s: any) => s.type));
+    const uniqueTypes = [...new Set(improvementTypes)];
+    
+    return `${goals_with_conflicts} of ${goals_analyzed} goals need improvement. ${totalSuggestions} suggestions ready: ${uniqueTypes.join(', ')}`;
+  }
+
+  private static formatGoalConflictContext(context: any): string {
+    const { conflicts, goal_created, goal_updated, message } = context;
+    const action = goal_created === false ? 'creation' : goal_updated === false ? 'update' : 'operation';
+    
+    const conflictDetails = conflicts.map((conflict: any) => {
+      const conflictingGoal = conflict.conflicting_goal?.title || 'existing goal';
+      const conflictTypes = conflict.conflict_types?.map((ct: any) => ct.type).join(', ') || 'general';
+      return `conflicts with "${conflictingGoal}" (${conflictTypes})`;
+    }).join('; ');
+    
+    return `Goal ${action} BLOCKED due to conflicts: ${conflictDetails}. ${message || 'Resolution needed.'}`;
+  }
+
   private static formatGoalContext(result: ToolResult): string {
     const data = result.data;
     console.log('🎯 Formatting goal context with data:', JSON.stringify(data, null, 2));
+    
+    // Handle goals with potential conflicts (new conversational approach)
+    if (data?.has_potential_conflicts && data?.conversational_message) {
+      const action = data.goal_created ? 'created' : data.goal_updated ? 'updated' : 'processed';
+      return `Goal ${action} with note: ${data.conversational_message}`;
+    }
+    
+    // Handle goal deletion with helpful info
+    if (data?.deleted_goal) {
+      const goalTitle = data.deleted_goal.title || 'Goal';
+      const timeFreed = data.time_freed || 0;
+      return timeFreed > 0 
+        ? `"${goalTitle}" deleted successfully. Freed up ${timeFreed} hours daily for other activities.`
+        : `"${goalTitle}" deleted successfully. More focus available for remaining goals.`;
+    }
+    
+    // Handle conflict detection responses (legacy)
+    if (data?.conflicts && data.conflicts.length > 0 && !data?.has_potential_conflicts) {
+      return this.formatGoalConflictContext(data);
+    }
+    
+    // Handle amendment suggestions
+    if (data?.amendments && data.amendments.length > 0) {
+      return this.formatAmendmentContext(data);
+    }
+    
+    // Handle conflict analysis results
+    if (data?.conflict_pairs !== undefined) {
+      return this.formatConflictAnalysisContext(data);
+    }
     
     // DEBUG MODE: Return debug info if available
     if (data?.debug_info) {
@@ -90,7 +270,8 @@ export class ContextBuilder {
       return context;
     }
     if (data?.goal) {
-      const context = `Goal "${data.goal.title}" ${data.message?.toLowerCase() || 'processed'}`;
+      const goalAction = data.goal_created ? 'created' : data.goal_updated ? 'updated' : 'processed';
+      const context = `Goal "${data.goal.title}" ${goalAction} successfully`;
       console.log('🎯 Single goal context:', context);
       return context;
     }
