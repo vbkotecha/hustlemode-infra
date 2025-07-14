@@ -29,16 +29,24 @@ export class GroqService {
         throw new Error('No response content from Groq');
       }
 
-      const content = response.choices[0].message.content.trim();
+      let content = response.choices[0].message.content.trim();
+      
+      // Remove unnecessary quotes that the AI sometimes adds
+      if (content.startsWith('"') && content.endsWith('"')) {
+        content = content.slice(1, -1);
+      }
+      
       const wordCount = content.split(' ').length;
       
-      // Increase word limit for accountability coach responses
-      if (wordCount > 25) {
+      // Skip word limit check for tool-related calls (indicated by higher maxTokens)
+      const isToolCall = maxTokens > 100; // Tool calls use 200+ tokens, chat uses default ~50
+      
+      if (!isToolCall && wordCount > 25) {
         console.warn(`⚠️ Response too long (${wordCount} words), using fallback`);
         return this.getFallbackResponse(personality);
       }
 
-      console.log(`✅ Groq response: ${content} (${wordCount} words)`);
+      console.log(`✅ Groq response: ${content} (${wordCount} words)${isToolCall ? ' [TOOL CALL]' : ''}`);
       return content;
     } catch (error) {
       console.error('❌ Groq API error:', error);
