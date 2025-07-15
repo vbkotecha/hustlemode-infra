@@ -98,7 +98,7 @@ async function processWhatsAppMessage(message: any) {
     const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
     const { AIToolService } = await import('../../shared/ai-tools.ts');
     const { WhatsAppAdapter } = await import('../../shared/platforms/whatsapp-adapter.ts');
-    const { getUserOrCreate, updateUserLastActive } = await import('../../shared/users.ts');
+          const { getOrCreateUserByPhone, updateUserLastActive } = await import('../../shared/database/users.ts');
     
     // Create Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
@@ -112,7 +112,7 @@ async function processWhatsAppMessage(message: any) {
     const supabase = createClient(supabaseUrl, supabaseKey);
     
     // Get or create user
-    const user = await getUserOrCreate(phoneNumber);
+          const user = await getOrCreateUserByPhone(phoneNumber);
     if (!user) {
       console.error('❌ Failed to get or create user');
       return;

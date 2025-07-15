@@ -36,10 +36,11 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    // Use same logic as WhatsApp function
+    // Import services (same pattern as WhatsApp function)
     const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
+    const { getOrCreateUserByPhone } = await import('../../shared/database/users.ts');
     const { AIToolService } = await import('../../shared/ai-tools.ts');
-    const { getUserOrCreate, updateUserLastActive } = await import('../../shared/users.ts');
+    const { MemoryService } = await import('../../shared/memory.ts');
     
     // Create Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
@@ -56,7 +57,7 @@ Deno.serve(async (req: Request) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
     
     // Get or create user
-    const user = await getUserOrCreate(phone_number);
+    const user = await getOrCreateUserByPhone(phone_number);
     if (!user) {
       console.error('❌ Failed to get or create user');
       return new Response(JSON.stringify({
@@ -72,7 +73,6 @@ Deno.serve(async (req: Request) => {
     const aiToolService = new AIToolService();
     
     // Get conversation context from memory
-    const { MemoryService } = await import('../../shared/memory.ts');
     const recentMemories = await MemoryService.getMemories(user.id, 5);
     const conversationContext = recentMemories
       .slice(0, 3)
@@ -94,7 +94,10 @@ Deno.serve(async (req: Request) => {
     console.log(`🔧 Tools used: ${toolsUsed.length}, Processing: ${processingTime.toFixed(1)}ms`);
     
     // Update user's last activity
-    await updateUserLastActive(user.id);
+    await supabase
+      .from('users')
+      .update({ last_active: new Date().toISOString() })
+      .eq('id', user.id);
 
     return new Response(JSON.stringify({
       success: true,
@@ -103,9 +106,9 @@ Deno.serve(async (req: Request) => {
         personality: validPersonality,
         user_id: user.id,
         processing_time_ms: processingTime,
-        memory_provider: Deno.env.get('MEMORY_PROVIDER') || 'postgresql',
         tools_used: toolsUsed.length,
-        tool_names: toolsUsed.map(t => t.tool_name)
+        tool_names: toolsUsed.map(t => t.tool_name),
+        tool_results: toolsUsed
       },
       timestamp: new Date().toISOString()
     }), { 
@@ -119,7 +122,8 @@ Deno.serve(async (req: Request) => {
     console.error('❌ Chat API error:', error);
     return new Response(JSON.stringify({
       success: false,
-      error: 'Internal server error'
+      error: `Internal server error: ${error.message}`,
+      stack: error.stack
     }), { 
       status: 500,
       headers: { 'Content-Type': 'application/json' }

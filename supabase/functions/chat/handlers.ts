@@ -1,6 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { AIToolService } from '../../shared/ai-tools.ts';
-import { getUserOrCreate, updateUserLastActive } from '../../shared/users.ts';
+import { getOrCreateUserByPhone, updateUserLastActive } from '../../shared/database/users.ts';
 import { getConfig } from '../../shared/config.ts';
 
 const corsHeaders = {
@@ -26,7 +26,7 @@ export async function handleChatRequest(request: Request): Promise<Response> {
     }
     
     // Get or create user (same as WhatsApp function)
-    const user = await getUserOrCreate(phone_number);
+    const user = await getOrCreateUserByPhone(phone_number);
     if (!user) {
       return new Response(JSON.stringify({
         success: false,

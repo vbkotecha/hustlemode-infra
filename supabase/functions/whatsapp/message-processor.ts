@@ -1,5 +1,5 @@
 // WhatsApp Message Processing Logic
-import { generateAIResponse } from '../../shared/ai.ts';
+import { generateAIResponse } from '../../shared/ai-response.ts';
 import { AIToolService } from '../../shared/ai-tools.ts';
 import { WhatsAppAdapter } from '../../shared/platforms/whatsapp-adapter.ts';
 import { WhatsAppService } from '../../shared/whatsapp.ts';
@@ -19,8 +19,8 @@ export async function processMessage(message: any, supabase: any) {
     
     console.log(`💬 Processing message from ${phoneNumber}: "${messageText}"`);
     
-    const { getUserOrCreate } = await import('../../shared/users.ts');
-    const user = await getUserOrCreate(phoneNumber);
+    const { getOrCreateUserByPhone } = await import('../../shared/database/users.ts');
+    const user = await getOrCreateUserByPhone(phoneNumber);
     
     if (!user) {
       console.error('❌ Failed to get or create user');
@@ -105,8 +105,8 @@ async function handleComplexMessage(
 
 async function handleFallback(message: any, phoneNumber: string, supabase: any) {
   try {
-    const { getUserOrCreate } = await import('../../shared/users.ts');
-    const user = await getUserOrCreate(phoneNumber);
+    const { getOrCreateUserByPhone } = await import('../../shared/database/users.ts');
+    const user = await getOrCreateUserByPhone(phoneNumber);
     if (user) {
       const fallbackResponse = await generateAIResponse(message.text?.body, user.id, 'taskmaster');
       if (fallbackResponse) {
