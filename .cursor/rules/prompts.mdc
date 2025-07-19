@@ -1,12 +1,7 @@
 ---
-description: 
-globs: prompts/**/*,ai/**/*
-alwaysApply: false
----
----
-description: "AI prompt management guidelines for version control, naming conventions, and template structure"
-globs: "prompts/**/*,ai/**/*"
-alwaysApply: false
+description: "AI prompt management - version control, naming conventions, template structure"
+globs: ["prompts/**/*", "supabase/shared/ai*.ts", "supabase/shared/groq*.ts"]
+alwaysApply: true
 ---
 
 # Prompt Management Guidelines

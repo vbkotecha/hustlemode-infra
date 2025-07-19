@@ -9,7 +9,14 @@ export interface IMemoryService {
 }
 
 class PostgreSQLMemoryService implements IMemoryService {
-  private db = getSupabaseClient();
+  private _db: any = null;
+
+  private get db() {
+    if (!this._db) {
+      this._db = getSupabaseClient();
+    }
+    return this._db;
+  }
 
   async searchMemories(query: string, userId: string, limit: number = 5): Promise<MemoryResult[]> {
     try {
@@ -67,5 +74,24 @@ class PostgreSQLMemoryService implements IMemoryService {
   }
 }
 
-// Export a singleton instance for convenience
-export const MemoryService = new PostgreSQLMemoryService();
+// Export lazy-loaded singleton instance to prevent import-time initialization
+let _memoryServiceInstance: IMemoryService | null = null;
+
+function getMemoryServiceInstance(): IMemoryService {
+  if (!_memoryServiceInstance) {
+    _memoryServiceInstance = new PostgreSQLMemoryService();
+  }
+  return _memoryServiceInstance;
+}
+
+// Export singleton with lazy loading
+export const MemoryService = {
+  searchMemories: (query: string, userId: string, limit?: number) => 
+    getMemoryServiceInstance().searchMemories(query, userId, limit),
+  addMemory: (content: string, userId: string, context?: string) => 
+    getMemoryServiceInstance().addMemory(content, userId, context),
+  getMemories: (userId: string, limit?: number) => 
+    getMemoryServiceInstance().getMemories(userId, limit),
+  checkHealth: () => 
+    getMemoryServiceInstance().checkHealth()
+};

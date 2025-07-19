@@ -1,7 +1,7 @@
 ---
-description: "Data schema management guidelines for database schemas, API schemas, and version control"
-globs: "schemas/**/*"
-alwaysApply: false
+description: "Database schema management - Supabase migrations only, no duplicate schemas"
+globs: ["supabase/migrations/**/*", "scripts/create-migration.sh", "scripts/deploy-migrations.sh"]
+alwaysApply: true
 ---
 
 # Schema Management Guidelines - Supabase Migration Approach

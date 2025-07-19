@@ -179,11 +179,11 @@ deploy_migrations() {
     echo -e "${BLUE}🔨 Deploying migrations...${NC}"
     
     if [[ "$target" == "local" ]]; then
-        echo -e "${YELLOW}   Running: supabase db reset${NC}"
-        supabase db reset --linked
+        echo -e "${YELLOW}   Running: supabase db reset --yes${NC}"
+        supabase db reset --linked --yes
     else
-        echo -e "${YELLOW}   Running: supabase db push${NC}"
-        supabase db push --linked
+        echo -e "${YELLOW}   Running: supabase db push --yes${NC}"
+        supabase db push --linked --yes
     fi
     
     echo -e "${GREEN}✅ Migration deployment completed${NC}"
@@ -233,7 +233,7 @@ show_rollback_guidance() {
     echo ""
     echo -e "${YELLOW}📋 Rollback Options:${NC}"
     echo -e "   1. Manual rollback (if recent):"
-    echo -e "      ${BLUE}supabase db reset --linked${NC}"
+            echo -e "      ${BLUE}supabase db reset --linked --yes${NC}"
     echo ""
     echo -e "   2. Restore from backup:"
     echo -e "      ${BLUE}# Use Supabase Dashboard to restore from backup${NC}"

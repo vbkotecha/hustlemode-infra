@@ -1,8 +1,9 @@
 ---
-description:
-globs:
-alwaysApply: false
+description: "2-personality system (Taskmaster/Cheerleader) with 8-12 word response limits"
+globs: ["supabase/shared/config.ts", "supabase/shared/groq*.ts", "prompts/**/*"]
+alwaysApply: true
 ---
+
 # HustleMode.ai Personality System Rules
 
 ## 🎭 2-Personality MVP System

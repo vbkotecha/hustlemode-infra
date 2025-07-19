@@ -1,97 +1,144 @@
-// WhatsApp Response Formatters
-// Personality-appropriate responses for 8-12 word WhatsApp constraint
+// Refactored WhatsApp Formatters - Using extracted modules
+import type { ToolResult } from '../tools/types.ts';
+import { GoalResponseFormatters } from './goal-response-formatters.ts';
+import { ResponseConstraints } from './response-constraints.ts';
+
+export interface WhatsAppResponse {
+  text: string;
+  format?: 'plain' | 'structured';
+  urgent?: boolean;
+}
 
 export class WhatsAppFormatters {
-  static formatGoalResponse(data: any, personality: 'taskmaster' | 'cheerleader'): string {
-    console.log('🎯 WhatsApp formatGoalResponse called with data:', JSON.stringify(data, null, 2));
+  static formatToolResults(
+    toolResults: ToolResult[],
+    fallbackResponse: string,
+    personality: 'taskmaster' | 'cheerleader'
+  ): WhatsAppResponse {
+    if (!toolResults || toolResults.length === 0) {
+      return { text: fallbackResponse };
+    }
+
+    // Process the most relevant tool result
+    const primaryResult = this.findPrimaryResult(toolResults);
+    const formattedResponse = this.formatSingleResult(primaryResult, personality);
     
-    if (data?.goals) {
-      const count = data.goals.length;
-      console.log(`📋 Formatting ${count} goals for WhatsApp`);
+    return {
+      text: formattedResponse,
+      format: 'plain',
+      urgent: ResponseConstraints.isUrgentResult(primaryResult)
+    };
+  }
+
+  static formatPlainResponse(
+    response: string,
+    personality: 'taskmaster' | 'cheerleader'
+  ): WhatsAppResponse {
+    // Ensure response follows personality constraints
+    const constrainedResponse = ResponseConstraints.enforcePersonalityConstraints(response, personality);
+    
+    return {
+      text: constrainedResponse,
+      format: 'plain'
+    };
+  }
+
+  static formatConversationalResponse(
+    response: string,
+    context: any,
+    personality: 'taskmaster' | 'cheerleader'
+  ): WhatsAppResponse {
+    // Add contextual emojis based on personality
+    const emoji = personality === 'taskmaster' ? '💪' : '✨';
+    const enhancedResponse = ResponseConstraints.addPersonalityFlair(response, emoji);
+    
+    return {
+      text: enhancedResponse,
+      format: 'plain'
+    };
+  }
+
+  private static findPrimaryResult(toolResults: ToolResult[]): ToolResult {
+    // Prioritize goal operations, then progress, then preferences
+    const priorities = ['manage_goal', 'enhanced_coaching', 'get_progress', 'update_preferences'];
+    
+    for (const priority of priorities) {
+      const result = toolResults.find(r => r.tool_name === priority && r.success);
+      if (result) return result;
+    }
+    
+    // Return first successful result as fallback
+    return toolResults.find(r => r.success) || toolResults[0];
+  }
+
+  private static formatSingleResult(result: ToolResult, personality: 'taskmaster' | 'cheerleader'): string {
+    if (!result) return ResponseConstraints.getFallbackMessage(personality);
+    
+    if (!result.success) {
+      return this.formatErrorResponse(result, personality);
+    }
+
+    switch (result.tool_name) {
+      case 'manage_goal':
+        return GoalResponseFormatters.formatGoalResponse(result.data, personality);
       
-      if (count === 0) {
-        return personality === 'taskmaster' ? 'No goals yet. Set one NOW! 🎯' : 'Time to set your first goal! 🌟';
-      }
+      case 'enhanced_coaching':
+        return this.formatCoachingResponse(result.data, personality);
       
-      // Show actual goal titles
-      const goalTitles = data.goals.map((g: any) => g.title || 'Untitled goal').slice(0, 2); // Max 2 for space
-      const titlesList = goalTitles.join(', ');
+      case 'get_progress':
+        return this.formatProgressResponse(result.data, personality);
+      
+      case 'update_preferences':
+        return this.formatPreferencesResponse(result.data, personality);
+      
+      default:
+        return ResponseConstraints.getFallbackMessage(personality);
+    }
+  }
+
+  private static formatCoachingResponse(data: any, personality: 'taskmaster' | 'cheerleader'): string {
+    if (data?.coaching_response) {
+      const response = data.coaching_response;
+      const emoji = personality === 'taskmaster' ? '💪' : '✨';
+      return `${response} ${emoji}`;
+    }
+    
+    return ResponseConstraints.getFallbackMessage(personality);
+  }
+
+  private static formatProgressResponse(data: any, personality: 'taskmaster' | 'cheerleader'): string {
+    if (data?.overall_completion_rate !== undefined) {
+      const rate = Math.round(data.overall_completion_rate);
       
       if (personality === 'taskmaster') {
-        return count === 1 
-          ? `Goal: ${titlesList}. Now execute! 💪`
-          : `${count} goals: ${titlesList}. Execute all! 🔥`;
+        return `${rate}% complete. Push harder! 💪`;
       } else {
-        return count === 1
-          ? `Goal: ${titlesList}. You've got this! ✨`
-          : `${count} goals: ${titlesList}. Amazing! 🎉`;
+        return `Amazing ${rate}% progress! Keep shining! ✨`;
       }
     }
-
-    if (data?.goal && data?.message) {
-      const action = data.message.includes('created') ? 'created' : 'updated';
-      const goalTitle = data.goal.title || 'Goal';
-      return personality === 'taskmaster'
-        ? `${goalTitle} ${action}. No excuses! 🔥`
-        : `${goalTitle} ${action}! Ready to crush it! ✨`;
-    }
-
-    console.log('⚠️ Using fallback goal response - no proper data structure');
-    return personality === 'taskmaster' ? 'Goal handled. Stay focused! 💯' : 'Goal updated! Keep going strong! 🚀';
+    
+    return ResponseConstraints.getFallbackMessage(personality);
   }
 
-  static formatProgressResponse(data: any, personality: 'taskmaster' | 'cheerleader'): string {
-    let rate = 0;
-    
-    if (data?.overall_completion_rate !== undefined) {
-      rate = Math.round(data.overall_completion_rate);
-    } else if (data?.goal?.progress_percentage) {
-      rate = Math.round(data.goal.progress_percentage);
+  private static formatPreferencesResponse(data: any, personality: 'taskmaster' | 'cheerleader'): string {
+    if (data?.default_personality) {
+      const newPersonality = data.default_personality;
+      
+      if (personality === 'taskmaster') {
+        return `Personality: ${newPersonality}. Let's dominate! 💪`;
+      } else {
+        return `Personality: ${newPersonality}! Love the change! ✨`;
+      }
     }
     
-    if (rate > 0) {
-      const emoji = rate >= 80 ? '📈' : rate >= 50 ? '💪' : '🔥';
-      const action = personality === 'taskmaster' 
-        ? (rate >= 80 ? 'Don\'t get comfortable!' : rate >= 50 ? 'Push harder!' : 'Time to WORK!')
-        : (rate >= 80 ? 'You\'re crushing it!' : rate >= 50 ? 'Momentum building!' : 'Every step counts!');
-      return `${rate}% progress. ${action} ${emoji}`;
-    }
-
-    return personality === 'taskmaster'
-      ? 'Progress checked. Don\'t stop now! 🚀'
-      : 'Progress looking good! Keep it up! ⭐';
+    return ResponseConstraints.getFallbackMessage(personality);
   }
 
-  static formatPreferenceResponse(data: any, personality: 'taskmaster' | 'cheerleader'): string {
-    return personality === 'taskmaster'
-      ? 'Settings updated. Time to perform! 💥'
-      : 'Settings updated! Ready for success! 🎉';
-  }
-
-  static getFallbackResponse(personality: 'taskmaster' | 'cheerleader'): string {
-    console.log('⚠️ Using fallback response - this should not happen if tools are working');
-    return personality === 'taskmaster' 
-      ? 'Action taken. Keep pushing forward! 💪'
-      : 'Done! You\'re making great progress! ✨';
-  }
-
-  static generateToolResponse(
-    toolName: string,
-    data: any,
-    personality: 'taskmaster' | 'cheerleader'
-  ): string | null {
-    console.log(`🔧 generateToolResponse: ${toolName} with data:`, JSON.stringify(data, null, 2));
-    
-    switch (toolName) {
-      case 'manage_goal':
-        return this.formatGoalResponse(data, personality);
-      case 'get_progress':
-        return this.formatProgressResponse(data, personality);
-      case 'update_preferences':
-        return this.formatPreferenceResponse(data, personality);
-      default:
-        console.log(`⚠️ Unknown tool name: ${toolName}`);
-        return null;
+  private static formatErrorResponse(result: ToolResult, personality: 'taskmaster' | 'cheerleader'): string {
+    if (personality === 'taskmaster') {
+      return 'System error. But accountability never stops! 💪';
+    } else {
+      return 'System hiccup! But you\'re still amazing! ✨';
     }
   }
 } 

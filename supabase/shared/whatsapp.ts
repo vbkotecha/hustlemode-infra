@@ -67,14 +67,46 @@ export class WhatsAppService {
     }
   }
 
-  detectPersonalityCommand(message: string): { isCommand: boolean; personality?: string } {
-    const lowerMessage = message.toLowerCase().trim();
-    if (lowerMessage.includes('taskmaster') || lowerMessage.includes('tough love')) {
-      return { isCommand: true, personality: 'taskmaster' };
+  async detectPersonalityCommand(message: string): Promise<{ isCommand: boolean; personality?: string }> {
+    // ✅ SEMANTIC LLM ANALYSIS - No keyword matching
+    const analysisPrompt = `
+Analyze this message for personality switching intent:
+
+Message: "${message}"
+
+Available personalities:
+- taskmaster (tough love, accountability, discipline)
+- cheerleader (positive, encouraging, celebrating)
+
+Does the user want to switch AI personality modes? Respond in JSON:
+{
+  "isPersonalityCommand": boolean,
+  "targetPersonality": "taskmaster|cheerleader|null",
+  "confidence": number (0-100),
+  "reasoning": "semantic understanding explanation"
+}
+
+Use semantic understanding, not keyword matching.`;
+
+    try {
+      const { GroqService } = await import('./groq.ts');
+      const groqService = new GroqService();
+      
+      const response = await groqService.getChatCompletion([{
+        role: 'user',
+        content: analysisPrompt,
+        timestamp: new Date().toISOString()
+      }], 'taskmaster', 150);
+
+      const analysis = JSON.parse(response.replace(/```json\n?|\n?```/g, ''));
+      
+      return {
+        isCommand: analysis.isPersonalityCommand && analysis.confidence > 70,
+        personality: analysis.targetPersonality
+      };
+    } catch (error) {
+      console.error('❌ Personality detection LLM failed:', error);
+      return { isCommand: false };
     }
-    if (lowerMessage.includes('cheerleader') || lowerMessage.includes('positive')) {
-      return { isCommand: true, personality: 'cheerleader' };
-    }
-    return { isCommand: false };
   }
 } 

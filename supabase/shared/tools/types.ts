@@ -2,13 +2,19 @@
 // Cross-platform tool system for goal tracking and accountability coaching
 
 export type Platform = 'whatsapp' | 'imessage' | 'email' | 'telegram' | 'api';
+export type Personality = 'taskmaster' | 'cheerleader';
+
+export interface ConversationMessage {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  timestamp: string;
+}
 
 export type ToolName = 
   | 'manage_goal'
-  | 'schedule_checkin' 
   | 'get_progress'
-  | 'analyze_patterns'
-  | 'update_preferences';
+  | 'update_preferences'
+  | 'enhanced_coaching';
 
 export interface ToolParameter {
   type: 'string' | 'number' | 'boolean' | 'enum' | 'array' | 'object';
@@ -22,7 +28,7 @@ export interface ToolDefinition {
   name: ToolName;
   description: string;
   parameters: Record<string, ToolParameter>;
-  cache_ttl?: number; // seconds, null = no cache
+  cache_ttl?: number; // seconds, undefined = no cache
   platforms?: Platform[]; // if undefined, available on all platforms
 }
 

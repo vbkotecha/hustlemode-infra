@@ -1,3 +1,9 @@
+---
+description: "Sentinel-style disciplined development - TDD, task management, documentation"
+globs: ["docs/**/*", "tasks/**/*", "tests/**/*", "**/*.test.ts"]
+alwaysApply: true
+---
+
 # Sentinel-Style Development Rules for HustleMode.ai
 
 ## System Context & Startup Behavior

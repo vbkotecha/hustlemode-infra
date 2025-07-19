@@ -4,7 +4,14 @@ import { AIToolService } from '../../shared/ai-tools.ts';
 import { WhatsAppAdapter } from '../../shared/platforms/whatsapp-adapter.ts';
 import { WhatsAppService } from '../../shared/whatsapp.ts';
 
-const whatsappService = new WhatsAppService();
+// Lazy-loaded WhatsAppService to prevent import-time initialization
+let _whatsappService: WhatsAppService | null = null;
+function getWhatsAppService(): WhatsAppService {
+  if (!_whatsappService) {
+    _whatsappService = new WhatsAppService();
+  }
+  return _whatsappService;
+}
 
 export async function processMessage(message: any, supabase: any) {
   try {
@@ -119,7 +126,7 @@ async function handleFallback(message: any, phoneNumber: string, supabase: any) 
 }
 
 async function sendWhatsAppResponse(phoneNumber: string, response: string, userId: string, supabase: any) {
-  const success = await whatsappService.sendMessage(phoneNumber, response);
+      const success = await getWhatsAppService().sendMessage(phoneNumber, response);
   
   if (success) {
     console.log(`✅ Response sent to WhatsApp ${phoneNumber}`);

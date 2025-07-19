@@ -1,9 +1,24 @@
 #!/bin/bash
 
 # HustleMode.ai Supabase Edge Functions Deployment Script
-# Deploys all Edge Functions with proper validation and error handling
+# Quality-enforced deployment with automatic validation
 
 set -euo pipefail
+
+# MANDATORY: Run quality checks before deployment
+echo "🔍 Running pre-deployment quality checks..."
+if ! ./scripts/code-quality-check.sh; then
+    echo ""
+    echo "❌ DEPLOYMENT BLOCKED: Quality violations found"
+    echo "Fix the violations above before deploying"
+    echo ""
+    echo "To bypass (EMERGENCY ONLY):"
+    echo "  ./scripts/deploy-supabase.sh --force"
+    exit 1
+fi
+
+echo ""
+echo "✅ Quality checks passed - proceeding with deployment"
 
 # Colors for output
 RED='\033[0;31m'

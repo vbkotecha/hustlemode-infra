@@ -1,3 +1,10 @@
+
+---
+description: "Automated code quality enforcement - file size limits, zero duplication, modular architecture"
+globs: ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx", "!node_modules/**", "!.next/**", "!dist/**"]
+alwaysApply: true
+---
+
 # Code Quality Enforcement Rules - AUTOMATED PREVENTION
 
 ## 🚫 CRITICAL: File Size Limits (STRICTLY ENFORCED)
@@ -213,7 +220,8 @@ echo "⚡ Performance Metrics:"
 
 ---
 **Core Principle**: Automated prevention is better than manual correction. These rules make it IMPOSSIBLE to create messy code.
-description:
-globs:
-alwaysApply: false
+
+- **Developer satisfaction**: Team feedback on maintainability
+
 ---
+**Core Principle**: Automated prevention is better than manual correction. These rules make it IMPOSSIBLE to create messy code.

@@ -494,6 +494,177 @@ class MetricsCollector {
 
 ---
 
+## Goal Conflict Detection & Amendment System
+
+### Overview
+Enhanced goal management system with **intelligent conflict detection** and **conversational user guidance**. Helps users maintain realistic, achievable goals through AI-powered analysis that asks permission rather than blocking progress.
+
+### Core Philosophy: **Smart Detection, User Choice**
+- ✅ **Create first, suggest later**: Goals are created successfully, then potential conflicts mentioned conversationally
+- ✅ **Real conflicts only**: Detects actual problems (duplicates, time overload, contradictions) - not false positives  
+- ✅ **Ask permission**: "Want to combine these?" instead of "3 conflicts detected!"
+- ✅ **Specific messaging**: "Gym daily + Exercise daily - combine them?" instead of vague warnings
+
+### Smart Conflict Detection
+
+#### **1. Duplicate Activity Detection** 
+Finds essentially the same goal:
+```
+❌ "Go to gym daily" + "Exercise daily" 
+   → "'Gym daily' + 'Exercise daily' seem similar - combine them?"
+
+✅ "Exercise daily" + "Study daily" = NO conflict (different activities)
+```
+
+#### **2. Time Overload Detection**
+Calculates actual time requirements:
+```
+❌ "Study 3 hours daily" + "Code 4 hours daily" + "Workout 2 hours" = 9+ hours
+   → "9+ hours daily seems tough - reduce scope?"
+
+✅ "Exercise 1h" + "Study 1h" + "Cook 30min" = 2.5 hours = Fine!
+```
+
+#### **3. Resource Contradiction Detection**
+Identifies conflicting behaviors:
+```
+❌ "Save $500/month" + "Buy expensive gadgets weekly"
+   → "Saving vs spending conflict - pick priority?"
+
+❌ "Eat healthy daily" + "Try new dessert shops"  
+   → "Healthy vs unhealthy habits - choose focus?"
+```
+
+#### **4. Lifestyle Contradiction Detection**
+Catches incompatible lifestyles:
+```
+❌ "Wake up 5AM daily" + "Party every weekend night"
+   → "Early mornings + late nights = tough combo. Pick one?"
+
+✅ "Wake up early" + "Exercise daily" = NO conflict (complementary)
+```
+
+### User Experience Examples
+
+#### **Smart Goal Creation**
+```
+User: "Set goal: Go to gym daily"
+AI: "'Gym daily' + 'Exercise daily' seem similar - combine them?" 
+   (Goal still created successfully!)
+
+vs OLD approach: "Conflict detected! Fix first! ⚠️"
+```
+
+#### **Conversational Amendments**
+```
+User: "Improve my goals"
+AI: "Frequency too aggressive. Scale back?"
+
+vs OLD: "3 improvements suggested. Apply them! 💪"
+```
+
+#### **Smart Goal Deletion**
+```
+User: "Delete exercise goal"
+AI: "Exercise daily deleted! 1h freed up. Use wisely! 🎯"
+   (Finds goal by name, shows time impact)
+```
+
+### Technical Implementation
+
+#### Goal Load Calculation (Time-Based)
+```typescript
+function estimateGoalTimeRequirement(goal: any): number {
+  // Extract explicit time: "2 hours", "30 minutes"
+  const timeMatch = text.match(/(\d+)\s*(hour|minute)/);
+  
+  // Activity-based estimates:
+  if (text.includes('workout')) return 1;      // 1 hour
+  if (text.includes('study')) return 2;       // 2 hours  
+  if (text.includes('meditate')) return 0.25; // 15 minutes
+  
+  // Frequency adjustment:
+  if (frequency === 'daily') return estimate;
+  if (frequency === '3x_weekly') return estimate * 0.6;
+}
+```
+
+#### Duplicate Detection (Activity-Based)
+```typescript
+const duplicatePairs = [
+  ['gym', 'exercise'], ['workout', 'exercise'],
+  ['read', 'reading'], ['study', 'studying'],
+  ['run', 'running'], ['jog', 'jogging']
+];
+```
+
+#### Conversational Responses
+```typescript
+// Smart conflict messaging with permission-asking
+conversational: "'Gym daily' + 'Exercise daily' seem similar - combine them?"
+
+// vs old generic messaging  
+OLD: "2 conflicts detected. Fix them first! ⚠️"
+```
+
+### Message Analysis Enhancement
+
+#### **New Keywords Detected:**
+- **Goal Management**: "delete goal", "remove goal", "drop goal"
+- **Smart References**: "delete exercise goal" (finds by name)
+- **Conflict Requests**: "overlapping goals", "goal problems"
+- **Improvements**: "optimize goals", "better goals"
+
+#### **Goal Reference Lookup:**
+```typescript
+// Finds goals by partial name matching
+"delete exercise goal" → finds "Exercise daily" goal
+"remove study" → finds "Study programming 2h daily"
+```
+
+### WhatsApp Integration (8-12 Word Constraint)
+
+#### **Conversational Conflict Messages:**
+```
+Instead of: "3 conflicts detected. Fix them first! ⚠️"
+Use: "'Gym daily' + 'Exercise daily' seem similar - combine them?"
+
+Instead of: "Time conflict found. Reduce frequency now!"  
+Use: "9+ hours daily seems tough - reduce scope?"
+```
+
+#### **Goal Deletion Feedback:**
+```
+Taskmaster: "Exercise daily deleted! 1h freed up. Use wisely! 🎯"
+Cheerleader: "Exercise removed! 1h freed up. New opportunities! ✨"
+```
+
+### Error Handling & User Guidance
+
+#### **Smart Goal Lookup:**
+- Exact title match: "Exercise daily"
+- Partial match: "exercise" → "Exercise daily"  
+- Keyword match: "gym" → "Go to gym daily"
+- Fallback: "No goal found matching 'xyz'. Try 'my goals' to see options."
+
+#### **Permission-Based Flow:**
+1. ✅ **Create/Update goal successfully**
+2. 💡 **Mention potential conflicts conversationally**  
+3. 🤝 **Ask user permission for changes**
+4. 📊 **Provide specific context (time saved, etc.)**
+
+### Performance & Reliability
+
+- **Non-blocking**: Goals always created successfully, conflicts mentioned after
+- **Smart caching**: Tool results cached for 5 minutes  
+- **Fallback handling**: If conflict detection fails, proceed normally
+- **Specific messaging**: Each conflict type has targeted suggestions
+- **User choice**: System suggests, user decides
+
+This approach maintains user momentum while providing intelligent guidance! [[memory:2188079]]
+
+---
+
 ## Development Guidelines
 
 ### Git Workflow

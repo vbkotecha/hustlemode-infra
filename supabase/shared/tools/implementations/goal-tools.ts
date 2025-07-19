@@ -1,72 +1,142 @@
-// Goal Management Tool Implementation
-import type { ToolExecution, ToolResult, Goal } from '../types.ts';
-import { createToolResult, createErrorResult } from '../utils.ts';
-import { 
-  createGoalInDB, 
-  updateGoalInDB, 
-  getActiveGoalsFromDB, 
-  getGoalFromDB, 
-  deleteGoalFromDB, 
-  completeGoalInDB 
-} from './goal-db-operations.ts';
+// Refactored Goal Tools - Using extracted handlers
+import type { ToolExecution, ToolResult, Platform } from '../types.ts';
+import { GoalCoachingService } from './goal-coaching.ts';
+import {
+  handleGoalCreate,
+  handleGoalUpdate,
+  handleGoalList,
+  handleGoalDelete,
+  handleConflictAnalysis,
+  handleAmendmentSuggestions
+} from './goal-operations.ts';
 
-export async function executeGoalTool(execution: ToolExecution): Promise<ToolResult> {
-  const { action, goal_id, title, description, goal_type, frequency, target_value } = execution.parameters;
-  
-  try {
-    switch (action) {
-      case 'create':
-        return await createGoal(execution, { title, description, goal_type, frequency, target_value });
-      case 'update':
-        return await updateGoal(execution, goal_id, { title, description, frequency, target_value });
-      case 'list':
-        return await listGoals(execution);
-      case 'get':
-        return await getGoal(execution, goal_id);
-      case 'delete':
-        return await deleteGoal(execution, goal_id);
-      case 'complete':
-        return await completeGoal(execution, goal_id);
-      default:
-        throw new Error(`Unknown goal action: ${action}`);
+export class GoalToolImplementation {
+  private _coachingService: GoalCoachingService | null = null;
+
+  private get coachingService(): GoalCoachingService {
+    if (!this._coachingService) {
+      this._coachingService = new GoalCoachingService();
     }
-  } catch (error) {
-    return createErrorResult(execution, error.message);
+    return this._coachingService;
   }
-}
 
-async function createGoal(execution: ToolExecution, goalData: any): Promise<ToolResult> {
-  const { data, error } = await createGoalInDB(execution, goalData);
-  if (error) throw error;
-  return createToolResult(execution, { goal: data }, `Goal "${goalData.title}" created successfully`);
-}
+  static async executeGoalTool(
+    toolExecution: ToolExecution,
+    userId: string,
+    platform: Platform
+  ): Promise<ToolResult> {
+    const implementation = new GoalToolImplementation();
+    const { action } = toolExecution.parameters;
+    const startTime = performance.now();
 
-async function updateGoal(execution: ToolExecution, goalId: string, updates: any): Promise<ToolResult> {
-  const { data, error } = await updateGoalInDB(execution, goalId, updates);
-  if (error) throw error;
-  return createToolResult(execution, { goal: data }, 'Goal updated successfully');
-}
+    try {
+      let result;
 
-async function listGoals(execution: ToolExecution): Promise<ToolResult> {
-  const { data, error } = await getActiveGoalsFromDB(execution);
-  if (error) throw error;
-  return createToolResult(execution, { goals: data || [], count: data?.length || 0 });
-}
+      switch (action) {
+        case 'create':
+          result = await handleGoalCreate(toolExecution, userId, platform);
+          break;
+        case 'update':
+          result = await handleGoalUpdate(toolExecution, userId, platform);
+          break;
+        case 'list':
+          result = await handleGoalList(toolExecution, userId, platform);
+          break;
+        case 'delete':
+          result = await handleGoalDelete(toolExecution, userId, platform);
+          break;
+        case 'analyze_conflicts':
+          result = await handleConflictAnalysis(toolExecution, userId, platform);
+          break;
+        case 'suggest_amendments':
+          result = await handleAmendmentSuggestions(toolExecution, userId, platform);
+          break;
+        default:
+          throw new Error(`Unknown goal action: ${action}`);
+      }
 
-async function getGoal(execution: ToolExecution, goalId: string): Promise<ToolResult> {
-  const { data, error } = await getGoalFromDB(execution, goalId);
-  if (error) throw error;
-  return createToolResult(execution, { goal: data });
-}
+      return {
+        tool_name: toolExecution.tool_name,
+        success: true,
+        data: result,
+        execution_time_ms: performance.now() - startTime,
+        platform
+      };
 
-async function deleteGoal(execution: ToolExecution, goalId: string): Promise<ToolResult> {
-  const { error } = await deleteGoalFromDB(execution, goalId);
-  if (error) throw error;
-  return createToolResult(execution, {}, 'Goal deleted successfully');
-}
+    } catch (error) {
+      console.error(`❌ Goal tool execution failed:`, error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      
+      return {
+        tool_name: toolExecution.tool_name,
+        success: false,
+        error: errorMessage,
+        execution_time_ms: performance.now() - startTime,
+        platform
+      };
+    }
+  }
 
-async function completeGoal(execution: ToolExecution, goalId: string): Promise<ToolResult> {
-  const { error } = await completeGoalInDB(execution, goalId);
-  if (error) throw error;
-  return createToolResult(execution, {}, 'Goal completed successfully');
+  static async executeEnhancedCoaching(
+    toolExecution: ToolExecution,
+    userId: string,
+    platform: Platform
+  ): Promise<ToolResult> {
+    const implementation = new GoalToolImplementation();
+    return implementation.handleEnhancedCoaching(toolExecution, userId, platform);
+  }
+
+  private async handleEnhancedCoaching(
+    toolExecution: ToolExecution,
+    userId: string,
+    platform: Platform
+  ): Promise<ToolResult> {
+    const startTime = performance.now();
+    const params = toolExecution.parameters;
+
+    try {
+      // Get user's current goals for context
+      const goalsResult = await handleGoalList(toolExecution, userId, platform);
+      const userGoals = goalsResult?.goals || [];
+
+      // Generate expert coaching response
+      const coachingResponse = await this.coachingService.generateExpertCoachingResponse(
+        params.message,
+        params.domain,
+        params.depth_level,
+        params.coaching_type,
+        params.follow_up_context,
+        params.specificity_needed,
+        params.conversation_progression,
+        params.unresolved_needs || [],
+        userGoals
+      );
+
+      return {
+        tool_name: toolExecution.tool_name,
+        success: true,
+        data: {
+          coaching_response: coachingResponse,
+          domain: params.domain,
+          depth_level: params.depth_level,
+          coaching_type: params.coaching_type,
+          goals_context: userGoals.length
+        },
+        execution_time_ms: performance.now() - startTime,
+        platform
+      };
+
+    } catch (error) {
+      console.error('❌ Enhanced coaching execution failed:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      
+      return {
+        tool_name: toolExecution.tool_name,
+        success: false,
+        error: errorMessage,
+        execution_time_ms: performance.now() - startTime,
+        platform
+      };
+    }
+  }
 } 

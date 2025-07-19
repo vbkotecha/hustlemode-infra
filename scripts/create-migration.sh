@@ -167,8 +167,8 @@ Expected Schema Version: ${version}
 Migration Type: ${migration_type^^}
 Changes: TODO - Document changes made
 Next Steps: 
-1. Test migration locally: supabase db reset
-2. Deploy to production: supabase db push
+1. Test migration locally: supabase db reset --yes
+2. Deploy to production: supabase db push --yes
 3. Verify with health check: curl /health endpoint
 ============================================================================
 */
@@ -220,8 +220,8 @@ main() {
     echo -e "${BLUE}📋 Next Steps:${NC}"
     echo -e "   1. Edit the migration file: ${filename}"
     echo -e "   2. Add your SQL changes in the marked section"
-    echo -e "   3. Test locally: ${YELLOW}supabase db reset${NC}"
-    echo -e "   4. Deploy: ${YELLOW}supabase db push${NC}"
+    echo -e "   3. Test locally: ${YELLOW}supabase db reset --yes${NC}"
+    echo -e "   4. Deploy: ${YELLOW}supabase db push --yes${NC}"
     echo -e "   5. Verify: ${YELLOW}curl https://your-project.supabase.co/functions/v1/health${NC}"
     echo ""
     echo -e "${YELLOW}⚠️  Remember to:${NC}"

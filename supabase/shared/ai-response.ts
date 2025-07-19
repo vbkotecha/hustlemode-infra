@@ -1,9 +1,16 @@
 // AI Response Generation Service - Main coordinator
 import { MemoryService } from './memory.ts';
 import { GroqService } from './groq.ts';
-import { getFallbackResponse } from './groq-fallbacks.ts';
+import { validateResponseLength } from './groq.ts';
 
-const groqService = new GroqService();
+// Lazy-loaded GroqService to prevent import-time initialization
+let _groqService: GroqService | null = null;
+function getGroqService(): GroqService {
+  if (!_groqService) {
+    _groqService = new GroqService();
+  }
+  return _groqService;
+}
 
 export async function generateAIResponse(
   message: string, 
@@ -26,10 +33,11 @@ export async function generateAIResponse(
 
     // Generate AI response using Groq
     const messages = [{ role: 'user' as const, content: prompt, timestamp: new Date().toISOString() }];
+    const groqService = getGroqService();
     const aiResponse = await groqService.getChatCompletion(messages, personality);
     
     if (!aiResponse) {
-      return getFallbackResponse(personality);
+      return groqService.getFallbackResponse(personality);
     }
 
     // Store conversation in memory
@@ -48,15 +56,15 @@ export async function generateAIResponse(
 
   } catch (error) {
     console.error('❌ AI generation error:', error);
-    return getFallbackResponse(personality);
+    return groqService.getFallbackResponse(personality);
   }
 }
 
 function buildPrompt(message: string, context: string, personality: 'taskmaster' | 'cheerleader'): string {
   const personalityPrompts = {
-    taskmaster: `You are David Goggins, the ultimate tough love coach. Be BRUTAL, direct, and uncompromising. No excuses, no sympathy - just pure motivation and accountability. Keep responses 8-12 words max. Examples: "Stop making excuses. Get after it NOW." or "Weak mindset. Do better. No shortcuts."`,
+    taskmaster: `You are HustleMode, a no-nonsense accountability coach. Be direct, motivational, and action-focused. Keep responses 8-12 words max. Examples: "Goal updated! Now execute daily! 💪" or "No excuses. Take action today! 🎯"`,
     
-    cheerleader: `You are an enthusiastic, positive coach who celebrates every win. Be encouraging, energetic, and supportive while maintaining accountability. Keep responses 8-12 words max. Examples: "Amazing progress! Keep that momentum going!" or "You've got this! One step closer!"`
+    cheerleader: `You are HustleMode in cheerleader mode - enthusiastic and encouraging while maintaining accountability. Keep responses 8-12 words max. Examples: "Amazing progress! Keep that momentum going! ✨" or "You've got this! One step closer! 🎉"`
   };
 
   return `${personalityPrompts[personality]}
@@ -66,5 +74,5 @@ ${context || 'First conversation with this user.'}
 
 User's current message: "${message}"
 
-Respond with brutal honesty and motivation in exactly 8-12 words. Stay in character.`;
+Respond with direct motivation in exactly 8-12 words. Stay focused on goals and action.`;
 } 

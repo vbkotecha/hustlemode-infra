@@ -1,6 +1,6 @@
 ---
-description: "Resource management rules - NEVER delete any resources without explicit user approval"
-globs: "**/*"
+description: "CRITICAL: Never delete resources without explicit user approval - databases, functions, files"
+globs: ["**/*"]
 alwaysApply: true
 ---
 

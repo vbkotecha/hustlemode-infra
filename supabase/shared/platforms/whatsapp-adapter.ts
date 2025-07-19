@@ -3,6 +3,7 @@
 
 import type { ToolResult, Platform, PlatformResponse } from '../tools/types.ts';
 import { WhatsAppFormatters } from './whatsapp-formatters.ts';
+import { ResponseConstraints } from './response-constraints.ts';
 
 export class WhatsAppAdapter {
   static formatToolResults(
@@ -11,7 +12,11 @@ export class WhatsAppAdapter {
     personality: 'taskmaster' | 'cheerleader'
   ): PlatformResponse {
     if (toolResults.length === 0) {
-      return { text: aiResponse, metadata: { tools_used: 0 } };
+      // Allow longer responses for enhanced coaching (up to 50 words)
+      const responseText = aiResponse.split(' ').length <= 50 
+        ? aiResponse 
+        : ResponseConstraints.getFallbackMessage(personality);
+      return { text: responseText, metadata: { tools_used: 0 } };
     }
 
     const enhancedResponse = this.enhanceResponseWithToolContext(aiResponse, toolResults, personality);
@@ -31,8 +36,8 @@ export class WhatsAppAdapter {
     toolResults: ToolResult[],
     personality: 'taskmaster' | 'cheerleader'
   ): string {
-    // Use AI response if within word limit
-    if (aiResponse.split(' ').length <= 12) return aiResponse;
+    // Use AI response if within enhanced word limit for coaching
+    if (aiResponse.split(' ').length <= 50) return aiResponse;
 
     // Generate tool-specific response
     for (const result of toolResults) {
@@ -42,28 +47,56 @@ export class WhatsAppAdapter {
       }
     }
 
-    return WhatsAppFormatters.getFallbackResponse(personality);
+    return ResponseConstraints.getFallbackMessage(personality);
   }
 
   private static generateToolSpecificResponse(
     result: ToolResult,
     personality: 'taskmaster' | 'cheerleader'
   ): string | null {
-    return WhatsAppFormatters.generateToolResponse(result.tool_name, result.data, personality);
+    // Use WhatsAppFormatters for tool-specific formatting
+    const formatterResponse = WhatsAppFormatters.formatToolResults([result], '', personality);
+    return formatterResponse.text || null;
   }
 
   // Formatting methods moved to WhatsAppFormatters class
 
-  static shouldUseFastPath(message: string): boolean {
-    // Simple messages that don't need tool processing
-    const simplePatterns = [
-      /^(hi|hey|hello|yo)$/i,
-      /^(thanks|thank you)$/i,
-      /^(ok|okay|got it)$/i,
-      /^(yes|no|yeah|nah)$/i
-    ];
-    
-    return simplePatterns.some(pattern => pattern.test(message.trim()));
+  static async shouldUseFastPath(message: string): Promise<boolean> {
+    // ✅ SEMANTIC LLM ANALYSIS - No regex patterns
+    const analysisPrompt = `
+Analyze if this message requires simple vs complex processing:
+
+Message: "${message}"
+
+Is this a simple greeting/casual message that can be handled with basic AI response, or does it require complex tool processing (goals, preferences, etc.)?
+
+Respond in JSON:
+{
+  "isSimpleMessage": boolean,
+  "messageType": "greeting|casual|question|goal_related|preference|complex",
+  "reasoning": "why this message is simple or complex"
+}
+
+Simple messages: greetings, casual chat, basic questions
+Complex messages: goal management, preference changes, progress tracking`;
+
+    try {
+      const { GroqService } = await import('../groq.ts');
+      const groqService = new GroqService();
+      
+      const response = await groqService.getChatCompletion([{
+        role: 'user',
+        content: analysisPrompt,
+        timestamp: new Date().toISOString()
+      }], 'taskmaster', 120);
+
+      const analysis = JSON.parse(response.replace(/```json\n?|\n?```/g, ''));
+      return analysis.isSimpleMessage;
+    } catch (error) {
+      console.error('❌ Fast path LLM analysis failed:', error);
+      // Conservative fallback - use complex path when unsure
+      return false;
+    }
   }
 
   static extractPlatformMetadata(message: string): Record<string, any> {

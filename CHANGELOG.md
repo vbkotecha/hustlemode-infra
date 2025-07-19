@@ -1,5 +1,22 @@
 # HustleMode.ai Changelog
 
+## [2.1.1] - 2025-01-14
+
+### 🐛 **CRITICAL BUG FIX**: LLM Semantic Analysis Fallback Issue Resolved
+
+**Issue**: WhatsApp accountability coach was responding with generic "Action taken. Keep pushing forward! 💪" instead of actually processing goal updates or providing intelligent responses.
+
+### Fixed
+- **LLM Semantic Analysis Failures**: Fixed silent failures in `message-analyzer.ts` where LLM errors were being caught and hidden
+- **Fallback Response Trigger**: Eliminated inappropriate fallback to generic responses when LLM analysis failed
+- **Error Handling**: Added comprehensive error logging and debugging for LLM analysis failures
+- **Judge/Eval/Orchestrator Pattern**: Ensured proper execution of semantic understanding instead of falling back to keyword matching
+
+### Technical Details
+- **Root Cause**: Error handling in `MessageAnalyzer.analyzeMessageForTools()` was silently failing
+- **Fix**: Enhanced error handling and LLM analysis reliability
+- **Impact**: System now provides intelligent responses instead of generic fallbacks
+
 ## [2.1.0] - 2024-12-19
 
 ### 🛡️ **MAJOR**: PERMANENT QUALITY ENFORCEMENT SYSTEM
@@ -1030,5 +1047,45 @@ hustlemode-infra/
 - **Improves Team Coordination**: Clear migration history and rollback procedures
 - **Reduces Deployment Risk**: Testing workflow and production safety measures
 - **Documentation Consistency**: Standardized templates and automated documentation
+
+--- 
+
+## [2.0.0] - 2025-01-11
+
+### 🎯 **System Prompt v2.0.0 - Response Coherence Fix**
+
+#### Added
+- ✅ **Versioned System Prompts**: Created `docs/system-prompts/v2.0.0.md` for proper version control
+- ✅ **Clear HustleMode Identity**: Established professional accountability coach persona
+- ✅ **Response Pattern Standards**: Defined formats for goal updates, listings, and boundaries
+- ✅ **Direct Goal Execution**: Goals update immediately without coaching hesitation
+- ✅ **Caching Disabled**: Real-time goal updates without cache delays
+
+#### Fixed  
+- 🚫 **Incoherent Responses**: Eliminated mixed response formatting (e.g., goal list + quoted text)
+- 🚫 **David Goggins Confusion**: Removed inconsistent persona references
+- 🚫 **Response Verbosity**: Enforced strict 8-12 word responses
+- 🚫 **Generic Fallbacks**: Responses now reference actual user goals specifically
+
+#### Changed
+- **System Prompt Structure**: Redesigned based on professional chatbot standards
+- **Goal Update Flow**: Direct execution instead of coaching evaluation
+- **Response Templates**: Clear patterns for different scenarios
+- **Error Boundaries**: Professional redirection instead of harsh rejection
+
+#### Technical
+- **LLM Semantic Understanding**: Maintained Judge/Eval/Orchestrator pattern (no keyword shortcuts)
+- **Database Updates**: Goal titles and target values update correctly 
+- **WhatsApp Integration**: Clean, actionable responses for mobile messaging
+- **Performance**: Removed caching bottlenecks for real-time updates
+
+#### Examples
+```
+Before: "Your goals: walk 20000 steps... \"20000 steps already set, now crush it!\""
+After:  "Walking goal updated to 22000 steps. Execute daily! 💪"
+
+Before: "20k steps is too ambitious, try 15k first?"  
+After:  "Walking goal updated to 20k steps! Execute! 🎯"
+```
 
 --- 

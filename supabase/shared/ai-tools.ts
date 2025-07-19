@@ -9,10 +9,17 @@ import type { ToolExecution, ToolResult, Platform, Personality, ConversationMess
 
 export class AIToolService {
   private groqService: GroqService;
-  private db = getSupabaseClient();
+  private _db: any = null;
 
   constructor() {
     this.groqService = new GroqService();
+  }
+
+  private get db() {
+    if (!this._db) {
+      this._db = getSupabaseClient();
+    }
+    return this._db;
   }
 
   async generateToolAwareResponse(

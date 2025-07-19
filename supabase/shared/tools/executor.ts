@@ -1,17 +1,15 @@
 // Tool Execution Engine
 import type { ToolExecution, ToolResult, ToolName } from './types.ts';
 import { TOOL_DEFINITIONS } from './definitions.ts';
-import { getCachedToolResult, setCachedToolResult, generateCacheKey } from './cache.ts';
-import { executeGoalTool } from './implementations/goal-tools.ts';
+import { GoalToolImplementation } from './implementations/goal-tools.ts';
 import { executeProgressTool } from './implementations/progress-tools.ts';
 import { executePreferencesTool } from './implementations/preference-tools.ts';
-import { validateParameters, createErrorResult, executeScheduleTool, executeAnalysisTool } from './utils.ts';
+import { validateParameters, createErrorResult } from './utils.ts';
 
 const TOOL_HANDLERS: Record<ToolName, (execution: ToolExecution) => Promise<ToolResult>> = {
-  'manage_goal': executeGoalTool,
+  'manage_goal': (execution) => GoalToolImplementation.executeGoalTool(execution, execution.user_id, execution.platform),
+  'enhanced_coaching': (execution) => GoalToolImplementation.executeGoalTool(execution, execution.user_id, execution.platform),
   'get_progress': executeProgressTool,
-  'schedule_checkin': executeScheduleTool,
-  'analyze_patterns': executeAnalysisTool,
   'update_preferences': executePreferencesTool,
 };
 
@@ -29,15 +27,7 @@ export async function executeTool(execution: ToolExecution): Promise<ToolResult>
     return createErrorResult(execution, validationError, startTime);
   }
 
-  // Check cache first
-  if (toolDef.cache_ttl) {
-    const cacheKey = generateCacheKey(execution);
-    const cachedResult = await getCachedToolResult(execution, cacheKey);
-    if (cachedResult) {
-      console.log(`✅ Tool cache hit: ${execution.tool_name}`);
-      return cachedResult;
-    }
-  }
+  // Cache system removed - direct execution only
 
   try {
     // Execute tool
@@ -48,15 +38,11 @@ export async function executeTool(execution: ToolExecution): Promise<ToolResult>
     result.execution_time_ms = performance.now() - startTime;
     console.log(`✅ Tool completed: ${execution.tool_name} (${result.execution_time_ms.toFixed(1)}ms)`);
 
-    // Cache result if configured
-    if (toolDef.cache_ttl && result.success) {
-      await setCachedToolResult(execution, result, toolDef.cache_ttl);
-    }
-
     return result;
   } catch (error) {
     console.error(`❌ Tool execution failed: ${execution.tool_name}`, error);
-    return createErrorResult(execution, error.message, startTime);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return createErrorResult(execution, errorMessage, startTime);
   }
 }
 

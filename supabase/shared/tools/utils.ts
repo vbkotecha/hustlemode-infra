@@ -41,23 +41,4 @@ export function createToolResult(
   };
 }
 
-// Placeholder implementations for future tools
-export async function executeScheduleTool(execution: ToolExecution): Promise<ToolResult> {
-  return { 
-    tool_name: execution.tool_name, 
-    success: true, 
-    data: { scheduled: true }, 
-    execution_time_ms: 0, 
-    platform: execution.platform 
-  };
-}
-
-export async function executeAnalysisTool(execution: ToolExecution): Promise<ToolResult> {
-  return { 
-    tool_name: execution.tool_name, 
-    success: true, 
-    data: { analysis: 'placeholder' }, 
-    execution_time_ms: 0, 
-    platform: execution.platform 
-  };
-} 
+// Placeholder implementations removed - only real tools supported 

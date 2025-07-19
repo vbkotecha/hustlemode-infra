@@ -10,7 +10,14 @@ import {
   calculateProgressSummary 
 } from './progress-utils.ts';
 
-const db = getSupabaseClient();
+// Lazy-loaded database client
+let _db: any = null;
+function getDb() {
+  if (!_db) {
+    _db = getSupabaseClient();
+  }
+  return _db;
+}
 
 export async function executeProgressTool(execution: ToolExecution): Promise<ToolResult> {
   const { time_period = 'week', goal_id, include_checkins = true } = execution.parameters;
@@ -22,7 +29,7 @@ export async function executeProgressTool(execution: ToolExecution): Promise<Too
       return await getAllGoalsProgress(execution, time_period, include_checkins);
     }
   } catch (error) {
-    return createErrorResult(execution, error.message);
+    return createErrorResult(execution, error instanceof Error ? error.message : 'Unknown error');
   }
 }
 
@@ -32,7 +39,7 @@ async function getGoalProgress(
   timePeriod: string,
   includeCheckins: boolean
 ): Promise<ToolResult> {
-  const { data: goal, error: goalError } = await db
+  const { data: goal, error: goalError } = await getDb()
     .from('user_goals')
     .select('*')
     .eq('id', goalId)
@@ -48,7 +55,7 @@ async function getGoalProgress(
 
   if (includeCheckins) {
     const dateFilter = getDateFilter(timePeriod);
-    const { data: checkins } = await db
+    const { data: checkins } = await getDb()
       .from('goal_check_ins')
       .select('*')
       .eq('goal_id', goalId)
@@ -68,7 +75,7 @@ async function getAllGoalsProgress(
   timePeriod: string,
   includeCheckins: boolean
 ): Promise<ToolResult> {
-  const { data: goals, error } = await db.rpc('get_user_active_goals', { p_user_id: execution.user_id });
+  const { data: goals, error } = await getDb().rpc('get_user_active_goals', { p_user_id: execution.user_id });
   if (error) throw error;
 
   const progressSummary = calculateProgressSummary(goals);

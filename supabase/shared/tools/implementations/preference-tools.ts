@@ -4,7 +4,14 @@
 import { getSupabaseClient } from '../../database/index.ts';
 import type { ToolExecution, ToolResult } from '../types.ts';
 
-const db = getSupabaseClient();
+// Lazy-loaded database client
+let _db: any = null;
+function getDb() {
+  if (!_db) {
+    _db = getSupabaseClient();
+  }
+  return _db;
+}
 
 export async function executePreferencesTool(execution: ToolExecution): Promise<ToolResult> {
   const { 
@@ -27,7 +34,7 @@ export async function executePreferencesTool(execution: ToolExecution): Promise<
     if (quiet_hours_start !== undefined) updates.quiet_hours_start = quiet_hours_start;
     if (quiet_hours_end !== undefined) updates.quiet_hours_end = quiet_hours_end;
 
-    const { data, error } = await db
+    const { data, error } = await getDb()
       .from('user_preferences')
       .update(updates)
       .eq('user_id', execution.user_id)
@@ -51,7 +58,7 @@ export async function executePreferencesTool(execution: ToolExecution): Promise<
     return {
       tool_name: execution.tool_name,
       success: false,
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
       execution_time_ms: 0,
       platform: execution.platform
     };

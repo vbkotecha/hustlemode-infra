@@ -1,50 +1,71 @@
-// Session Context Builder - Always loads current user state for accountability coaching
-import { getSupabaseClient } from '../database/index.ts';
-import type { ConversationMessage, Personality } from '../tools/types.ts';
+// Refactored Session Context - Using extracted modules
+import { ConversationStateAnalyzer, ConversationState } from './conversation-state.ts';
+import { AccountabilityBuilder } from './accountability-builder.ts';
+import type { ConversationMessage } from '../tools/types.ts';
 
 export interface AccountabilityContext {
-  currentGoals: Goal[];
+  currentGoals: any[];
   goalCount: number;
   recentActivity: string;
   conversationContext: string;
-}
-
-interface Goal {
-  id: string;
-  title: string;
-  goal_type: string;
-  status: string;
-  days_active: number;
+  // Enhanced conversation intelligence
+  conversationState: ConversationState;
+  unresolvedNeeds: string[];
+  conversationProgression: 'start' | 'continue' | 'deep_dive' | 'switching_topics' | 'wrapping_up';
 }
 
 export class SessionContextBuilder {
-  private db = getSupabaseClient();
+  private stateAnalyzer = new ConversationStateAnalyzer();
+  private accountabilityBuilder = new AccountabilityBuilder();
 
-  async buildAccountabilityContext(userId: string, conversationMemory?: string): Promise<AccountabilityContext> {
-    console.log(`🎯 Building accountability context for user ${userId}`);
-    
+  async buildAccountabilityContext(
+    userId: string, 
+    conversationMemory?: string,
+    currentMessage?: string
+  ): Promise<AccountabilityContext> {
     try {
-      // Always load current goals fresh from database
-      const { data: goals, error } = await this.db.rpc('get_user_active_goals', { 
-        p_user_id: userId 
-      });
+      // Get user's current active goals
+      const goals = await this.accountabilityBuilder.fetchUserGoals(userId);
       
-      if (error) {
-        console.error('❌ Failed to load goals:', error);
+      if (!conversationMemory || !currentMessage) {
         return this.buildEmptyContext(conversationMemory);
       }
-      
-      const currentGoals = goals || [];
-      console.log(`📋 Loaded ${currentGoals.length} active goals`);
-      
+
+      // Analyze conversation state using extracted module
+      const conversationState = await this.stateAnalyzer.analyzeConversationState(
+        conversationMemory,
+        currentMessage,
+        goals
+      );
+
+      // Identify unresolved needs
+      const unresolvedNeeds = await this.stateAnalyzer.identifyUnresolvedNeeds(
+        conversationMemory,
+        currentMessage,
+        conversationState
+      );
+
+      // Determine conversation progression
+      const conversationProgression = await this.stateAnalyzer.determineConversationProgression(
+        conversationMemory,
+        currentMessage,
+        conversationState
+      );
+
+      const activitySummary = this.accountabilityBuilder.buildActivitySummary(goals);
+
       return {
-        currentGoals,
-        goalCount: currentGoals.length,
-        recentActivity: this.buildActivitySummary(currentGoals),
-        conversationContext: conversationMemory || ''
+        currentGoals: goals,
+        goalCount: goals.length,
+        recentActivity: activitySummary,
+        conversationContext: conversationMemory.slice(-500), // Keep recent context
+        conversationState,
+        unresolvedNeeds,
+        conversationProgression
       };
+
     } catch (error) {
-      console.error('❌ Context building error:', error);
+      console.error('❌ Failed to build accountability context:', error);
       return this.buildEmptyContext(conversationMemory);
     }
   }
@@ -52,49 +73,59 @@ export class SessionContextBuilder {
   buildContextualMessage(
     message: string,
     context: AccountabilityContext,
-    personality: Personality
+    personality: 'taskmaster' | 'cheerleader'
   ): ConversationMessage[] {
-    console.log('📝 Building contextual message with accountability data');
+    const conversationIntelligence = this.accountabilityBuilder.formatConversationIntelligence(
+      context.conversationState,
+      context.unresolvedNeeds,
+      context.conversationProgression
+    );
     
-    // Build accountability-aware prompt
-    const accountabilityInfo = this.formatAccountabilityInfo(context);
-    const contextualContent = [
-      accountabilityInfo,
-      context.conversationContext,
-      `User message: "${message}"`
-    ].filter(Boolean).join('\n\n');
-    
-    console.log('🎯 Accountability context:', accountabilityInfo);
-    
-    return [{
-      role: 'user',
-      content: contextualContent,
-      timestamp: new Date().toISOString()
-    }];
-  }
+    const accountabilityInfo = this.accountabilityBuilder.formatAccountabilityInfo(
+      context.goalCount,
+      context.currentGoals,
+      context.recentActivity
+    );
 
-  private formatAccountabilityInfo(context: AccountabilityContext): string {
-    if (context.goalCount === 0) {
-      return 'USER STATUS: No active goals set. User needs to create goals first.';
-    }
-    
-    const goalTitles = context.currentGoals.map(g => g.title).join(', ');
-    return `USER STATUS: ${context.goalCount} active goals - ${goalTitles}. Provide accountability based on these current goals.`;
-  }
+    const systemPrompt = `You are a ${personality} accountability coach. 
 
-  private buildActivitySummary(goals: Goal[]): string {
-    if (goals.length === 0) return 'No active goals';
-    
-    const avgDays = Math.round(goals.reduce((sum, g) => sum + g.days_active, 0) / goals.length);
-    return `${goals.length} goals, average ${avgDays} days active`;
+${conversationIntelligence}
+
+${accountabilityInfo}
+
+Respond in exactly 8-12 words: ultra-concise, actionable coaching that drives immediate action.`;
+
+    return [
+      {
+        role: 'system',
+        content: systemPrompt,
+        timestamp: new Date().toISOString()
+      },
+      {
+        role: 'user',
+        content: message,
+        timestamp: new Date().toISOString()
+      }
+    ];
   }
 
   private buildEmptyContext(conversationMemory?: string): AccountabilityContext {
     return {
       currentGoals: [],
       goalCount: 0,
-      recentActivity: 'No goals set',
-      conversationContext: conversationMemory || ''
+      recentActivity: 'No recent activity',
+      conversationContext: conversationMemory?.slice(-500) || '',
+      conversationState: {
+        currentTopic: 'general',
+        depthLevel: 'surface',
+        lastCoachingType: 'informational',
+        pendingFollowUp: false,
+        lastDomain: 'general',
+        conversationTurns: 1,
+        needsDeepDive: false
+      },
+      unresolvedNeeds: [],
+      conversationProgression: 'start'
     };
   }
 } 

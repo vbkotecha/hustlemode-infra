@@ -20,6 +20,9 @@ MAX_HANDLER_LINES=120
 MAX_UTIL_LINES=60
 MIN_TEST_COVERAGE=80
 
+# ENFORCEMENT: Always treat violations as blocking
+ENFORCE_STRICT=true
+
 # Counters
 VIOLATIONS=0
 WARNINGS=0
@@ -64,25 +67,25 @@ done
 
 # Check Shared Module files
 echo "  Checking Shared Modules (max $MAX_SHARED_LINES lines)..."
-find supabase/shared -name "*.ts" -not -path "*/types.ts" -not -name "index.ts" 2>/dev/null | while read -r file; do
+while IFS= read -r file; do
     if [[ -f "$file" ]]; then
         lines=$(wc -l < "$file" 2>/dev/null || echo "0")
         if [[ $lines -gt $MAX_SHARED_LINES ]]; then
             report_violation "ERROR" "File $file has $lines lines (max $MAX_SHARED_LINES)"
         fi
     fi
-done
+done < <(find supabase/shared -name "*.ts" -not -path "*/types.ts" -not -name "index.ts" 2>/dev/null)
 
 # Check Handler files
 echo "  Checking Handler files (max $MAX_HANDLER_LINES lines)..."
-find supabase/functions -name "handlers.ts" 2>/dev/null | while read -r file; do
+while IFS= read -r file; do
     if [[ -f "$file" ]]; then
         lines=$(wc -l < "$file" 2>/dev/null || echo "0")
         if [[ $lines -gt $MAX_HANDLER_LINES ]]; then
             report_violation "ERROR" "File $file has $lines lines (max $MAX_HANDLER_LINES)"
         fi
     fi
-done
+done < <(find supabase/functions -name "handlers.ts" 2>/dev/null)
 
 report_success "File size check completed"
 echo ""
@@ -226,6 +229,7 @@ if [[ $VIOLATIONS -eq 0 ]]; then
     report_success "All critical checks passed! ✨"
 else
     echo -e "${RED}❌ Found $VIOLATIONS critical violations${NC}"
+    echo -e "${RED}🚫 BLOCKING: Cannot proceed with violations${NC}"
 fi
 
 if [[ $WARNINGS -gt 0 ]]; then
@@ -235,11 +239,12 @@ fi
 echo ""
 echo -e "${PURPLE}Code Quality Score: $((100 - VIOLATIONS * 20 - WARNINGS * 5))%${NC}"
 
-# Exit with error if violations found (strict mode includes warnings)
+# Exit with error if violations found (ALWAYS BLOCKING)
 if [[ $VIOLATIONS -gt 0 ]]; then
     echo ""
     echo -e "${RED}🚫 Code quality check FAILED${NC}"
     echo -e "${YELLOW}Fix critical violations before committing/deploying${NC}"
+    echo -e "${RED}BLOCKING: Cannot proceed with $VIOLATIONS violations${NC}"
     exit 1
 elif [[ "$STRICT_MODE" == "--strict" && $WARNINGS -gt 0 ]]; then
     echo ""
