@@ -1,3 +1,9 @@
+---
+description: "Supabase deployment standards - quality checks, proper commands, environment management"
+globs: ["supabase/**/*", "scripts/deploy-*.sh", ".github/workflows/*.yml", "deployment-config.json"]
+alwaysApply: true
+---
+
 # HustleMode.ai Supabase Deployment Rules
 
 ## 🛡️ CRITICAL: Quality Enforcement Integration
@@ -52,15 +58,20 @@
 
 ### Individual Function Deployment (With Quality Checks)
 ```bash
-# Quality checks integrated into all deployment paths
-supabase functions deploy health    # ≤100 lines enforced
-supabase functions deploy chat      # ≤100 lines enforced  
-supabase functions deploy whatsapp  # ≤100 lines enforced
+# ALWAYS use deployment script for quality-checked deployment
+./scripts/deploy-supabase.sh
+
+# Script automatically handles:
+# → Quality checks before deployment
+# → File size validation per code-quality-enforcement.mdc  
+# → Duplication detection
+# → TypeScript compilation
+# → Individual function deployment with proper flags
 ```
 
 ### Quality Gate Requirements (CANNOT BYPASS)
-- **File Size Validation**: Edge functions ≤100 lines, shared modules ≤80 lines
-- **Duplication Detection**: Zero tolerance for duplicate code
+- **File Size Validation**: Per code-quality-enforcement.mdc (Edge functions ≤100 lines, shared modules ≤80 lines)
+- **Duplication Detection**: Per code-quality-enforcement.mdc (Zero tolerance for duplicate code)
 - **Organization Check**: Proper directory structure required
 - **TypeScript Compilation**: All functions must compile without errors
 - **Import Validation**: No circular dependencies allowed
@@ -68,32 +79,34 @@ supabase functions deploy whatsapp  # ≤100 lines enforced
 ## 🔧 Quality-Controlled Project Structure
 
 ### Enforced Structure (Validated Automatically)
+**File Size Limits**: See code-quality-enforcement.mdc for specific line limits per file type
+
 ```
 supabase/
 ├── functions/
 │   ├── health/
-│   │   └── index.ts          # ≤100 lines - routing only
+│   │   └── index.ts          # Routing only (size limits enforced)
 │   ├── chat/
-│   │   ├── index.ts          # ≤100 lines - routing only
-│   │   └── handlers.ts       # ≤120 lines - business logic
+│   │   ├── index.ts          # Routing only (size limits enforced)
+│   │   └── handlers.ts       # Business logic (size limits enforced)
 │   └── whatsapp/
-│       ├── index.ts          # ≤100 lines - routing only
-│       └── handlers.ts       # ≤120 lines - business logic
+│       ├── index.ts          # Routing only (size limits enforced)
+│       └── handlers.ts       # Business logic (size limits enforced)
 ├── shared/
-│   ├── ai.ts                 # ≤80 lines - AI generation
-│   ├── users.ts              # ≤80 lines - user operations
-│   ├── config.ts             # ≤80 lines - configuration
+│   ├── ai.ts                 # AI generation (size limits enforced)
+│   ├── users.ts              # User operations (size limits enforced)
+│   ├── config.ts             # Configuration (size limits enforced)
 │   ├── database/
-│   │   ├── index.ts          # ≤20 lines - exports only
-│   │   ├── client.ts         # ≤80 lines - client management
-│   │   ├── users.ts          # ≤80 lines - user operations
-│   │   └── health.ts         # ≤80 lines - health checks
+│   │   ├── index.ts          # Exports only (size limits enforced)
+│   │   ├── client.ts         # Client management (size limits enforced)
+│   │   ├── users.ts          # User operations (size limits enforced)
+│   │   └── health.ts         # Health checks (size limits enforced)
 │   └── utils/
-│       ├── index.ts          # ≤20 lines - exports only
-│       ├── responses.ts      # ≤60 lines - response helpers
-│       ├── validation.ts     # ≤60 lines - validation logic
-│       ├── text.ts           # ≤60 lines - text processing
-│       └── performance.ts    # ≤60 lines - performance monitoring
+│       ├── index.ts          # Exports only (size limits enforced)
+│       ├── responses.ts      # Response helpers (size limits enforced)
+│       ├── validation.ts     # Validation logic (size limits enforced)
+│       ├── text.ts           # Text processing (size limits enforced)
+│       └── performance.ts    # Performance monitoring (size limits enforced)
 ├── migrations/
 │   ├── 20241219_v1.0.0_baseline_schema.sql
 │   └── README.md
@@ -103,13 +116,13 @@ supabase/
 
 ### Quality Validation Rules (AUTOMATICALLY ENFORCED)
 - ✅ All functions must use TypeScript with no compilation errors
-- ✅ File size limits strictly enforced (see limits above)
-- ✅ Zero code duplication tolerance
+- ✅ **File size limits**: Enforced per code-quality-enforcement.mdc (Edge Functions ≤100 lines, Shared Modules ≤80 lines)
+- ✅ **Zero code duplication**: Enforced per code-quality-enforcement.mdc
 - ✅ Shared utilities must be in appropriate directories
 - ✅ Database schema managed through migration system
 - ✅ Import maps defined in `import_map.json`
-- ❌ Never exceed file size limits
-- ❌ Never duplicate code between modules
+- ❌ Never exceed file size limits (see code-quality-enforcement.mdc)
+- ❌ Never duplicate code between modules (see code-quality-enforcement.mdc)
 - ❌ Never deploy without passing quality checks
 
 ## 🚨 MANDATORY Quality-Enhanced Documentation Sync
@@ -229,8 +242,8 @@ MEM0_API_KEY=m0-px1OPjDmgZtUYoMwaNRUeGOL8nnoqT5zv8oUaDdj
 ## 🚫 Prohibited Patterns (AUTOMATICALLY BLOCKED)
 
 ### Quality System Prevents These:
-- ❌ **Files exceeding size limits** (automatically blocked)
-- ❌ **Code duplication** (pre-commit hooks prevent)
+- ❌ **Files exceeding size limits** (per code-quality-enforcement.mdc - automatically blocked)
+- ❌ **Code duplication** (per code-quality-enforcement.mdc - pre-commit hooks prevent)
 - ❌ **Poor organization** (directory structure validated)
 - ❌ **TypeScript errors** (compilation checked)
 - ❌ **Deployment without quality checks** (integrated into scripts)
@@ -255,14 +268,14 @@ MEM0_API_KEY=m0-px1OPjDmgZtUYoMwaNRUeGOL8nnoqT5zv8oUaDdj
 ### 🚨 AUTOMATED QUALITY GATES (CANNOT BYPASS):
 1. **Pre-Commit Hook**: Quality checks run automatically before every commit
 2. **Pre-Deploy Validation**: Quality checks integrated into all deployment scripts
-3. **File Size Enforcement**: Oversized files blocked immediately
+3. **File Size Enforcement**: Per code-quality-enforcement.mdc - oversized files blocked immediately
 4. **Duplication Prevention**: Copy-paste code blocked at commit time
 5. **TypeScript Validation**: Compilation errors prevent deployment
 6. **Organization Checks**: Directory structure validated automatically
 
 ### 🚫 AUTOMATIC DEPLOYMENT BLOCKERS:
-- ❌ **File size violations** (Edge functions >100 lines, modules >80 lines)
-- ❌ **Code duplication detected** (shared modules required)
+- ❌ **File size violations** (per code-quality-enforcement.mdc - Edge functions >100 lines, modules >80 lines)
+- ❌ **Code duplication detected** (per code-quality-enforcement.mdc - shared modules required)
 - ❌ **TypeScript compilation errors** in any function
 - ❌ **Improper file organization** (wrong directory structure)
 - ❌ **Missing migration versioning** for schema changes
@@ -307,7 +320,7 @@ MEM0_API_KEY=m0-px1OPjDmgZtUYoMwaNRUeGOL8nnoqT5zv8oUaDdj
 ### Quality Metrics (Continuously Monitored)
 - **File Size Compliance**: >95%
 - **Code Duplication**: 0%
-- **Test Coverage**: >80%
+- **Test Coverage**: 95%+ (aligned with sentinel-patterns.mdc)
 - **TypeScript Compilation**: 100%
 - **Architecture Adherence**: 100%
 
