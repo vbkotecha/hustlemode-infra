@@ -1,0 +1,42 @@
+{
+  "name": "hustlemode-infra",
+  "version": "1.0.0",
+  "description": "HustleMode.ai Infrastructure - Supabase Edge Functions with AI-powered coaching",
+  "scripts": {
+    "test": "deno test tests/unit/ --coverage=coverage",
+    "test:unit": "deno test tests/unit/ --coverage=coverage",
+    "test:integration": "deno test tests/integration/",
+    "test:evaluations": "deno test tests/evaluations/",
+    "test:performance": "deno test tests/integration/edge-functions/performance.test.ts",
+    "test:coverage": "deno coverage coverage --html",
+    "test:watch": "deno test tests/unit/ --watch",
+    "test:all": "deno test tests/ --parallel",
+    "deploy": "./scripts/deploy-supabase.sh",
+    "deploy:force": "./scripts/deploy-supabase.sh --force",
+    "health-check": "./scripts/health-check.sh",
+    "quality-check": "./scripts/code-quality-check.sh"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "deno": ">=1.40.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/hustlemode-infra.git"
+  },
+  "keywords": [
+    "ai",
+    "coaching",
+    "supabase",
+    "edge-functions",
+    "whatsapp",
+    "groq",
+    "typescript"
+  ],
+  "author": "HustleMode.ai Team",
+  "license": "MIT"
+} 

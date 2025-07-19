@@ -1,0 +1,63 @@
+{
+  "conversations": [
+    {
+      "id": "goal-setting-001",
+      "scenario": "User sets a fitness goal",
+      "messages": [
+        {
+          "user": "I want to workout 3 times a week",
+          "expected_tools": ["manage_goal"],
+          "expected_response_pattern": "goal_setting",
+          "personality": "cheerleader"
+        },
+        {
+          "user": "I completed my workout today",
+          "expected_tools": ["track_progress"],
+          "expected_response_pattern": "progress_celebration",
+          "personality": "cheerleader"
+        }
+      ]
+    },
+    {
+      "id": "goal-setting-002",
+      "scenario": "User sets a learning goal",
+      "messages": [
+        {
+          "user": "I want to read 20 books this year",
+          "expected_tools": ["manage_goal"],
+          "expected_response_pattern": "goal_setting",
+          "personality": "taskmaster"
+        },
+        {
+          "user": "I finished reading my first book",
+          "expected_tools": ["track_progress"],
+          "expected_response_pattern": "progress_acknowledgment",
+          "personality": "taskmaster"
+        }
+      ]
+    },
+    {
+      "id": "goal-setting-003",
+      "scenario": "User sets a financial goal",
+      "messages": [
+        {
+          "user": "I need to save $5000 by December",
+          "expected_tools": ["manage_goal"],
+          "expected_response_pattern": "goal_setting",
+          "personality": "cheerleader"
+        },
+        {
+          "user": "I saved $500 this month",
+          "expected_tools": ["track_progress"],
+          "expected_response_pattern": "progress_celebration",
+          "personality": "cheerleader"
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "description": "Test conversations for goal-setting workflows",
+    "version": "1.0.0",
+    "created": "2024-12-19T16:00:00Z"
+  }
+} 

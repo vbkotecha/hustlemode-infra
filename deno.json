@@ -1,0 +1,47 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "lib": ["deno.window"],
+    "strict": true
+  },
+  "importMap": "./supabase/functions/import_map.json",
+  "tasks": {
+    "test": "deno test tests/unit/ --coverage=coverage",
+    "test:unit": "deno test tests/unit/ --coverage=coverage",
+    "test:integration": "deno test tests/integration/",
+    "test:evaluations": "deno test tests/evaluations/",
+    "test:performance": "deno test tests/integration/edge-functions/performance.test.ts",
+    "test:coverage": "deno coverage coverage --html",
+    "test:watch": "deno test tests/unit/ --watch",
+    "test:all": "deno test tests/ --parallel",
+    "deploy": "./scripts/deploy-supabase.sh",
+    "deploy:force": "./scripts/deploy-supabase.sh --force",
+    "health-check": "./scripts/health-check.sh",
+    "quality-check": "./scripts/code-quality-check.sh"
+  },
+  "test": {
+    "include": ["tests/**/*.test.ts"],
+    "exclude": ["tests/fixtures/**/*"],
+    "coverage": {
+      "include": ["supabase/shared/**/*.ts", "supabase/functions/**/*.ts"],
+      "exclude": ["**/*.test.ts", "**/*.d.ts"],
+      "reporter": ["text", "html", "lcov"]
+    }
+  },
+  "lint": {
+    "include": ["supabase/**/*.ts", "tests/**/*.ts"],
+    "exclude": ["tests/fixtures/**/*"],
+    "rules": {
+      "tags": ["recommended"]
+    }
+  },
+  "fmt": {
+    "include": ["supabase/**/*.ts", "tests/**/*.ts"],
+    "exclude": ["tests/fixtures/**/*"],
+    "indentWidth": 2,
+    "lineWidth": 80,
+    "semiColons": true,
+    "singleQuote": true,
+    "proseWrap": "preserve"
+  }
+} 
