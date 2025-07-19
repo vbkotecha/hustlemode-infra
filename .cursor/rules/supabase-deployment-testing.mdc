@@ -1,3 +1,9 @@
+---
+description: "Supabase deployment and testing workflow - pre-deployment checks, testing protocols"
+globs: ["supabase/**/*", "scripts/**/*.sh", ".env*"]
+alwaysApply: true
+---
+
 # HustleMode.ai Supabase Deployment & Testing Rules
 
 ## 🎯 Overview
@@ -39,16 +45,15 @@ ENVIRONMENT=production
 
 ### Deployment Commands
 ```bash
-# Standard deployment (no JWT verification for webhooks)
-supabase functions deploy --no-verify-jwt
+# ALWAYS use deployment script (includes quality checks and proper flags)
+./scripts/deploy-supabase.sh
 
-# Individual function deployment
-supabase functions deploy health --no-verify-jwt
-supabase functions deploy chat --no-verify-jwt  
-supabase functions deploy whatsapp --no-verify-jwt
-
-# With explicit project reference
-supabase functions deploy --project-ref yzfclhnkxpgyxeklrvur --no-verify-jwt
+# Script automatically handles:
+# → Quality validation before deployment
+# → Proper --no-verify-jwt flags for webhooks
+# → Individual function deployment as needed
+# → Project reference configuration
+# → Environment variable verification
 ```
 
 ## 🔍 Testing Protocols
@@ -133,8 +138,8 @@ psql "postgresql://postgres:UTA_nxh7zcn2gmz_jkz@db.yzfclhnkxpgyxeklrvur.supabase
 **Root Cause**: Missing or incorrect function authentication
 **Solution**:
 ```bash
-# Deploy with --no-verify-jwt flag (CRITICAL for webhooks)
-supabase functions deploy --no-verify-jwt
+# Use deployment script (automatically includes --no-verify-jwt for webhooks)
+./scripts/deploy-supabase.sh
 
 # Verify webhook URL format (no auth tokens needed)
 # ✅ Correct: https://yzfclhnkxpgyxeklrvur.supabase.co/functions/v1/whatsapp
@@ -225,7 +230,7 @@ supabase functions logs --follow --project-ref yzfclhnkxpgyxeklrvur
 # Complete environment reset
 supabase link --project-ref yzfclhnkxpgyxeklrvur
 supabase db reset --linked --yes
-supabase functions deploy --no-verify-jwt
+./scripts/deploy-supabase.sh
 ```
 
 ### Verify All Systems
@@ -246,7 +251,7 @@ supabase secrets set WHATSAPP_TOKEN=new_token --project-ref yzfclhnkxpgyxeklrvur
 supabase secrets set GROQ_MODEL=meta-llama/llama-4-maverick-17b-128e-instruct --project-ref yzfclhnkxpgyxeklrvur
 
 # Force redeploy
-supabase functions deploy --no-verify-jwt
+./scripts/deploy-supabase.sh
 ```
 
 ## 📋 Pre-Production Checklist
