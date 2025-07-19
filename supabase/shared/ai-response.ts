@@ -37,26 +37,26 @@ export async function generateAIResponse(
     const aiResponse = await groqService.getChatCompletion(messages, personality);
     
     if (!aiResponse) {
-      return groqService.getFallbackResponse(personality);
+      return getGroqService().getFallbackResponse(personality);
     }
 
     // Store conversation in memory
     await MemoryService.addMemory(
       `User: ${message}\nAI (${personality}): ${aiResponse}`,
       userId,
-      {
+      JSON.stringify({
         personality,
         platform: 'api',
         intent: 'general_chat',
         timestamp: new Date().toISOString(),
-      }
+      })
     );
 
     return aiResponse;
 
   } catch (error) {
     console.error('❌ AI generation error:', error);
-    return groqService.getFallbackResponse(personality);
+    return getGroqService().getFallbackResponse(personality);
   }
 }
 

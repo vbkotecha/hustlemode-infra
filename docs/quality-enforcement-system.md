@@ -4,6 +4,41 @@
 
 This document explains the **automated quality enforcement system** that makes it **IMPOSSIBLE** to create the mess we just cleaned up. Every principle we applied is now **permanently enforced by automation**.
 
+## 🛡️ CRITICAL: Debugging vs Shortcuts Rule
+
+### **NEVER Take Shortcuts - Always Debug Root Causes**
+
+**MANDATORY RULE**: When any system component "doesn't work" or has issues:
+
+1. **🔍 DEBUG FIRST**: Always diagnose the root cause before making changes
+2. **🚫 NO SHORTCUTS**: Never simplify/remove functionality to "make it work"
+3. **🔧 FIX PROPERLY**: Address the actual problem, not symptoms
+4. **✅ VERIFY COMPLETE**: Ensure full functionality is restored
+
+### **Prohibited Shortcut Behaviors:**
+- ❌ **Simplifying complex functions** to avoid import issues
+- ❌ **Removing AI tool systems** to resolve boot errors  
+- ❌ **Breaking functionality** to achieve "working" status
+- ❌ **Declaring false success** when core features are broken
+- ❌ **Using direct CLI commands** instead of deployment scripts
+
+### **Required Debugging Process:**
+1. **Check compilation errors** with `deno check`
+2. **Trace import dependencies** systematically
+3. **Fix TypeScript errors** one by one
+4. **Test each component** individually
+5. **Use proper deployment scripts** (never direct CLI)
+6. **Verify full functionality** before declaring success
+
+### **Success Criteria:**
+- ✅ All original functionality preserved
+- ✅ No TypeScript compilation errors
+- ✅ All APIs working as designed
+- ✅ Quality enforcement system active
+- ✅ Proper deployment process followed
+
+**VIOLATION**: Taking shortcuts results in technical debt and broken systems. Always debug properly.
+
 ## 🏗️ What We Built
 
 ### 1. **Automated File Size Limits** ✅

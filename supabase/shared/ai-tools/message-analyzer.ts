@@ -4,7 +4,7 @@ import { IntentAnalyzer, EnhancedIntentAnalysis } from './intent-analyzer.ts';
 import { ToolCoordinator } from './tool-coordinator.ts';
 import { FallbackAnalyzer } from './fallback-analyzer.ts';
 
-export { EnhancedIntentAnalysis } from './intent-analyzer.ts';
+export type { EnhancedIntentAnalysis } from './intent-analyzer.ts';
 
 export class MessageAnalyzer {
   private _intentAnalyzer: IntentAnalyzer | null = null;
