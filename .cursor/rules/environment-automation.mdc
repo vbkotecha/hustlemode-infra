@@ -1,3 +1,9 @@
+---
+description: "Environment variable management and testing automation for Supabase Edge Functions"
+globs: [".env*", "supabase/functions/**/*", "scripts/health-check.sh", "deployment-config.json"]
+alwaysApply: true
+---
+
 # Environment Variable Management & Testing Automation
 
 ## 🔐 Environment Variable Standards
@@ -50,7 +56,7 @@ supabase secrets list --project-ref yzfclhnkxpgyxeklrvur | grep -E "(GROQ_API_KE
 supabase db reset --linked --yes
 
 # 4. Deploy functions
-supabase functions deploy --no-verify-jwt
+./scripts/deploy-supabase.sh
 
 # 5. Run health check
 ./scripts/health-check.sh
@@ -148,7 +154,7 @@ supabase secrets list --project-ref yzfclhnkxpgyxeklrvur | grep VARIABLE_NAME
 supabase secrets set VARIABLE_NAME=value --project-ref yzfclhnkxpgyxeklrvur
 
 # Redeploy functions to pick up new secrets
-supabase functions deploy --no-verify-jwt
+./scripts/deploy-supabase.sh
 ```
 
 #### Issue: "Invalid API key" errors
